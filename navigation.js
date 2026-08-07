@@ -15,13 +15,13 @@ if (Text && Text.defaultProps) {
 }
 // Pastikan import safe area di bawah ini
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import JadwalTidurScreen from './card_menu/jadwal_tidur';
-import KalkulatorPertumbuhanScreen from './card_menu/kalkulator_pertumbuhan';
-import OlahragaScreen from './card_menu/olahraga';
-import PengelolaStresScreen from './card_menu/pengelola_stres';
-import PolaMakanScreen from './card_menu/pola_makan';
+import JadwalTidurScreen from './card_menu/1_jadwal_tidur';
+import KalkulatorPertumbuhanScreen from './card_menu/2_kalkulator_pertumbuhan';
+import OlahragaScreen from './card_menu/3_olahraga';
+import PengelolaStresScreen from './card_menu/4_pengelola_stres';
+import PolaMakanScreen from './card_menu/5_pola_makan';
 import ProfilesScreen from './card_menu/profiles';
-import RekomendasiMakananScreen from './card_menu/rekomendasi_makanan';
+import RekomendasiMakananScreen from './card_menu/6_rekomendasi_makanan';
 import LoginScreen from './auth/login';
 import RegisterScreen from './auth/register';
 
