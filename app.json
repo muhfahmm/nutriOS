@@ -22,6 +22,11 @@
       },
       "edgeToEdgeEnabled": true
     },
+    "updates": {
+      "enabled": false,
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     }

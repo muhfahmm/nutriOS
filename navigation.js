@@ -20,8 +20,6 @@ import PengelolaStresScreen from './card_menu/pengelola_stres';
 import PolaMakanScreen from './card_menu/pola_makan';
 import ProfilesScreen from './card_menu/profiles';
 import RekomendasiMakananScreen from './card_menu/rekomendasi_makanan';
-import LoginScreen from './auth/LoginScreen';
-import RegisterScreen from './auth/RegisterScreen';
 
 // --- KOMPONEN BANTUAN UNTUK GRID MENU ---
 export const GridItem = ({ color, iconName, label, badge }) => {
@@ -160,7 +158,6 @@ export function ProfileScreen() {
 
 const Tab = createBottomTabNavigator();
 const HomeStackNavigator = createStackNavigator();
-const RootStack = createStackNavigator();
 
 // --- STACK NAVIGATOR UNTUK HALAMAN BERANDA ---
 function HomeStack() {
@@ -228,14 +225,9 @@ function MainTabs() {
 // --- ROOT UTAMA ---
 export default function Navigation() {
   return (
-    // Provider harus berada di lapisan PALING LUAR
     <SafeAreaProvider>
       <NavigationContainer>
-        <RootStack.Navigator screenOptions={{ headerShown: false }}>
-          <RootStack.Screen name="Main" component={MainTabs} />
-          <RootStack.Screen name="Login" component={LoginScreen} />
-          <RootStack.Screen name="Register" component={RegisterScreen} />
-        </RootStack.Navigator>
+        <MainTabs />
       </NavigationContainer>
     </SafeAreaProvider>
   );
