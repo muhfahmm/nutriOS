@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "concurrently \"npm run auth:start\" \"expo start --lan --clear\"",
-    "android": "concurrently \"npm run auth:start\" \"expo start --android --lan --clear\"",
-    "ios": "concurrently \"npm run auth:start\" \"expo start --ios --lan --clear\"",
+    "start": "node scripts/start-with-servers.js",
+    "android": "node scripts/start-with-servers.js",
+    "ios": "node scripts/start-with-servers.js",
     "web": "expo start --web",
     "auth:start": "node auth/server.js"
   },
@@ -32,6 +32,7 @@
   "devDependencies": {
     "@types/react": "~19.1.10",
     "concurrently": "^10.0.4",
+    "kill-port": "^2.0.1",
     "typescript": "~5.9.2"
   }
 }
