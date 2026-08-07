@@ -1,9 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { useState, useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
+import { AuthContext } from './auth/AuthContext';
 
 if (Text && !Text.defaultProps) {
   Text.defaultProps = {};
@@ -20,6 +22,8 @@ import PengelolaStresScreen from './card_menu/pengelola_stres';
 import PolaMakanScreen from './card_menu/pola_makan';
 import ProfilesScreen from './card_menu/profiles';
 import RekomendasiMakananScreen from './card_menu/rekomendasi_makanan';
+import LoginScreen from './auth/login';
+import RegisterScreen from './auth/register';
 
 // --- KOMPONEN BANTUAN UNTUK GRID MENU ---
 export const GridItem = ({ color, iconName, label, badge }) => {
@@ -40,13 +44,16 @@ export const GridItem = ({ color, iconName, label, badge }) => {
 
 // --- SCREEN BERANDA ---
 export function HomeScreen({ navigation }) {
+  const { user } = useContext(AuthContext);
+  const greetingName = user?.nama_lengkap ? `Hai, ${user.nama_lengkap}` : 'Hai, user';
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F7FF' }}>
       <ScrollView contentContainerStyle={styles.screenContent}>
         <View style={styles.headerContainer}>
           <View style={styles.profileSection}>
             <Ionicons name="person-circle" size={40} color="#6B7280" style={{ marginRight: 10 }} />
-            <Text style={styles.greetingText}>Hai, user</Text>
+            <Text style={styles.greetingText}>{greetingName}</Text>
           </View>
           <Ionicons name="notifications-outline" size={26} color="#111827" />
         </View>
@@ -158,6 +165,7 @@ export function ProfileScreen() {
 
 const Tab = createBottomTabNavigator();
 const HomeStackNavigator = createStackNavigator();
+const RootStackNavigator = createStackNavigator();
 
 // --- STACK NAVIGATOR UNTUK HALAMAN BERANDA ---
 function HomeStack() {
@@ -224,12 +232,20 @@ function MainTabs() {
 
 // --- ROOT UTAMA ---
 export default function Navigation() {
+  const [user, setUser] = useState(null);
+
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <MainTabs />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <AuthContext.Provider value={{ user, setUser }}>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <RootStackNavigator.Navigator screenOptions={{ headerShown: false }}>
+            <RootStackNavigator.Screen name="MainTabs" component={MainTabs} />
+            <RootStackNavigator.Screen name="Login" component={LoginScreen} />
+            <RootStackNavigator.Screen name="Register" component={RegisterScreen} />
+          </RootStackNavigator.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </AuthContext.Provider>
   );
 }
 
