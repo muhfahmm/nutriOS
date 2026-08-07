@@ -5,10 +5,10 @@ import {
   View, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView,
   Animated,
   Easing
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function OlahragaScreen() {

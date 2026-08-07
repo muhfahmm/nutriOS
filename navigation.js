@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { useState, useContext } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Animated, Easing } from 'react-native';
+import { useState, useContext, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -13,7 +13,6 @@ if (Text && !Text.defaultProps) {
 if (Text && Text.defaultProps) {
   Text.defaultProps.style = [Text.defaultProps.style, { fontFamily: 'Roboto' }];
 }
-// Pastikan import safe area di bawah ini
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import JadwalTidurScreen from './card_menu/1_jadwal_tidur';
 import KalkulatorPertumbuhanScreen from './card_menu/2_kalkulator_pertumbuhan';
@@ -25,20 +24,127 @@ import RekomendasiMakananScreen from './card_menu/6_rekomendasi_makanan';
 import LoginScreen from './auth/login';
 import RegisterScreen from './auth/register';
 
-// --- KOMPONEN BANTUAN UNTUK GRID MENU ---
-export const GridItem = ({ color, iconName, label, badge }) => {
+// --- KOMPONEN LIQUID GLASS UNTUK GRID MENU ---
+const LiquidGlassTouchable = ({ onPress, onLongPress, style, children }) => {
+  const shineAnim = useRef(new Animated.Value(0)).current;
+
+  const handleLongPress = () => {
+    shineAnim.setValue(0);
+    Animated.timing(shineAnim, {
+      toValue: 1,
+      duration: 700,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+    if (onLongPress) onLongPress();
+  };
+
   return (
-    <View style={styles.gridItem}>
-      <View style={[styles.gridIconBox, { backgroundColor: color }]}> 
-        {badge && (
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>{badge}</Text>
-          </View>
-        )}
-        <Ionicons name={iconName} size={24} color="#fff" />
+    <TouchableOpacity
+      onPress={onPress}
+      onLongPress={handleLongPress}
+      activeOpacity={0.8}
+      style={[style, { overflow: 'hidden', position: 'relative' }]}
+    >
+      {children}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          width: 80,
+          backgroundColor: 'rgba(255, 255, 255, 0.5)',
+          transform: [
+            {
+              translateX: shineAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-100, 250],
+              }),
+            },
+            { rotate: '30deg' },
+          ],
+          opacity: shineAnim.interpolate({
+            inputRange: [0, 0.4, 1],
+            outputRange: [0, 1, 0],
+          }),
+        }}
+      />
+    </TouchableOpacity>
+  );
+};
+
+// --- KOMPONEN LIQUID GLASS KHUSUS UNTUK TAB BAR BAWAH ---
+const LiquidGlassTabButton = ({ children, onPress, onLongPress, ...props }) => {
+  const shineAnim = useRef(new Animated.Value(0)).current;
+
+  const handleLongPress = () => {
+    shineAnim.setValue(0);
+    Animated.timing(shineAnim, {
+      toValue: 1,
+      duration: 700,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+    if (onLongPress) onLongPress();
+  };
+
+  return (
+    <TouchableOpacity
+      {...props}
+      onPress={onPress}
+      onLongPress={handleLongPress}
+      activeOpacity={0.8}
+      style={[props.style, { 
+        position: 'relative', 
+        overflow: 'hidden', 
+        flex: 1, 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }]}
+    >
+      {children}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          width: 80,
+          backgroundColor: 'rgba(255, 255, 255, 0.5)',
+          transform: [
+            {
+              translateX: shineAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-80, 200],
+              }),
+            },
+            { rotate: '30deg' },
+          ],
+          opacity: shineAnim.interpolate({
+            inputRange: [0, 0.4, 1],
+            outputRange: [0, 1, 0],
+          }),
+        }}
+      />
+    </TouchableOpacity>
+  );
+};
+
+// --- KOMPONEN BANTUAN UNTUK GRID MENU ---
+export const GridItem = ({ color, iconName, label, badge, onPress, onLongPress }) => {
+  return (
+    <LiquidGlassTouchable onPress={onPress} onLongPress={onLongPress} style={styles.gridTouch}>
+      <View style={styles.gridItem}>
+        <View style={[styles.gridIconBox, { backgroundColor: color }]}>
+          {badge && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>{badge}</Text>
+            </View>
+          )}
+          <Ionicons name={iconName} size={24} color="#fff" />
+        </View>
+        <Text style={styles.gridLabel} numberOfLines={2}>{label}</Text>
       </View>
-      <Text style={styles.gridLabel} numberOfLines={2}>{label}</Text>
-    </View>
+    </LiquidGlassTouchable>
   );
 };
 
@@ -58,6 +164,10 @@ export function HomeScreen({ navigation }) {
     'Pola Tidur Bayi 0-12 Bulan yang Benar',
     'Resep MPASI 6 Bulan: Pure Labu & Ayam',
   ];
+
+  const handleLongPressMenu = (menuName) => {
+    console.log(`Anda menekan lama menu: ${menuName}`);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F7FF' }}>
@@ -87,25 +197,38 @@ export function HomeScreen({ navigation }) {
           <Text style={styles.miniCheckinText}>Pengaturan Check-in</Text>
         </TouchableOpacity>
 
+        {/* --- GRID MENU --- */}
         <View style={styles.gridContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('JadwalTidur')} style={styles.gridTouch}>
-            <GridItem color="#5C6BC0" iconName="moon" label="Jadwal Tidur" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('KalkulatorPertumbuhan')} style={styles.gridTouch}>
-            <GridItem color="#FFA726" iconName="analytics" label="Kalkulator Pertumbuhan" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('OlahragaMenu')} style={styles.gridTouch}>
-            <GridItem color="#EF5350" iconName="barbell" label="Olahraga" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('PengelolaStres')} style={styles.gridTouch}>
-            <GridItem color="#26A69A" iconName="leaf" label="Pengelola Stres" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('PolaMakan')} style={styles.gridTouch}>
-            <GridItem color="#FDD835" iconName="nutrition" label="Pola Makan" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('RekomendasiMakanan')} style={styles.gridTouch}>
-            <GridItem color="#AB47BC" iconName="fast-food" label="Rekomendasi Makanan" />
-          </TouchableOpacity>
+          <GridItem 
+            color="#5C6BC0" iconName="moon" label="Jadwal Tidur" 
+            onPress={() => navigation.navigate('JadwalTidur')} 
+            onLongPress={() => handleLongPressMenu('Jadwal Tidur')} 
+          />
+          <GridItem 
+            color="#FFA726" iconName="analytics" label="Kalkulator Pertumbuhan" 
+            onPress={() => navigation.navigate('KalkulatorPertumbuhan')} 
+            onLongPress={() => handleLongPressMenu('Kalkulator Pertumbuhan')}
+          />
+          <GridItem 
+            color="#EF5350" iconName="barbell" label="Olahraga" 
+            onPress={() => navigation.navigate('OlahragaMenu')} 
+            onLongPress={() => handleLongPressMenu('Olahraga')}
+          />
+          <GridItem 
+            color="#26A69A" iconName="leaf" label="Pengelola Stres" 
+            onPress={() => navigation.navigate('PengelolaStres')} 
+            onLongPress={() => handleLongPressMenu('Pengelola Stres')}
+          />
+          <GridItem 
+            color="#FDD835" iconName="nutrition" label="Pola Makan" 
+            onPress={() => navigation.navigate('PolaMakan')} 
+            onLongPress={() => handleLongPressMenu('Pola Makan')}
+          />
+          <GridItem 
+            color="#AB47BC" iconName="fast-food" label="Rekomendasi Makanan" 
+            onPress={() => navigation.navigate('RekomendasiMakanan')} 
+            onLongPress={() => handleLongPressMenu('Rekomendasi Makanan')}
+          />
         </View>
 
         <View style={styles.streakSection}>
@@ -215,9 +338,8 @@ function HomeStack() {
   );
 }
 
-// --- KOMPONEN TAB BAR UTAMA (DIPISAHKAN AGAR BISA PAKAI useSafeAreaInsets) ---
+// --- KOMPONEN TAB BAR UTAMA ---
 function MainTabs() {
-  // AMBIL SAFE AREA DI SINI (Setelah SafeAreaProvider di luar menyala)
   const insets = useSafeAreaInsets();
 
   return (
@@ -234,6 +356,10 @@ function MainTabs() {
         },
         tabBarActiveTintColor: '#3B82F6',
         tabBarInactiveTintColor: '#9CA3AF',
+        
+        // --- BAGIAN PENTING: GANTI TOMBOL TAB DENGAN LIQUID GLASS ---
+        tabBarButton: (props) => <LiquidGlassTabButton {...props} />,
+        
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
@@ -242,7 +368,6 @@ function MainTabs() {
           shadowOpacity: 0.05,
           shadowRadius: 10,
           shadowOffset: { width: 0, height: -4 },
-          // Gunakan inset di sini agar tidak tertutup tombol device
           height: 70 + insets.bottom,
           paddingBottom: 10 + insets.bottom,
           paddingTop: 6,

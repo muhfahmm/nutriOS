@@ -5,10 +5,10 @@ import {
   View, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView,
   Modal,
   Switch
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 // --- 1. DATABASE BAHAN MAKANAN LOKAL (MOCK JSON) ---

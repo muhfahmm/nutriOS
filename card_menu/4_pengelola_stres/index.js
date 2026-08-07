@@ -5,12 +5,12 @@ import {
   View, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView,
   Animated,
   Easing,
   TextInput,
   Dimensions
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');

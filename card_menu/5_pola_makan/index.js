@@ -5,9 +5,9 @@ import {
   View, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView,
   TextInput
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function PolaMakanScreen() {
