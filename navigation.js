@@ -47,6 +47,18 @@ export function HomeScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   const greetingName = user?.nama_lengkap ? `Hai, ${user.nama_lengkap}` : 'Hai, user';
 
+  const streakStats = [
+    { icon: 'flame', label: 'Hari Aktif', value: '5 Hari', note: 'berturut-turut', color: '#F97316' },
+    { icon: 'time', label: 'Total Olahraga', value: '38 Menit', note: 'minggu ini', color: '#3B82F6' },
+    { icon: 'restaurant', label: 'Makan Tercatat', value: '95%', note: 'minggu ini', color: '#10B981' },
+  ];
+
+  const tipsData = [
+    'Penting! Cegah Stunting dengan Protein Hewani',
+    'Pola Tidur Bayi 0-12 Bulan yang Benar',
+    'Resep MPASI 6 Bulan: Pure Labu & Ayam',
+  ];
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F7FF' }}>
       <ScrollView contentContainerStyle={styles.screenContent}>
@@ -96,9 +108,30 @@ export function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        <View style={styles.streakSection}>
+          <Text style={styles.infoTitle}>Statistik Aktivitas Harian</Text>
+          <View style={styles.streakGrid}>
+            {streakStats.map((item) => (
+              <View key={item.label} style={styles.streakCard}>
+                <Ionicons name={item.icon} size={20} color={item.color} style={styles.streakIcon} />
+                <Text style={styles.streakValue}>{item.value}</Text>
+                <Text style={styles.streakLabel}>{item.label}</Text>
+                <Text style={styles.streakNote}>{item.note}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
         <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>Informasi Kesehatan</Text>
-          <View style={styles.infoPlaceholder} />
+          <Text style={styles.infoTitle}>Tips & Edukasi Kesehatan Harian</Text>
+          <View style={styles.carouselContainer}>
+            {tipsData.map((tip, index) => (
+              <View key={index} style={styles.tipCard}>
+                <Text style={styles.tipBadge}>Tip #{index + 1}</Text>
+                <Text style={styles.tipText}>{tip}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         <TouchableOpacity style={styles.fab}>
@@ -194,8 +227,8 @@ function MainTabs() {
           let iconName;
           if (route.name === 'Beranda') iconName = focused ? 'home' : 'home-outline';
           else if (route.name === 'Olahraga') iconName = focused ? 'barbell' : 'barbell-outline';
-          else if (route.name === 'Nutrisi') iconName = focused ? 'nutrition' : 'nutrition-outline';
-          else if (route.name === 'Kesehatan') iconName = focused ? 'heart' : 'heart-outline';
+          else if (route.name === 'Pola Makan') iconName = focused ? 'nutrition' : 'nutrition-outline';
+          else if (route.name === 'Pengelola Stres') iconName = focused ? 'heart' : 'heart-outline';
           else if (route.name === 'Profil') iconName = focused ? 'person' : 'person-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -223,8 +256,8 @@ function MainTabs() {
     >
       <Tab.Screen name="Beranda" component={HomeStack} />
       <Tab.Screen name="Olahraga" component={OlahragaScreen} options={{ title: 'Olahraga' }} />
-      <Tab.Screen name="Nutrisi" component={PolaMakanScreen} options={{ title: 'Nutrisi' }} />
-      <Tab.Screen name="Kesehatan" component={PengelolaStresScreen} options={{ title: 'Kesehatan' }} />
+      <Tab.Screen name="Pola Makan" component={PolaMakanScreen} options={{ title: 'Pola Makan' }} />
+      <Tab.Screen name="Pengelola Stres" component={PengelolaStresScreen} options={{ title: 'Pengelola Stres' }} />
       <Tab.Screen name="Profil" component={ProfilesScreen} options={{ title: 'Profil' }} />
     </Tab.Navigator>
   );
@@ -372,8 +405,52 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     width: '100%',
   },
+  streakSection: {
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  streakGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  streakCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  streakIcon: {
+    marginBottom: 6,
+  },
+  streakValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  streakLabel: {
+    fontSize: 11,
+    color: '#374151',
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  streakNote: {
+    fontSize: 10,
+    color: '#6B7280',
+    marginTop: 2,
+    textAlign: 'center',
+  },
   infoSection: {
     marginTop: 4,
+    marginBottom: 20,
   },
   infoTitle: {
     fontSize: 18,
@@ -381,11 +458,32 @@ const styles = StyleSheet.create({
     color: '#111827',
     marginBottom: 12,
   },
-  infoPlaceholder: {
+  carouselContainer: {
     backgroundColor: '#E5E7EB',
-    width: '100%',
-    height: 160,
-    borderRadius: 16,
+    borderRadius: 18,
+    padding: 14,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  tipCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    minHeight: 120,
+    justifyContent: 'center',
+  },
+  tipBadge: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#2563EB',
+    marginBottom: 8,
+  },
+  tipText: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '700',
+    lineHeight: 20,
   },
   fab: {
     position: 'absolute',
