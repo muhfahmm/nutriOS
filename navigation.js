@@ -4,6 +4,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
+
+if (Text && !Text.defaultProps) {
+  Text.defaultProps = {};
+}
+if (Text && Text.defaultProps) {
+  Text.defaultProps.style = [Text.defaultProps.style, { fontFamily: 'Roboto' }];
+}
 // Pastikan import safe area di bawah ini
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import JadwalTidurScreen from './card_menu/jadwal_tidur';
@@ -11,7 +18,10 @@ import KalkulatorPertumbuhanScreen from './card_menu/kalkulator_pertumbuhan';
 import OlahragaScreen from './card_menu/olahraga';
 import PengelolaStresScreen from './card_menu/pengelola_stres';
 import PolaMakanScreen from './card_menu/pola_makan';
+import ProfilesScreen from './card_menu/profiles';
 import RekomendasiMakananScreen from './card_menu/rekomendasi_makanan';
+import LoginScreen from './auth/LoginScreen';
+import RegisterScreen from './auth/RegisterScreen';
 
 // --- KOMPONEN BANTUAN UNTUK GRID MENU ---
 export const GridItem = ({ color, iconName, label, badge }) => {
@@ -38,7 +48,7 @@ export function HomeScreen({ navigation }) {
         <View style={styles.headerContainer}>
           <View style={styles.profileSection}>
             <Ionicons name="person-circle" size={40} color="#6B7280" style={{ marginRight: 10 }} />
-            <Text style={styles.greetingText}>Hai, andri wahyudi</Text>
+            <Text style={styles.greetingText}>Hai, user</Text>
           </View>
           <Ionicons name="notifications-outline" size={26} color="#111827" />
         </View>
@@ -149,20 +159,21 @@ export function ProfileScreen() {
 }
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
+const HomeStackNavigator = createStackNavigator();
+const RootStack = createStackNavigator();
 
 // --- STACK NAVIGATOR UNTUK HALAMAN BERANDA ---
 function HomeStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="HomeMain" component={HomeScreen} />
-      <Stack.Screen name="JadwalTidur" component={JadwalTidurScreen} />
-      <Stack.Screen name="KalkulatorPertumbuhan" component={KalkulatorPertumbuhanScreen} />
-      <Stack.Screen name="OlahragaMenu" component={OlahragaScreen} />
-      <Stack.Screen name="PengelolaStres" component={PengelolaStresScreen} />
-      <Stack.Screen name="PolaMakan" component={PolaMakanScreen} />
-      <Stack.Screen name="RekomendasiMakanan" component={RekomendasiMakananScreen} />
-    </Stack.Navigator>
+    <HomeStackNavigator.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStackNavigator.Screen name="HomeMain" component={HomeScreen} />
+      <HomeStackNavigator.Screen name="JadwalTidur" component={JadwalTidurScreen} />
+      <HomeStackNavigator.Screen name="KalkulatorPertumbuhan" component={KalkulatorPertumbuhanScreen} />
+      <HomeStackNavigator.Screen name="OlahragaMenu" component={OlahragaScreen} />
+      <HomeStackNavigator.Screen name="PengelolaStres" component={PengelolaStresScreen} />
+      <HomeStackNavigator.Screen name="PolaMakan" component={PolaMakanScreen} />
+      <HomeStackNavigator.Screen name="RekomendasiMakanan" component={RekomendasiMakananScreen} />
+    </HomeStackNavigator.Navigator>
   );
 }
 
@@ -206,10 +217,10 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Beranda" component={HomeStack} />
-      <Tab.Screen name="Olahraga" component={WorkoutScreen} options={{ title: 'Olahraga' }} />
-      <Tab.Screen name="Nutrisi" component={NutritionScreen} options={{ title: 'Nutrisi' }} />
-      <Tab.Screen name="Kesehatan" component={WellnessScreen} options={{ title: 'Kesehatan' }} />
-      <Tab.Screen name="Profil" component={ProfileScreen} options={{ title: 'Profil' }} />
+      <Tab.Screen name="Olahraga" component={OlahragaScreen} options={{ title: 'Olahraga' }} />
+      <Tab.Screen name="Nutrisi" component={PolaMakanScreen} options={{ title: 'Nutrisi' }} />
+      <Tab.Screen name="Kesehatan" component={PengelolaStresScreen} options={{ title: 'Kesehatan' }} />
+      <Tab.Screen name="Profil" component={ProfilesScreen} options={{ title: 'Profil' }} />
     </Tab.Navigator>
   );
 }
@@ -220,7 +231,11 @@ export default function Navigation() {
     // Provider harus berada di lapisan PALING LUAR
     <SafeAreaProvider>
       <NavigationContainer>
-        <MainTabs />
+        <RootStack.Navigator screenOptions={{ headerShown: false }}>
+          <RootStack.Screen name="Main" component={MainTabs} />
+          <RootStack.Screen name="Login" component={LoginScreen} />
+          <RootStack.Screen name="Register" component={RegisterScreen} />
+        </RootStack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
   );
