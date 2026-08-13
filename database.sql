@@ -6,9 +6,9 @@ USE db_nutrios;
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nama_lengkap VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) DEFAULT NULL,
     password VARCHAR(255) NOT NULL, 
-    nomor_telepon VARCHAR(20),
     foto_profil VARCHAR(255) DEFAULT NULL, -- Menyimpan URL foto (opsional)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -39,4 +39,29 @@ CREATE TABLE IF NOT EXISTS jadwal_tidur (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 5. Buat Tabel riwayat_pertumbuhan_user untuk mencatat riwayat IMT orang tua
+CREATE TABLE IF NOT EXISTS riwayat_pertumbuhan_user (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    berat_badan DECIMAL(5,2) NOT NULL,
+    tinggi_badan DECIMAL(5,2) NOT NULL,
+    umur_tahun INT NOT NULL DEFAULT 20,
+    imt DECIMAL(4,2) NOT NULL,
+    status_imt VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 6. Buat Tabel riwayat_pertumbuhan_anak untuk mencatat perkembangan fisik anak
+CREATE TABLE IF NOT EXISTS riwayat_pertumbuhan_anak (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    anak_id INT NOT NULL,
+    berat_badan DECIMAL(5,2) NOT NULL,
+    tinggi_badan DECIMAL(5,2) NOT NULL,
+    umur_bulan INT NOT NULL,
+    status_gizi VARCHAR(50) DEFAULT 'Normal',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (anak_id) REFERENCES anak(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

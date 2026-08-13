@@ -15,17 +15,19 @@ import { AuthContext } from '../AuthContext';
 import { API_BASE_URL } from '../api';
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState('error'); // 'error' atau 'success'
   const [loading, setLoading] = useState(false);
 
   const { setUser } = useContext(AuthContext);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setMessage('Email dan password wajib diisi.');
+    if (!username || !password) {
+      setMessageType('error');
+      setMessage('Username dan password wajib diisi.');
       return;
     }
 
@@ -38,11 +40,12 @@ export default function LoginScreen({ navigation }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const result = await response.json();
       if (response.ok && result.user) {
+        setMessageType('success');
         setUser(result.user);
         setMessage('Login berhasil.');
         setTimeout(() => {
@@ -51,10 +54,12 @@ export default function LoginScreen({ navigation }) {
           }
         }, 500);
       } else {
-        setMessage(result.message || 'Email atau password salah.');
+        setMessageType('error');
+        setMessage(result.message || 'Username atau password salah.');
       }
     } catch (error) {
       console.error('Login error:', error);
+      setMessageType('error');
       setMessage('Tidak dapat terhubung ke server autentikasi.');
     } finally {
       setLoading(false);
@@ -65,7 +70,7 @@ export default function LoginScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView 
         style={styles.keyboardContainer} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.headerSection}>
           <View style={styles.iconWrapper}>
@@ -77,16 +82,15 @@ export default function LoginScreen({ navigation }) {
 
         <View style={styles.form}>
           <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>Username</Text>
             <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
+              <Ionicons name="at-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                keyboardType="email-address"
                 autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-                placeholder="email@contoh.com"
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Masukkan username"
                 placeholderTextColor="#9CA3AF"
               />
             </View>
@@ -115,7 +119,11 @@ export default function LoginScreen({ navigation }) {
             </View>
           </View>
 
-          {message ? <Text style={styles.message}>{message}</Text> : null}
+          {message ? (
+            <Text style={[styles.message, messageType === 'success' && styles.messageSuccess]}>
+              {message}
+            </Text>
+          ) : null}
 
           <TouchableOpacity 
             style={[styles.buttonPrimary, loading && styles.buttonDisabled]} 
@@ -270,7 +278,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     backgroundColor: '#FEF2F2',
+    borderColor: '#FEE2E2',
+    borderWidth: 1.5,
     padding: 10,
     borderRadius: 8,
+  },
+  messageSuccess: {
+    color: '#16A34A',
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
   },
 });

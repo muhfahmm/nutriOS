@@ -97,24 +97,24 @@ app.get('/api/health', (req, res) => {
 // Registrasi User baru ke database
 app.post('/api/register', async (req, res) => {
   try {
-    const { nama_lengkap, email, password, nomor_telepon } = req.body;
-    if (!nama_lengkap || !email || !password) {
-      return res.status(400).json({ message: 'Nama lengkap, email, dan password wajib diisi.' });
+    const { nama_lengkap, username, password } = req.body;
+    if (!nama_lengkap || !username || !password) {
+      return res.status(400).json({ message: 'Nama lengkap, username, dan password wajib diisi.' });
     }
 
     if (!pool) {
       return res.status(500).json({ message: 'Database tidak terkoneksi.' });
     }
 
-    const [existingUser] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
+    const [existingUser] = await pool.execute('SELECT id FROM users WHERE username = ?', [username]);
     if (existingUser.length > 0) {
-      return res.status(409).json({ message: 'Email sudah terdaftar.' });
+      return res.status(409).json({ message: 'Username sudah terdaftar.' });
     }
 
     const passwordHash = bcrypt.hashSync(password, 12);
     const [result] = await pool.execute(
-      'INSERT INTO users (nama_lengkap, email, password, nomor_telepon) VALUES (?, ?, ?, ?)',
-      [nama_lengkap, email, passwordHash, nomor_telepon || null]
+      'INSERT INTO users (nama_lengkap, username, password) VALUES (?, ?, ?)',
+      [nama_lengkap, username, passwordHash]
     );
 
     return res.status(201).json({ message: 'Registrasi berhasil.', userId: result.insertId });
@@ -124,34 +124,52 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// Cek ketersediaan username
+app.get('/api/check-username', async (req, res) => {
+  try {
+    const { username } = req.query;
+    if (!username) {
+      return res.status(400).json({ message: 'Username wajib disertakan.' });
+    }
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    const [rows] = await pool.execute('SELECT id FROM users WHERE username = ?', [username]);
+    return res.json({ taken: rows.length > 0 });
+  } catch (error) {
+    console.error('Error checking username:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan saat memeriksa username.' });
+  }
+});
+
+
 // Login User
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email dan password wajib diisi.' });
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username dan password wajib diisi.' });
     }
 
     if (!pool) {
       return res.status(500).json({ message: 'Database tidak terkoneksi.' });
     }
 
-    const [rows] = await pool.execute('SELECT id, nama_lengkap, email, password, nomor_telepon, foto_profil FROM users WHERE email = ?', [email]);
+    const [rows] = await pool.execute('SELECT id, nama_lengkap, username, email, password, foto_profil FROM users WHERE username = ?', [username]);
     if (rows.length === 0) {
-      return res.status(401).json({ message: 'Email atau password salah.' });
+      return res.status(401).json({ message: 'Username atau password salah.' });
     }
 
     const user = rows[0];
     const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Email atau password salah.' });
+      return res.status(401).json({ message: 'Username atau password salah.' });
     }
 
     const safeUser = {
       id: user.id,
       nama_lengkap: user.nama_lengkap,
+      username: user.username,
       email: user.email,
-      nomor_telepon: user.nomor_telepon,
       foto_profil: user.foto_profil,
     };
 
@@ -268,6 +286,180 @@ app.get('/api/jadwal-tidur/:userId', async (req, res) => {
   } catch (error) {
     console.error('Error getting sleep schedule:', error);
     return res.status(500).json({ message: 'Terjadi kesalahan server saat mengambil jadwal tidur.' });
+  }
+});
+
+
+// Ganti Password User (Menggunakan GET sesuai request user)
+app.get('/api/ganti-password', async (req, res) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.query;
+    
+    if (!userId || !oldPassword || !newPassword) {
+      return res.status(400).json({ message: 'User ID, password lama, dan password baru wajib diisi.' });
+    }
+
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    // 1. Ambil user dari database
+    const [rows] = await pool.execute('SELECT password FROM users WHERE id = ?', [userId]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+
+    // 2. Bandingkan password lama
+    const userDb = rows[0];
+    const passwordIsValid = bcrypt.compareSync(oldPassword, userDb.password);
+    if (!passwordIsValid) {
+      return res.status(401).json({ message: 'Password lama salah.' });
+    }
+
+    // 3. Hash password baru & simpan ke DB
+    const newPasswordHash = bcrypt.hashSync(newPassword, 12);
+    await pool.execute('UPDATE users SET password = ? WHERE id = ?', [newPasswordHash, userId]);
+
+    return res.json({ message: 'Password berhasil diperbarui.' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat memperbarui password.' });
+  }
+});
+
+
+// === ENDPOINT ANAK (CRUD) ===
+
+// Mendapatkan daftar anak berdasarkan userId
+app.get('/api/anak/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    const [rows] = await pool.execute(
+      'SELECT id, nama_anak, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, jenis_kelamin, status_z_score FROM anak WHERE user_id = ? ORDER BY created_at DESC', 
+      [userId]
+    );
+    return res.json(rows);
+  } catch (error) {
+    console.error('Error getting children:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat mengambil data anak.' });
+  }
+});
+
+// Menambahkan data anak baru
+app.post('/api/anak', async (req, res) => {
+  try {
+    const { userId, nama_anak, tanggal_lahir, jenis_kelamin, status_z_score } = req.body;
+    if (!userId || !nama_anak) {
+      return res.status(400).json({ message: 'User ID dan nama anak wajib diisi.' });
+    }
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    const [result] = await pool.execute(
+      'INSERT INTO anak (user_id, nama_anak, tanggal_lahir, jenis_kelamin, status_z_score) VALUES (?, ?, ?, ?, ?)',
+      [userId, nama_anak, tanggal_lahir || null, jenis_kelamin || null, status_z_score || 'Normal']
+    );
+
+    return res.status(201).json({ 
+      message: 'Profil anak berhasil ditambahkan.', 
+      anakId: result.insertId 
+    });
+  } catch (error) {
+    console.error('Error adding child:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat menambah data anak.' });
+  }
+});
+
+// Menghapus data anak
+app.delete('/api/anak/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    await pool.execute('DELETE FROM anak WHERE id = ?', [id]);
+    return res.json({ message: 'Profil anak berhasil dihapus.' });
+  } catch (error) {
+    console.error('Error deleting child:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat menghapus data anak.' });
+  }
+});
+
+
+// === ENDPOINT RIWAYAT PERTUMBUHAN USER (IMT) ===
+
+app.get('/api/pertumbuhan-user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    const [rows] = await pool.execute(
+      'SELECT id, berat_badan, tinggi_badan, umur_tahun, imt, status_imt, DATE_FORMAT(created_at, "%d %b %Y %H:%i") as date FROM riwayat_pertumbuhan_user WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
+    );
+    return res.json(rows);
+  } catch (error) {
+    console.error('Error getting user growth history:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat mengambil riwayat IMT.' });
+  }
+});
+
+app.post('/api/pertumbuhan-user', async (req, res) => {
+  try {
+    const { userId, berat_badan, tinggi_badan, umur_tahun, imt, status_imt } = req.body;
+    if (!userId || !berat_badan || !tinggi_badan || !umur_tahun || !imt || !status_imt) {
+      return res.status(400).json({ message: 'Data pengukuran user tidak lengkap.' });
+    }
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    await pool.execute(
+      'INSERT INTO riwayat_pertumbuhan_user (user_id, berat_badan, tinggi_badan, umur_tahun, imt, status_imt) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, berat_badan, tinggi_badan, umur_tahun, imt, status_imt]
+    );
+    return res.status(201).json({ message: 'Riwayat IMT berhasil disimpan.' });
+  } catch (error) {
+    console.error('Error adding user growth record:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat menyimpan riwayat IMT.' });
+  }
+});
+
+
+// === ENDPOINT RIWAYAT PERTUMBUHAN ANAK ===
+
+app.get('/api/pertumbuhan-anak/:anakId', async (req, res) => {
+  try {
+    const { anakId } = req.params;
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    const [rows] = await pool.execute(
+      'SELECT id, berat_badan, tinggi_badan, umur_bulan, status_gizi, DATE_FORMAT(created_at, "%d %b %Y") as date FROM riwayat_pertumbuhan_anak WHERE anak_id = ? ORDER BY created_at DESC',
+      [anakId]
+    );
+    return res.json(rows);
+  } catch (error) {
+    console.error('Error getting child growth history:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat mengambil riwayat anak.' });
+  }
+});
+
+app.post('/api/pertumbuhan-anak', async (req, res) => {
+  try {
+    const { anakId, berat_badan, tinggi_badan, umur_bulan, status_gizi } = req.body;
+    if (!anakId || !berat_badan || !tinggi_badan || !umur_bulan) {
+      return res.status(400).json({ message: 'Data pengukuran anak tidak lengkap.' });
+    }
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    await pool.execute(
+      'INSERT INTO riwayat_pertumbuhan_anak (anak_id, berat_badan, tinggi_badan, umur_bulan, status_gizi) VALUES (?, ?, ?, ?, ?)',
+      [anakId, berat_badan, tinggi_badan, umur_bulan, status_gizi || 'Normal']
+    );
+    
+    // Update status Z-Score terakhir di profil anak
+    await pool.execute('UPDATE anak SET status_z_score = ? WHERE id = ?', [status_gizi || 'Normal', anakId]);
+
+    return res.status(201).json({ message: 'Riwayat timbangan anak berhasil disimpan.' });
+  } catch (error) {
+    console.error('Error adding child growth record:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat menyimpan riwayat anak.' });
   }
 });
 

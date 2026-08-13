@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -6,40 +6,288 @@ import {
   ScrollView, 
   TouchableOpacity, 
   TextInput,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Dimensions,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { AuthContext } from '../../auth/AuthContext';
+import { API_BASE_URL } from '../../auth/api';
+import { LoginPromptModal, AddChildModal } from './GrowthModals';
+import { getAISuggestions, classifyUserIMT } from './suggestion_AI';
 
-export default function KalkulatorPertumbuhanScreen() {
-  // --- STATE MOCK (Untuk Demo Interaktif) ---
-  const [selectedChild, setSelectedChild] = useState('Budi (24 Bulan)');
-  const [gender, setGender] = useState('Laki-laki');
-  const [position, setPosition] = useState('Berdiri');
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
-  const [isCalculated, setIsCalculated] = useState(false);
+const { width: screenWidth } = Dimensions.get('window');
 
-  // Mock Data Riwayat Anak
-  const [history, setHistory] = useState([
-    { date: '10 Mei 2026', weight: '10.2 kg', height: '82.5 cm' },
-    { date: '10 Apr 2026', weight: '9.8 kg', height: '81.0 cm' },
-    { date: '10 Mar 2026', weight: '9.5 kg', height: '79.5 cm' },
-  ]);
+export default function KalkulatorPertumbuhanScreen({ navigation }) {
+  const { user } = useContext(AuthContext);
+  const userId = user?.id || null;
 
-  // --- SIMULASI LOGIKA PERHITUNGAN Z-SCORE (MOCK) ---
-  // Saat tombol ditekan, kita simulasi hasil perhitungan muncul
-  const mockResult = {
-    stunting: { status: 'Normal', color: '#10B981', text: '🟢 Normal' },
-    gizi: { status: 'Gizi Baik', color: '#10B981' },
-    zScore: '-0.8 SD',
+  // --- STATE USER IMT ---
+  const [userWeight, setUserWeight] = useState('');
+  const [userHeight, setUserHeight] = useState('');
+  const [userAge, setUserAge] = useState('');
+  const [userGender, setUserGender] = useState('Laki-laki');
+  const [userImtResult, setUserImtResult] = useState(null);
+  const [isUserCalculated, setIsUserCalculated] = useState(false);
+  const [userHistory, setUserHistory] = useState([]);
+  const [isLoadingUserHistory, setIsLoadingUserHistory] = useState(false);
+
+  // --- STATE MANAJEMEN ANAK ---
+  const [children, setChildren] = useState([]);
+  const [isLoadingChildren, setIsLoadingChildren] = useState(false);
+  const [isAddChildVisible, setIsAddChildVisible] = useState(false);
+  const [isLoginPromptVisible, setIsLoginPromptVisible] = useState(false);
+  
+  // Form Anak Baru
+  const [childName, setChildName] = useState('');
+  const [childBirthDate, setChildBirthDate] = useState(''); // Format: YYYY-MM-DD
+  const [childGender, setChildGender] = useState('Laki-laki');
+  const [isSavingChild, setIsSavingChild] = useState(false);
+
+  // --- STATE PENGUKURAN ANAK DETAIL ---
+  const [selectedAnak, setSelectedAnak] = useState(null);
+  const [isAnakDetailVisible, setIsAnakDetailVisible] = useState(false);
+  const [anakHistory, setAnakHistory] = useState([]);
+  const [isLoadingAnakHistory, setIsLoadingAnakHistory] = useState(false);
+
+  // Form Pengukuran Anak Baru
+  const [newAnakWeight, setNewAnakWeight] = useState('');
+  const [newAnakHeight, setNewAnakHeight] = useState('');
+  const [isSavingAnakRecord, setIsSavingAnakRecord] = useState(false);
+
+  // Fetch Data Awal
+  useEffect(() => {
+    fetchUserHistory();
+    fetchChildren();
+  }, [userId]);
+
+  // --- LOGIKA UTAMANYA ---
+
+  // 1. Ambil Riwayat IMT User
+  const fetchUserHistory = async () => {
+    if (!userId) return;
+    setIsLoadingUserHistory(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/pertumbuhan-user/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserHistory(data);
+      }
+    } catch (e) {
+      console.log('Error fetchUserHistory:', e);
+    } finally {
+      setIsLoadingUserHistory(false);
+    }
   };
 
-  const handleCalculate = () => {
-    if (!weight || !height) {
-      alert('Harap masukkan Berat Badan dan Tinggi Badan terlebih dahulu!');
+  // 2. Hitung IMT User
+  const handleCalculateUserImt = async () => {
+    const weightNum = parseFloat(userWeight);
+    const heightNum = parseFloat(userHeight);
+    const ageNum = parseInt(userAge);
+
+    if (!weightNum || !heightNum || !ageNum) {
+      Alert.alert('Gagal', 'Harap masukkan Berat Badan, Tinggi Badan, dan Usia Anda!');
       return;
     }
-    setIsCalculated(true);
+
+    // Hitung klasifikasi IMT dinamis berdasarkan usia, tinggi badan, berat badan & jenis kelamin
+    const newResult = classifyUserIMT(weightNum, heightNum, ageNum, userGender);
+
+    setUserImtResult(newResult);
+    setIsUserCalculated(true);
+
+    // Simpan ke database jika user sudah login
+    if (userId) {
+      try {
+        await fetch(`${API_BASE_URL}/api/pertumbuhan-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            berat_badan: weightNum,
+            tinggi_badan: heightNum,
+            umur_tahun: ageNum,
+            imt: newResult.imt,
+            status_imt: newResult.status
+          })
+        });
+        fetchUserHistory(); // Refresh riwayat
+      } catch (err) {
+        console.log('Error save user growth:', err);
+      }
+    }
+  };
+
+  // 3. Ambil Daftar Anak
+  const fetchChildren = async () => {
+    if (!userId) return;
+    setIsLoadingChildren(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/anak/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setChildren(data);
+      }
+    } catch (e) {
+      console.log('Error fetchChildren:', e);
+    } finally {
+      setIsLoadingChildren(false);
+    }
+  };
+
+  // 4. Tambah Anak
+  const handleAddChild = async () => {
+    if (!childName) {
+      Alert.alert('Gagal', 'Nama anak wajib diisi!');
+      return;
+    }
+
+    if (!userId) {
+      Alert.alert('Perhatian', 'Silakan login terlebih dahulu untuk menyimpan data anak ke cloud.');
+      return;
+    }
+
+    setIsSavingChild(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/anak`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          nama_anak: childName,
+          tanggal_lahir: childBirthDate || null,
+          jenis_kelamin: childGender,
+          status_z_score: 'Normal'
+        })
+      });
+
+      if (response.ok) {
+        Alert.alert('Sukses', 'Profil anak berhasil ditambahkan!');
+        setChildName('');
+        setChildBirthDate('');
+        setIsAddChildVisible(false);
+        fetchChildren();
+      } else {
+        Alert.alert('Gagal', 'Gagal menambahkan profil anak.');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Koneksi API gagal.');
+    } finally {
+      setIsSavingChild(false);
+    }
+  };
+
+  // 5. Hapus Anak
+  const handleDeleteChild = (id, name) => {
+    Alert.alert(
+      'Hapus Profil',
+      `Apakah Anda yakin ingin menghapus profil anak "${name}" beserta seluruh riwayat pertumbuhannya?`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        { 
+          text: 'Hapus', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`${API_BASE_URL}/api/anak/${id}`, { method: 'DELETE' });
+              if (response.ok) {
+                Alert.alert('Sukses', 'Profil anak berhasil dihapus.');
+                setIsAnakDetailVisible(false);
+                setSelectedAnak(null);
+                fetchChildren();
+              }
+            } catch (e) {
+              Alert.alert('Error', 'Gagal menghapus data anak.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // 6. Buka Detail & Riwayat Anak
+  const handleOpenAnakDetail = async (anak) => {
+    setSelectedAnak(anak);
+    setIsAnakDetailVisible(true);
+    setIsLoadingAnakHistory(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/pertumbuhan-anak/${anak.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAnakHistory(data);
+      }
+    } catch (e) {
+      console.log('Error fetchAnakHistory:', e);
+    } finally {
+      setIsLoadingAnakHistory(false);
+    }
+  };
+
+  // 7. Hitung Selisih Bulan Lahir (Usia Anak)
+  const calculateAgeInMonths = (birthDateStr) => {
+    if (!birthDateStr) return 0;
+    const birth = new Date(birthDateStr);
+    const now = new Date();
+    return (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+  };
+
+  // 8. Tambah Catatan Timbangan Anak
+  const handleAddAnakRecord = async () => {
+    const weightNum = parseFloat(newAnakWeight);
+    const heightNum = parseFloat(newAnakHeight);
+
+    if (!weightNum || !heightNum) {
+      Alert.alert('Gagal', 'Harap masukkan Berat Badan dan Tinggi Badan anak!');
+      return;
+    }
+
+    setIsSavingAnakRecord(true);
+    try {
+      const ageMonths = calculateAgeInMonths(selectedAnak.tanggal_lahir);
+      
+      // Hitung Z-Score sederhana untuk mock status gizi
+      let statusGizi = 'Normal';
+      // Aturan estimasi sederhana (BB normal rata-rata balita)
+      if (weightNum < (ageMonths * 0.3 + 3.0)) {
+        statusGizi = 'Gizi Kurang ⚠️';
+      } else if (weightNum > (ageMonths * 0.6 + 6.0)) {
+        statusGizi = 'Gizi Lebih ⚠️';
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/pertumbuhan-anak`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          anakId: selectedAnak.id,
+          berat_badan: weightNum,
+          tinggi_badan: heightNum,
+          umur_bulan: ageMonths,
+          status_gizi: statusGizi
+        })
+      });
+
+      if (response.ok) {
+        Alert.alert('Sukses', 'Riwayat pertumbuhan anak berhasil disimpan.');
+        setNewAnakWeight('');
+        setNewAnakHeight('');
+        
+        // Refresh data anak & riwayatnya
+        const refreshedAnak = { ...selectedAnak, status_z_score: statusGizi };
+        setSelectedAnak(refreshedAnak);
+        handleOpenAnakDetail(refreshedAnak);
+        fetchChildren();
+      } else {
+        Alert.alert('Gagal', 'Gagal menyimpan riwayat pertumbuhan anak.');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Gagal menyimpan data.');
+    } finally {
+      setIsSavingAnakRecord(false);
+    }
   };
 
   return (
@@ -48,229 +296,467 @@ export default function KalkulatorPertumbuhanScreen() {
         
         {/* HEADER */}
         <View style={styles.header}>
-          <Text style={styles.title}>Kalkulator Pertumbuhan</Text>
-          <Text style={styles.subtitle}>Pantau Z-Score anak, deteksi stunting, dan cetak KMS Digital.</Text>
+          <Text style={styles.title}>Kalkulator Gizi & IMT</Text>
+          <Text style={styles.subtitle}>Ukur Indeks Massa Tubuh (IMT) Anda dan kelola catatan tumbuh kembang buah hati.</Text>
         </View>
 
-        {/* 1. FORM INPUT DATA FISIK ANAK */}
+        {/* 1. KALKULATOR IMT DI-SENDIRI (USER) */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Data Fisik Anak</Text>
-          
-          {/* Profil Anak */}
-          <TouchableOpacity style={styles.rowSelector}>
-            <View style={styles.rowIconText}>
-              <Ionicons name="people-outline" size={20} color="#4B5563" style={{ marginRight: 10 }} />
-              <Text style={styles.inputLabel}>Anak Terpilih</Text>
-            </View>
-            <View style={styles.rowValue}>
-              <Text style={styles.rowValueText}>{selectedChild}</Text>
-              <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
-            </View>
-          </TouchableOpacity>
+          <Text style={styles.cardTitle}>Kalkulator IMT Orang Tua</Text>
 
-          {/* Usia Otomatis */}
-          <View style={styles.rowSelector}>
-            <View style={styles.rowIconText}>
-              <Ionicons name="calendar-outline" size={20} color="#4B5563" style={{ marginRight: 10 }} />
-              <Text style={styles.inputLabel}>Usia saat ini</Text>
-            </View>
-            <View style={styles.rowValue}>
-              <Text style={styles.rowValueText}>24 Bulan (Lahir: 15 Jan 2024)</Text>
-            </View>
-          </View>
-
-          {/* Jenis Kelamin */}
+          {/* Jenis Kelamin User */}
           <Text style={styles.smallLabel}>Jenis Kelamin</Text>
           <View style={styles.inlineButtonRow}>
             {['Laki-laki', 'Perempuan'].map((item) => (
               <TouchableOpacity 
                 key={item} 
-                style={[styles.inlineBtn, gender === item && styles.inlineBtnActive]}
-                onPress={() => setGender(item)}
+                style={[styles.inlineBtn, userGender === item && styles.inlineBtnActive]}
+                onPress={() => setUserGender(item)}
               >
-                <Text style={[styles.inlineBtnText, gender === item && styles.inlineBtnTextActive]}>{item}</Text>
+                <Text style={[styles.inlineBtnText, userGender === item && styles.inlineBtnTextActive]}>{item}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Berat & Tinggi Badan */}
+          {/* Input Tinggi, Berat & Usia */}
           <View style={styles.rowInputGroup}>
             <View style={styles.inputWrapper}>
-              <Text style={styles.smallLabel}>Berat Badan (kg)</Text>
+              <Text style={styles.smallLabel}>BB (kg)</Text>
               <TextInput
                 style={styles.inputNumeric}
                 keyboardType="numeric"
-                value={weight}
-                onChangeText={setWeight}
-                placeholder="10.5"
-                placeholderTextColor="#9CA3AF"
+                value={userWeight}
+                onChangeText={setUserWeight}
+                placeholder="60.5"
+                placeholderTextColor="#94A3B8"
               />
             </View>
             <View style={styles.inputWrapper}>
-              <Text style={styles.smallLabel}>Tinggi Badan (cm)</Text>
+              <Text style={styles.smallLabel}>TB (cm)</Text>
               <TextInput
                 style={styles.inputNumeric}
                 keyboardType="numeric"
-                value={height}
-                onChangeText={setHeight}
-                placeholder="75.0"
-                placeholderTextColor="#9CA3AF"
+                value={userHeight}
+                onChangeText={setUserHeight}
+                placeholder="165"
+                placeholderTextColor="#94A3B8"
+              />
+            </View>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.smallLabel}>Usia (Thn)</Text>
+              <TextInput
+                style={styles.inputNumeric}
+                keyboardType="numeric"
+                value={userAge}
+                onChangeText={setUserAge}
+                placeholder="25"
+                placeholderTextColor="#94A3B8"
               />
             </View>
           </View>
 
-          {/* Posisi Pengukuran */}
-          <Text style={[styles.smallLabel, { marginTop: 4 }]}>Posisi Pengukuran</Text>
-          <View style={styles.inlineButtonRow}>
-            {['Telentang (< 2 thn)', 'Berdiri (≥ 2 thn)'].map((item) => (
-              <TouchableOpacity 
-                key={item} 
-                style={[styles.inlineBtn, position === item && styles.inlineBtnActive, { flex: 1 }]}
-                onPress={() => setPosition(item)}
-              >
-                <Text style={[styles.inlineBtnText, position === item && styles.inlineBtnTextActive, { fontSize: 12 }]}>{item}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Tombol Hitung */}
-          <TouchableOpacity style={styles.primaryButton} onPress={handleCalculate}>
-            <Text style={styles.primaryButtonText}>Hitung Z-Score & Analisis</Text>
+          {/* Tombol Kalkulasi */}
+          <TouchableOpacity style={styles.primaryButton} onPress={handleCalculateUserImt}>
+            <Ionicons name="calculator-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={styles.primaryButtonText}>Hitung IMT Saya</Text>
           </TouchableOpacity>
         </View>
 
-        {/* 2. CARD HASIL KALKULASI & INDIKATOR VISUAL */}
-        {isCalculated && (
+        {/* 2. CARD HASIL IMT USER */}
+        {isUserCalculated && userImtResult && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Hasil Z-Score WHO</Text>
+            <Text style={styles.cardTitle}>Hasil Indeks Massa Tubuh</Text>
             
-            {/* TB/U (Stunting) */}
-            <View style={styles.resultItem}>
-              <Text style={styles.resultLabel}>Tinggi Menurut Umur (TB/U):</Text>
-              <View style={styles.resultStatusRow}>
-                <View style={[styles.statusBadge, { backgroundColor: mockResult.stunting.color + '20' }]}>
-                  <View style={[styles.statusDot, { backgroundColor: mockResult.stunting.color }]} />
-                  <Text style={[styles.statusText, { color: mockResult.stunting.color, fontWeight: '700' }]}>
-                    {mockResult.stunting.text}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* BB/TB (Gizi) */}
-            <View style={[styles.resultItem, { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 14 }]}>
-              <Text style={styles.resultLabel}>Berat Menurut Tinggi (BB/TB):</Text>
-              <View style={styles.resultStatusRow}>
-                <View style={[styles.statusBadge, { backgroundColor: mockResult.gizi.color + '20' }]}>
-                  <View style={[styles.statusDot, { backgroundColor: mockResult.gizi.color }]} />
-                  <Text style={[styles.statusText, { color: mockResult.gizi.color, fontWeight: '700' }]}>
-                    {mockResult.gizi.status}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Ringkasan Skor */}
             <View style={styles.scoreBox}>
-              <Text style={styles.scoreLabel}>Nilai Z-Score Spesifik</Text>
-              <Text style={styles.scoreValue}>{mockResult.zScore}</Text>
-              <Text style={styles.scoreNote}>Normal mendekati batas bawah. Pertahankan asupan gizi.</Text>
-            </View>
-          </View>
-        )}
-
-        {/* 3. GRAFIK PERTUMBUHAN INTERAKTIF (WHO GROWTH CHART) */}
-        {isCalculated && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Grafik Pertumbuhan</Text>
-            <Text style={styles.subCardTitle}>Kurva Standar WHO (TB/U - 24 Bulan)</Text>
-
-            {/* Pita Warna -3 SD ke +3 SD */}
-            <View style={styles.chartContainer}>
-              <View style={styles.chartBand}>
-                <View style={[styles.bandSegment, { flex: 1, backgroundColor: '#FCA5A5' }]} />
-                <View style={[styles.bandSegment, { flex: 1.5, backgroundColor: '#FDE047' }]} />
-                <View style={[styles.bandSegment, { flex: 3, backgroundColor: '#86EFAC' }]} />
-                <View style={[styles.bandSegment, { flex: 1.5, backgroundColor: '#FDE047' }]} />
-                <View style={[styles.bandSegment, { flex: 1, backgroundColor: '#93C5FD' }]} />
-              </View>
-              <View style={styles.chartLabels}>
-                <Text style={styles.chartLabelText}>-3 SD</Text>
-                <Text style={styles.chartLabelText}>-2 SD</Text>
-                <Text style={styles.chartLabelText}>Median</Text>
-                <Text style={styles.chartLabelText}>+2 SD</Text>
-                <Text style={styles.chartLabelText}>+3 SD</Text>
-              </View>
+              <Text style={styles.scoreLabel}>Nilai IMT Anda</Text>
+              <Text style={[styles.scoreValue, { color: userImtResult.color }]}>{userImtResult.imt}</Text>
               
-              {/* Plot Titik Anak (Mock posisi di antara -1 SD dan Median) */}
-              <View style={styles.plotPointWrapper}>
-                <View style={[styles.plotPoint, { left: '60%' }]}>
-                  <Text style={styles.plotEmoji}>👶</Text>
-                </View>
+              <View style={[styles.statusBadge, { backgroundColor: userImtResult.color + '20', alignSelf: 'center', marginTop: 10 }]}>
+                <View style={[styles.statusDot, { backgroundColor: userImtResult.color }]} />
+                <Text style={[styles.statusText, { color: userImtResult.color }]}>
+                  {userImtResult.status}
+                </Text>
               </View>
+
+              <Text style={styles.scoreNote}>{userImtResult.desc}</Text>
             </View>
 
-            {/* Catatan Trend */}
-            <Text style={styles.chartTrendNote}>📈 Tren 3 bulan terakhir: Naik stabil (Normal).</Text>
+            {/* Visual IMT Bar */}
+            <View style={styles.imtBarContainer}>
+              <View style={styles.imtScale}>
+                <View style={[styles.scaleSegment, { flex: 18.5, backgroundColor: '#F59E0B' }]} />
+                <View style={[styles.scaleSegment, { flex: 6.4, backgroundColor: '#10B981' }]} />
+                <View style={[styles.scaleSegment, { flex: 5.0, backgroundColor: '#F97316' }]} />
+                <View style={[styles.scaleSegment, { flex: 10.0, backgroundColor: '#EF4444' }]} />
+              </View>
+              <View style={styles.scaleLabels}>
+                <Text style={styles.scaleLabelText}>Kurus</Text>
+                <Text style={styles.scaleLabelText}>Normal</Text>
+                <Text style={styles.scaleLabelText}>Gemuk</Text>
+                <Text style={styles.scaleLabelText}>Obesitas</Text>
+              </View>
+            </View>
           </View>
         )}
 
-        {/* 4. REKOMENDASI & TINDAKAN OTOMATIS */}
-        {isCalculated && (
+        {/* CARD 2.5: SARAN KESEHATAN AI (USER) */}
+        {isUserCalculated && userImtResult && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Rekomendasi & Tindakan</Text>
-            
-            <TouchableOpacity style={styles.actionRow}>
-              <View style={styles.actionIconWrap}>
-                <Ionicons name="restaurant-outline" size={22} color="#2563EB" />
-              </View>
-              <View style={styles.actionContent}>
-                <Text style={styles.actionTitle}>Saran Nutrisi Lokal</Text>
-                <Text style={styles.actionDesc}>Lihat rekomendasi makanan tinggi protein hewani & sayur murah.</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
-
-            <View style={[styles.actionRow, { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 14, marginTop: 14 }]}>
-              <View style={styles.actionIconWrap}>
-                <Ionicons name="medical-outline" size={22} color="#EF5350" />
-              </View>
-              <View style={styles.actionContent}>
-                <Text style={styles.actionTitle}>Rujukan Kesehatan</Text>
-                <Text style={styles.actionDesc}>Konsultasi ke Posyandu jika grafik turun 2 bulan berturut-turut.</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <View style={styles.aiHeaderRow}>
+              <Ionicons name="sparkles" size={20} color="#2563EB" />
+              <Text style={[styles.cardTitle, { marginBottom: 0, marginLeft: 8 }]}>Saran Kesehatan AI (Untuk Anda)</Text>
             </View>
+            <Text style={styles.aiSubtitle}>Rekomendasi gaya hidup disesuaikan dengan profil gizi Anda</Text>
+
+            {/* Render 4 Suggestion Cards */}
+            {(() => {
+              const suggestions = getAISuggestions({
+                type: 'adult',
+                gender: userGender,
+                weight: userWeight,
+                height: userHeight,
+                status: userImtResult.status,
+                age: userAge
+              });
+
+              return (
+                <View style={styles.aiContainer}>
+                  {/* Pola Makan */}
+                  <View style={styles.aiItem}>
+                    <View style={[styles.aiIconBox, { backgroundColor: '#EFF6FF' }]}>
+                      <Ionicons name="restaurant" size={20} color="#2563EB" />
+                    </View>
+                    <View style={styles.aiTextContainer}>
+                      <Text style={styles.aiItemTitle}>{suggestions.polaMakan.title}</Text>
+                      <Text style={styles.aiItemDesc}>{suggestions.polaMakan.desc}</Text>
+                    </View>
+                  </View>
+
+                  {/* Pola Tidur */}
+                  <View style={styles.aiItem}>
+                    <View style={[styles.aiIconBox, { backgroundColor: '#F5F3FF' }]}>
+                      <Ionicons name="moon" size={20} color="#8B5CF6" />
+                    </View>
+                    <View style={styles.aiTextContainer}>
+                      <Text style={styles.aiItemTitle}>{suggestions.polaTidur.title}</Text>
+                      <Text style={styles.aiItemDesc}>{suggestions.polaTidur.desc}</Text>
+                    </View>
+                  </View>
+
+                  {/* Olahraga */}
+                  <View style={styles.aiItem}>
+                    <View style={[styles.aiIconBox, { backgroundColor: '#ECFDF5' }]}>
+                      <Ionicons name="barbell" size={20} color="#10B981" />
+                    </View>
+                    <View style={styles.aiTextContainer}>
+                      <Text style={styles.aiItemTitle}>{suggestions.olahraga.title}</Text>
+                      <Text style={styles.aiItemDesc}>{suggestions.olahraga.desc}</Text>
+                    </View>
+                  </View>
+
+                  {/* Tambahan */}
+                  <View style={styles.aiItem}>
+                    <View style={[styles.aiIconBox, { backgroundColor: '#FFF7ED' }]}>
+                      <Ionicons name="medical" size={20} color="#F97316" />
+                    </View>
+                    <View style={styles.aiTextContainer}>
+                      <Text style={styles.aiItemTitle}>{suggestions.tambahan.title}</Text>
+                      <Text style={styles.aiItemDesc}>{suggestions.tambahan.desc}</Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })()}
           </View>
         )}
 
-        {/* 5. RIWAYAT CATATAN & CETAK KARTU MENUJU SEHAT (KMS DIGITAL) */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Riwayat Bulanan & KMS</Text>
-          <Text style={styles.subCardTitle}>Data pengukuran 3 bulan terakhir</Text>
-          
-          {/* Tabel Riwayat */}
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Tanggal</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }]}>Berat</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }]}>Tinggi</Text>
-          </View>
-          {history.map((item, index) => (
-            <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableRowText, { flex: 1.5 }]}>{item.date}</Text>
-              <Text style={[styles.tableRowText, { flex: 1, textAlign: 'center' }]}>{item.weight}</Text>
-              <Text style={[styles.tableRowText, { flex: 1, textAlign: 'center' }]}>{item.height}</Text>
+        {/* 3. RIWAYAT IMT USER */}
+        {userId && userHistory.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Riwayat IMT Anda</Text>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderText, { flex: 1.8 }]}>Waktu</Text>
+              <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }]}>Tinggi/BB</Text>
+              <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }]}>Usia</Text>
+              <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }]}>IMT</Text>
             </View>
-          ))}
+            {userHistory.slice(0, 5).map((item, index) => (
+              <View key={item.id || index} style={styles.tableRow}>
+                <Text style={[styles.tableRowText, { flex: 1.8 }]}>{item.date}</Text>
+                <Text style={[styles.tableRowText, { flex: 1, textAlign: 'center' }]}>{item.tinggi_badan}c / {item.berat_badan}k</Text>
+                <Text style={[styles.tableRowText, { flex: 0.8, textAlign: 'center' }]}>{item.umur_tahun} thn</Text>
+                <Text style={[styles.tableRowText, { flex: 0.8, textAlign: 'center', fontWeight: 'bold' }]}>{item.imt}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
-          {/* Tombol Cetak KMS */}
-          <TouchableOpacity style={styles.pdfButton}>
-            <Ionicons name="download-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-            <Text style={styles.pdfButtonText}>Unduh KMS (PDF) - Siap Cetak</Text>
-          </TouchableOpacity>
+        {/* 4. SEKTOR MANAJEMEN ANAK */}
+        <View style={styles.card}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.cardTitle}>Data Tumbuh Kembang Anak</Text>
+            <TouchableOpacity 
+              style={styles.addChildButton} 
+              onPress={() => {
+                if (!userId) {
+                  setIsLoginPromptVisible(true);
+                } else {
+                  setIsAddChildVisible(true);
+                }
+              }}
+            >
+              <Ionicons name="add" size={16} color="#FFFFFF" />
+              <Text style={styles.addChildButtonText}>Tambah Anak</Text>
+            </TouchableOpacity>
+          </View>
+
+          {!userId ? (
+            <View style={styles.guestWarningBox}>
+              <Ionicons name="lock-closed" size={24} color="#64748B" />
+              <Text style={styles.guestWarningText}>Fitur manajemen anak memerlukan login akun agar data tersimpan dengan aman ke server database.</Text>
+            </View>
+          ) : isLoadingChildren ? (
+            <ActivityIndicator size="small" color="#2563EB" style={{ marginVertical: 20 }} />
+          ) : children.length === 0 ? (
+            <View style={styles.emptyChildrenBox}>
+              <Ionicons name="people-outline" size={32} color="#94A3B8" />
+              <Text style={styles.emptyChildrenText}>Belum ada profil anak terdaftar. Klik "+ Tambah Anak" untuk membuat profil anak Anda.</Text>
+            </View>
+          ) : (
+            children.map((anak) => (
+              <TouchableOpacity 
+                key={anak.id} 
+                style={styles.childItemRow}
+                onPress={() => handleOpenAnakDetail(anak)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.childInfoLeft}>
+                  <View style={styles.childAvatarContainer}>
+                    <Ionicons 
+                      name={anak.jenis_kelamin === 'Laki-laki' ? 'boy' : 'girl'} 
+                      size={24} 
+                      color={anak.jenis_kelamin === 'Laki-laki' ? '#2563EB' : '#EC4899'} 
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.childNameText}>{anak.nama_anak}</Text>
+                    <Text style={styles.childAgeText}>
+                      Lahir: {anak.tanggal_lahir ? new Date(anak.tanggal_lahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'} ({calculateAgeInMonths(anak.tanggal_lahir)} Bulan)
+                    </Text>
+                  </View>
+                </View>
+                
+                <View style={styles.childInfoRight}>
+                  <View style={styles.miniStatusBadge}>
+                    <Text style={styles.miniStatusBadgeText}>{anak.status_z_score}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#64748B" />
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
       </ScrollView>
+
+      {/* MODAL 1: PROMPT MASUK AKUN / LOGIN */}
+      <LoginPromptModal
+        visible={isLoginPromptVisible}
+        onClose={() => setIsLoginPromptVisible(false)}
+        onLogin={() => {
+          setIsLoginPromptVisible(false);
+          navigation.navigate('Login');
+        }}
+      />
+
+      {/* MODAL 2: TAMBAH ANAK BARU */}
+      <AddChildModal
+        visible={isAddChildVisible}
+        onClose={() => setIsAddChildVisible(false)}
+        childName={childName}
+        setChildName={setChildName}
+        childBirthDate={childBirthDate}
+        setChildBirthDate={setChildBirthDate}
+        childGender={childGender}
+        setChildGender={setChildGender}
+        onSave={handleAddChild}
+        isSaving={isSavingChild}
+      />
+
+      {/* MODAL 2: CATATAN PERTUMBUHAN ANAK & GRAFIK LOGS */}
+      <Modal visible={isAnakDetailVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>{selectedAnak?.nama_anak}</Text>
+                <Text style={styles.modalSubtitle}>Riwayat Catatan Pertumbuhan & Gizi</Text>
+              </View>
+              <TouchableOpacity onPress={() => setIsAnakDetailVisible(false)}>
+                <Ionicons name="close" size={24} color="#0F172A" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              
+              {/* Form Input Timbangan Anak Baru */}
+              <View style={styles.modalSectionCard}>
+                <Text style={styles.sectionTitle}>Input Timbangan Baru</Text>
+                
+                <View style={styles.rowInputGroup}>
+                  <View style={styles.inputWrapper}>
+                    <Text style={styles.smallLabel}>Berat Badan (kg)</Text>
+                    <TextInput
+                      style={styles.inputNumeric}
+                      keyboardType="numeric"
+                      value={newAnakWeight}
+                      onChangeText={setNewAnakWeight}
+                      placeholder="10.5"
+                      placeholderTextColor="#94A3B8"
+                    />
+                  </View>
+                  <View style={styles.inputWrapper}>
+                    <Text style={styles.smallLabel}>Tinggi Badan (cm)</Text>
+                    <TextInput
+                      style={styles.inputNumeric}
+                      keyboardType="numeric"
+                      value={newAnakHeight}
+                      onChangeText={setNewAnakHeight}
+                      placeholder="80.2"
+                      placeholderTextColor="#94A3B8"
+                    />
+                  </View>
+                </View>
+
+                <TouchableOpacity 
+                  style={styles.secondaryButton} 
+                  onPress={handleAddAnakRecord}
+                  disabled={isSavingAnakRecord}
+                >
+                  {isSavingAnakRecord ? (
+                    <ActivityIndicator size="small" color="#2563EB" />
+                  ) : (
+                    <>
+                      <Ionicons name="add-circle-outline" size={20} color="#2563EB" style={{ marginRight: 6 }} />
+                      <Text style={styles.secondaryButtonText}>Simpan Catatan Timbangan</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {/* Tabel Riwayat Bulanan Anak */}
+              <View style={styles.modalSectionCard}>
+                <Text style={styles.sectionTitle}>Daftar Riwayat Timbangan</Text>
+                
+                {isLoadingAnakHistory ? (
+                  <ActivityIndicator size="small" color="#2563EB" style={{ marginVertical: 20 }} />
+                ) : anakHistory.length === 0 ? (
+                  <Text style={styles.emptyHistoryText}>Belum ada riwayat timbangan tercatat.</Text>
+                ) : (
+                  <View>
+                    <View style={styles.tableHeader}>
+                      <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Tanggal</Text>
+                      <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }]}>Umur</Text>
+                      <Text style={[styles.tableHeaderText, { flex: 1.2, textAlign: 'center' }]}>BB / TB</Text>
+                      <Text style={[styles.tableHeaderText, { flex: 1.5, textAlign: 'right' }]}>Status Gizi</Text>
+                    </View>
+                    {anakHistory.map((item, index) => (
+                      <View key={item.id || index} style={styles.tableRow}>
+                        <Text style={[styles.tableRowText, { flex: 1.5 }]}>{item.date}</Text>
+                        <Text style={[styles.tableRowText, { flex: 0.8, textAlign: 'center' }]}>{item.umur_bulan} bln</Text>
+                        <Text style={[styles.tableRowText, { flex: 1.2, textAlign: 'center' }]}>{item.berat_badan}k / {item.tinggi_badan}c</Text>
+                        <Text style={[styles.tableRowText, { flex: 1.5, textAlign: 'right', fontWeight: 'bold', color: '#1E40AF' }]}>
+                          {item.status_gizi}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Saran Tumbuh Kembang AI Anak */}
+              {selectedAnak && (
+                <View style={styles.modalSectionCard}>
+                  <View style={styles.aiHeaderRow}>
+                    <Ionicons name="sparkles" size={18} color="#2563EB" />
+                    <Text style={[styles.sectionTitle, { marginBottom: 0, marginLeft: 6 }]}>Saran Tumbuh Kembang AI</Text>
+                  </View>
+                  
+                  {(() => {
+                    const suggestions = getAISuggestions({
+                      type: 'child',
+                      gender: selectedAnak.jenis_kelamin,
+                      weight: 10,
+                      height: 80,
+                      status: selectedAnak.status_z_score,
+                      age: calculateAgeInMonths(selectedAnak.tanggal_lahir)
+                    });
+
+                    return (
+                      <View style={[styles.aiContainer, { marginTop: 12 }]}>
+                        {/* Pola Makan */}
+                        <View style={styles.aiItem}>
+                          <View style={[styles.aiIconBox, { backgroundColor: '#EFF6FF' }]}>
+                            <Ionicons name="restaurant" size={18} color="#2563EB" />
+                          </View>
+                          <View style={styles.aiTextContainer}>
+                            <Text style={styles.aiItemTitle}>{suggestions.polaMakan.title}</Text>
+                            <Text style={styles.aiItemDesc}>{suggestions.polaMakan.desc}</Text>
+                          </View>
+                        </View>
+
+                        {/* Pola Tidur */}
+                        <View style={styles.aiItem}>
+                          <View style={[styles.aiIconBox, { backgroundColor: '#F5F3FF' }]}>
+                            <Ionicons name="moon" size={18} color="#8B5CF6" />
+                          </View>
+                          <View style={styles.aiTextContainer}>
+                            <Text style={styles.aiItemTitle}>{suggestions.polaTidur.title}</Text>
+                            <Text style={styles.aiItemDesc}>{suggestions.polaTidur.desc}</Text>
+                          </View>
+                        </View>
+
+                        {/* Stimulasi Fisik */}
+                        <View style={styles.aiItem}>
+                          <View style={[styles.aiIconBox, { backgroundColor: '#ECFDF5' }]}>
+                            <Ionicons name="barbell" size={18} color="#10B981" />
+                          </View>
+                          <View style={styles.aiTextContainer}>
+                            <Text style={styles.aiItemTitle}>{suggestions.olahraga.title}</Text>
+                            <Text style={styles.aiItemDesc}>{suggestions.olahraga.desc}</Text>
+                          </View>
+                        </View>
+
+                        {/* Tambahan */}
+                        <View style={styles.aiItem}>
+                          <View style={[styles.aiIconBox, { backgroundColor: '#FFF7ED' }]}>
+                            <Ionicons name="medical" size={18} color="#F97316" />
+                          </View>
+                          <View style={styles.aiTextContainer}>
+                            <Text style={styles.aiItemTitle}>{suggestions.tambahan.title}</Text>
+                            <Text style={styles.aiItemDesc}>{suggestions.tambahan.desc}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })()}
+                </View>
+              )}
+
+              {/* Tombol Hapus Anak */}
+              <TouchableOpacity 
+                style={styles.deleteAnakButton}
+                onPress={() => handleDeleteChild(selectedAnak?.id, selectedAnak?.nama_anak)}
+              >
+                <Ionicons name="trash-outline" size={18} color="#EF4444" style={{ marginRight: 6 }} />
+                <Text style={styles.deleteAnakButtonText}>Hapus Profil Anak Ini</Text>
+              </TouchableOpacity>
+
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -282,7 +768,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 10, // Memberikan batas atas yang aman
+    paddingTop: 10,
     paddingBottom: 40,
   },
   header: {
@@ -292,71 +778,46 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#111827',
+    color: '#0F172A',
     marginBottom: 4,
+    fontFamily: 'Roboto',
   },
   subtitle: {
-    fontSize: 15,
-    color: '#6B7280',
-    lineHeight: 22,
+    fontSize: 14,
+    color: '#64748B',
+    lineHeight: 20,
+    fontFamily: 'Roboto',
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 18,
+    borderRadius: 24,
+    padding: 20,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
+    shadowOpacity: 0.03,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
     elevation: 4,
   },
   cardTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#111827',
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
     marginBottom: 14,
+    fontFamily: 'Roboto',
   },
-  subCardTitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 12,
-  },
-
-  // --- 1. FORM INPUT ---
-  rowSelector: {
+  rowBetween: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  rowIconText: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  rowValue: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowValueText: {
-    fontSize: 14,
-    color: '#111827',
-    marginRight: 6,
+    marginBottom: 14,
   },
   smallLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '700',
+    color: '#334155',
     marginBottom: 8,
+    fontFamily: 'Roboto',
   },
   inlineButtonRow: {
     flexDirection: 'row',
@@ -365,21 +826,20 @@ const styles = StyleSheet.create({
   },
   inlineBtn: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   inlineBtnActive: {
     backgroundColor: '#2563EB',
-    borderWidth: 1,
-    borderColor: '#2563EB',
   },
   inlineBtnText: {
-    fontWeight: '600',
-    color: '#6B7280',
+    fontWeight: '700',
+    color: '#64748B',
     fontSize: 14,
+    fontFamily: 'Roboto',
   },
   inlineBtnTextActive: {
     color: '#FFFFFF',
@@ -387,206 +847,377 @@ const styles = StyleSheet.create({
   rowInputGroup: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   inputWrapper: {
     flex: 1,
   },
   inputNumeric: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+    fontFamily: 'Roboto',
+  },
+  inputField: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
-    color: '#111827',
+    fontSize: 14,
+    color: '#0F172A',
+    marginBottom: 14,
+    fontFamily: 'Roboto',
   },
   primaryButton: {
+    flexDirection: 'row',
     backgroundColor: '#2563EB',
+    borderRadius: 14,
     paddingVertical: 14,
-    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 4,
+    justifyContent: 'center',
     shadowColor: '#2563EB',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
+    elevation: 4,
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 16,
+    fontWeight: '800',
+    fontSize: 15,
+    fontFamily: 'Roboto',
   },
-
-  // --- 2. HASIL KALKULASI ---
-  resultItem: {
-    marginBottom: 8,
-  },
-  resultLabel: {
-    fontSize: 14,
-    color: '#4B5563',
-    marginBottom: 6,
-  },
-  resultStatusRow: {
+  secondaryButton: {
     flexDirection: 'row',
+    borderWidth: 1.5,
+    borderColor: '#2563EB',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  secondaryButtonText: {
+    color: '#2563EB',
+    fontWeight: '800',
+    fontSize: 14,
+    fontFamily: 'Roboto',
+  },
+  
+  // --- SCORE BOX (IMT RESULTS) ---
+  scoreBox: {
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  scoreLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    fontFamily: 'Roboto',
+  },
+  scoreValue: {
+    fontSize: 48,
+    fontWeight: '950',
+    fontFamily: 'Roboto',
+  },
+  scoreNote: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 10,
+    lineHeight: 18,
+    fontFamily: 'Roboto',
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderRadius: 20,
+    gap: 6,
   },
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginRight: 8,
   },
   statusText: {
-    fontSize: 14,
-  },
-  scoreBox: {
-    backgroundColor: '#EFF6FF',
-    padding: 14,
-    borderRadius: 14,
-    marginTop: 4,
-    alignItems: 'center',
-  },
-  scoreLabel: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  scoreValue: {
-    fontSize: 22,
+    fontSize: 12,
     fontWeight: '800',
-    color: '#2563EB',
-  },
-  scoreNote: {
-    fontSize: 13,
-    color: '#4B5563',
-    marginTop: 4,
-    textAlign: 'center',
+    fontFamily: 'Roboto',
   },
 
-  // --- 3. GRAFIK ---
-  chartContainer: {
-    marginTop: 4,
-    marginBottom: 8,
-    paddingHorizontal: 4,
-  },
-  chartBand: {
-    flexDirection: 'row',
-    height: 32,
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  bandSegment: {
-    height: '100%',
-  },
-  chartLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  chartLabelText: {
-    fontSize: 10,
-    color: '#6B7280',
-  },
-  plotPointWrapper: {
-    position: 'relative',
-    height: 0,
-  },
-  plotPoint: {
-    position: 'absolute',
-    top: -16, // Dinaikkan dari garis batas
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  plotEmoji: {
-    fontSize: 20,
-  },
-  chartTrendNote: {
-    fontSize: 14,
-    color: '#10B981',
-    fontWeight: '600',
-    textAlign: 'center',
+  // --- IMT SCALE BAR ---
+  imtBarContainer: {
     marginTop: 10,
   },
-
-  // --- 4. REKOMENDASI ---
-  actionRow: {
+  imtScale: {
     flexDirection: 'row',
-    alignItems: 'center',
+    height: 10,
+    borderRadius: 5,
+    overflow: 'hidden',
+    backgroundColor: '#E2E8F0',
   },
-  actionIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#EFF6FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  scaleSegment: {
+    height: '100%',
   },
-  actionContent: {
-    flex: 1,
+  scaleLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
   },
-  actionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  actionDesc: {
-    fontSize: 13,
-    color: '#6B7280',
+  scaleLabelText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    fontFamily: 'Roboto',
   },
 
-  // --- 5. RIWAYAT & KMS ---
+  // --- TABLE HISTORI ---
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 6,
+    borderBottomWidth: 1.5,
+    borderColor: '#E2E8F0',
+    paddingBottom: 8,
+    marginBottom: 8,
   },
   tableHeaderText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#6B7280',
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748B',
+    fontFamily: 'Roboto',
   },
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 10,
-    paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderColor: '#F1F5F9',
+    alignItems: 'center',
   },
   tableRowText: {
-    fontSize: 14,
-    color: '#374151',
+    fontSize: 13,
+    color: '#334155',
+    fontFamily: 'Roboto',
   },
-  pdfButton: {
+
+  // --- CHILDREN SECTOR ---
+  addChildButton: {
+    flexDirection: 'row',
     backgroundColor: '#2563EB',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    gap: 4,
+  },
+  addChildButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  guestWarningBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 12,
+  },
+  guestWarningText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#64748B',
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  emptyChildrenBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  emptyChildrenText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 18,
+    paddingHorizontal: 20,
+  },
+  childItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  childInfoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  childAvatarContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  childNameText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  childAgeText: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  childInfoRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  miniStatusBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+  },
+  miniStatusBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#2563EB',
+  },
+
+  // --- MODAL LAYOUTS ---
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    width: '100%',
+    paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  modalSectionCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#334155',
+    marginBottom: 12,
+  },
+  emptyHistoryText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    textAlign: 'center',
+    paddingVertical: 14,
+  },
+  deleteAnakButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
     borderRadius: 12,
-    marginTop: 16,
+    marginTop: 8,
+    marginBottom: 20,
   },
-  pdfButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 15,
+  deleteAnakButtonText: {
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  
+  // --- AI SUGGESTIONS ENGINE STYLES ---
+  aiHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  aiSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 4,
+    marginBottom: 16,
+    fontWeight: '500',
+    fontFamily: 'Roboto',
+  },
+  aiContainer: {
+    gap: 16,
+  },
+  aiItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  aiIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiTextContainer: {
+    flex: 1,
+  },
+  aiItemTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#1E293B',
+    fontFamily: 'Roboto',
+  },
+  aiItemDesc: {
+    fontSize: 12,
+    color: '#64748B',
+    lineHeight: 18,
+    marginTop: 2,
+    fontFamily: 'Roboto',
   },
 });

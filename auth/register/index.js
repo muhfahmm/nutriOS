@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -17,19 +17,72 @@ import { API_BASE_URL } from '../api';
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState('error'); // 'error' atau 'success'
+  const [isUsernameTaken, setIsUsernameTaken] = useState(false);
+  const [isUsernameChecked, setIsUsernameChecked] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!username) {
+      setIsUsernameTaken(false);
+      setIsUsernameChecked(false);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/check-username?username=${encodeURIComponent(username)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setIsUsernameTaken(data.taken);
+          setIsUsernameChecked(true);
+        }
+      } catch (err) {
+        console.log('Error checking username availability:', err);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [username]);
+
+  // Fungsi evaluasi kekuatan sandi
+  const getPasswordStrength = (pass) => {
+    if (!pass) return { score: 0, text: '', color: '#94A3B8', width: '0%', icon: null };
+    let score = 0;
+    if (pass.length >= 4) score += 1;
+    if (/[0-9]/.test(pass) || /[^A-Za-z0-9]/.test(pass)) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    
+    if (score <= 1) {
+      return { score, text: 'Lemah', color: '#EF4444', width: '33%', icon: 'alert-circle-outline' };
+    } else if (score === 2) {
+      return { score, text: 'Sedang', color: '#F59E0B', width: '66%', icon: 'flash-outline' };
+    } else {
+      return { score, text: 'Sangat Kuat', color: '#10B981', width: '100%', icon: 'checkmark-circle-outline' };
+    }
+  };
+
+  const strength = getPasswordStrength(password);
+
   const handleRegister = async () => {
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !username || !password || !confirmPassword) {
+      setMessageType('error');
       setMessage('Harap isi semua kolom wajib.');
       return;
     }
+    if (isUsernameTaken) {
+      setMessageType('error');
+      setMessage('Username sudah digunakan oleh user lain.');
+      return;
+    }
     if (password !== confirmPassword) {
+      setMessageType('error');
       setMessage('Password dan konfirmasi tidak cocok.');
       return;
     }
@@ -46,13 +99,14 @@ export default function RegisterScreen({ navigation }) {
         body: JSON.stringify({
           nama_lengkap: name,
           email,
+          username,
           password,
-          nomor_telepon: phone,
         }),
       });
 
       const result = await response.json();
       if (response.ok) {
+        setMessageType('success');
         setMessage('Registrasi berhasil! Silakan masuk.');
         setTimeout(() => {
           if (navigation) {
@@ -60,9 +114,11 @@ export default function RegisterScreen({ navigation }) {
           }
         }, 1500);
       } else {
+        setMessageType('error');
         setMessage(result.message || 'Registrasi gagal.');
       }
     } catch (error) {
+      setMessageType('error');
       setMessage('Tidak dapat terhubung ke server autentikasi.');
     } finally {
       setLoading(false);
@@ -73,7 +129,7 @@ export default function RegisterScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView 
         style={styles.keyboardContainer} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.headerSection}>
@@ -100,34 +156,39 @@ export default function RegisterScreen({ navigation }) {
             </View>
 
             <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Email *</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="mail-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
+              <Text style={styles.label}>Username *</Text>
+              <View style={[
+                styles.inputContainer, 
+                isUsernameChecked && (isUsernameTaken ? styles.inputContainerError : styles.inputContainerSuccess)
+              ]}>
+                <Ionicons 
+                  name="at-outline" 
+                  size={20} 
+                  color={isUsernameChecked ? (isUsernameTaken ? '#EF4444' : '#10B981') : '#9CA3AF'} 
+                  style={styles.inputIcon} 
+                />
                 <TextInput
                   style={styles.input}
-                  keyboardType="email-address"
                   autoCapitalize="none"
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="email@contoh.com"
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="Username kustom"
                   placeholderTextColor="#9CA3AF"
                 />
               </View>
-            </View>
-
-            <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Nomor Telepon</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="call-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  keyboardType="phone-pad"
-                  value={phone}
-                  onChangeText={setPhone}
-                  placeholder="0812xxxxxxx"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
+              {isUsernameChecked && (
+                isUsernameTaken ? (
+                  <View style={styles.feedbackRow}>
+                    <Ionicons name="close-circle" size={16} color="#EF4444" />
+                    <Text style={styles.takenWarningText}>Username telah digunakan</Text>
+                  </View>
+                ) : (
+                  <View style={styles.feedbackRow}>
+                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                    <Text style={styles.availableSuccessText}>Username tersedia</Text>
+                  </View>
+                )
+              )}
             </View>
 
             <View style={styles.inputWrapper}>
@@ -139,7 +200,7 @@ export default function RegisterScreen({ navigation }) {
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="Minimal 8 karakter"
+                  placeholder="Masukkan password"
                   placeholderTextColor="#9CA3AF"
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
@@ -151,6 +212,18 @@ export default function RegisterScreen({ navigation }) {
                   />
                 </TouchableOpacity>
               </View>
+
+              {password.length > 0 && (
+                <View style={styles.strengthContainer}>
+                  <View style={styles.strengthHeader}>
+                    <Ionicons name={strength.icon} size={16} color={strength.color} style={{ marginRight: 4 }} />
+                    <Text style={styles.strengthText}>Kekuatan Sandi: <Text style={{ fontWeight: 'bold', color: strength.color }}>{strength.text}</Text></Text>
+                  </View>
+                  <View style={styles.strengthBarBg}>
+                    <View style={[styles.strengthBar, { width: strength.width, backgroundColor: strength.color }]} />
+                  </View>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputWrapper}>
@@ -159,16 +232,28 @@ export default function RegisterScreen({ navigation }) {
                 <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  secureTextEntry={!showPassword}
+                  secureTextEntry={!showConfirmPassword}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder="Ulangi password"
                   placeholderTextColor="#9CA3AF"
                 />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  <Ionicons 
+                    name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} 
+                    size={20} 
+                    color="#9CA3AF" 
+                    style={{ padding: 4 }} 
+                  />
+                </TouchableOpacity>
               </View>
             </View>
 
-            {message ? <Text style={styles.message}>{message}</Text> : null}
+             {message ? (
+              <Text style={[styles.message, messageType === 'success' && styles.messageSuccess]}>
+                {message}
+              </Text>
+            ) : null}
 
             <TouchableOpacity 
               style={[styles.buttonPrimary, loading && styles.buttonDisabled]} 
@@ -313,7 +398,66 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     backgroundColor: '#FEF2F2',
+    borderColor: '#FEE2E2',
+    borderWidth: 1.5,
     padding: 10,
     borderRadius: 8,
+  },
+  messageSuccess: {
+    color: '#16A34A',
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  strengthContainer: {
+    marginTop: 8,
+    paddingHorizontal: 2,
+  },
+  strengthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  strengthText: {
+    fontSize: 11,
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  strengthBarBg: {
+    height: 4,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  strengthBar: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  inputContainerError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  inputContainerSuccess: {
+    borderColor: '#10B981',
+    backgroundColor: '#F0FDF4',
+    borderWidth: 2,
+  },
+  feedbackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    marginLeft: 2,
+    gap: 4,
+  },
+  takenWarningText: {
+    color: '#EF4444',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Roboto',
+  },
+  availableSuccessText: {
+    color: '#10B981',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Roboto',
   },
 });
