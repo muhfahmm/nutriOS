@@ -21,6 +21,7 @@ export default function ProfileScreen({ navigation }) {
   const [namaLengkapInput, setNamaLengkapInput] = useState('');
   const [usernameInput, setUsernameInput] = useState('');
   const [fotoProfilUri, setFotoProfilUri] = useState('');
+  const [jenisKelamin, setJenisKelamin] = useState('');
 
   const [tinggiInput, setTinggiInput] = useState('');
   const [beratInput, setBeratInput] = useState('');
@@ -34,6 +35,7 @@ export default function ProfileScreen({ navigation }) {
       setNamaLengkapInput(user.nama_lengkap || '');
       setUsernameInput(user.username || '');
       setFotoProfilUri(user.foto_profil || '');
+      setJenisKelamin(user.jenis_kelamin || '');
       setTinggiInput(user.tinggi_badan ? user.tinggi_badan.toString() : '');
       setBeratInput(user.berat_badan ? user.berat_badan.toString() : '');
       setTglLahirInput(user.tanggal_lahir || '');
@@ -77,6 +79,7 @@ export default function ProfileScreen({ navigation }) {
           tinggi_badan: tinggiInput || null,
           berat_badan: beratInput || null,
           tanggal_lahir: tglLahirInput || null,
+          jenis_kelamin: jenisKelamin || null,
           nama_lengkap: namaLengkapInput,
           username: usernameInput,
           foto_profil: fotoProfilUri || null,
@@ -267,6 +270,30 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
+              {/* Pemilih Jenis Kelamin (Gender) */}
+              <View style={[styles.rowItem, styles.rowSeparator]}>
+                <Ionicons name="people-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                <View style={styles.infoCol}>
+                  <Text style={styles.infoLabel}>Jenis Kelamin</Text>
+                  <View style={styles.genderRow}>
+                    <TouchableOpacity 
+                      style={[styles.genderOptionBtn, jenisKelamin === 'Pria' && styles.genderOptionBtnActive]} 
+                      onPress={() => setJenisKelamin('Pria')}
+                    >
+                      <Ionicons name="male" size={14} color={jenisKelamin === 'Pria' ? '#FFFFFF' : '#475569'} style={{ marginRight: 4 }} />
+                      <Text style={[styles.genderOptionText, jenisKelamin === 'Pria' && styles.genderOptionTextActive]}>Pria</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.genderOptionBtn, jenisKelamin === 'Wanita' && styles.genderOptionBtnActive]} 
+                      onPress={() => setJenisKelamin('Wanita')}
+                    >
+                      <Ionicons name="female" size={14} color={jenisKelamin === 'Wanita' ? '#FFFFFF' : '#475569'} style={{ marginRight: 4 }} />
+                      <Text style={[styles.genderOptionText, jenisKelamin === 'Wanita' && styles.genderOptionTextActive]}>Wanita</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
               {/* Tombol Simpan Perubahan Profil */}
               <TouchableOpacity style={styles.saveProfileBtn} onPress={handleUpdateProfile}>
                 <Ionicons name="save-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
@@ -323,27 +350,49 @@ export default function ProfileScreen({ navigation }) {
 
           let analysisTitle = "Analisis Berat & Tinggi Badan";
           let analysisColor = "#6B7280";
-          let suggestionText = "Masukkan Tinggi Badan (TB) dan Berat Badan (BB) Anda untuk mendapatkan saran gizi personal.";
+          let suggestionText = "Masukkan Tinggi Badan (TB), Berat Badan (BB), dan Jenis Kelamin Anda untuk mendapatkan saran gizi personal.";
 
-          if (h > 0 && w > 0) {
+          if (h > 0 && w > 0 && jenisKelamin) {
             const imt = w / (h * h);
             let status = "";
-            if (imt < 18.5) {
-              status = "Kurus (Kurang Berat Badan)";
-              analysisColor = "#EF4444";
-              suggestionText = `Berdasarkan usia Anda (${ageStr}), IMT Anda (${imt.toFixed(1)}) tergolong Kurus. Sangat disarankan untuk meningkatkan konsumsi protein berkualitas tinggi dan kalori sehat secara bertahap.`;
-            } else if (imt >= 18.5 && imt < 25) {
-              status = "Normal (Berat Badan Ideal)";
-              analysisColor = "#10B981";
-              suggestionText = `Luar biasa! Di usia Anda (${ageStr}), IMT Anda (${imt.toFixed(1)}) tergolong Normal/Ideal. Pertahankan pola makan gizi seimbang saat ini dan olahraga secara rutin.`;
-            } else if (imt >= 25 && imt < 30) {
-              status = "Kelebihan Berat Badan (Overweight)";
-              analysisColor = "#F59E0B";
-              suggestionText = `Berdasarkan usia Anda (${ageStr}), IMT Anda (${imt.toFixed(1)}) masuk kategori Overweight. Disarankan untuk membatasi makanan tinggi gula/lemak jenuh serta meningkatkan intensitas kardio.`;
-            } else {
-              status = "Obesitas";
-              analysisColor = "#EF4444";
-              suggestionText = `Peringatan! Berdasarkan usia Anda (${ageStr}), IMT Anda (${imt.toFixed(1)}) tergolong Obesitas. Disarankan untuk berkonsultasi dengan ahli gizi, kurangi porsi karbohidrat simpleks, serta aktif bergerak.`;
+            
+            // Evaluasi dengan memperhitungkan gender secara biologis
+            if (jenisKelamin === 'Pria') {
+              if (imt < 18.5) {
+                status = "Kurus (Kurang Berat Badan Pria)";
+                analysisColor = "#EF4444";
+                suggestionText = `Di usia Anda (${ageStr}) sebagai Pria, IMT Anda (${imt.toFixed(1)}) tergolong Kurus. Pria disarankan menambah massa otot melalui asupan kalori surplus sehat (+300-500 kkal) dan latihan beban ringan.`;
+              } else if (imt >= 18.5 && imt < 25) {
+                status = "Normal (Berat Badan Pria Ideal)";
+                analysisColor = "#10B981";
+                suggestionText = `Luar biasa! Di usia Anda (${ageStr}) sebagai Pria, IMT Anda (${imt.toFixed(1)}) tergolong Normal/Ideal. Anda memiliki keseimbangan metabolisme yang optimal, pertahankan dengan asupan makro seimbang.`;
+              } else if (imt >= 25 && imt < 30) {
+                status = "Kelebihan Berat Badan (Overweight Pria)";
+                analysisColor = "#F59E0B";
+                suggestionText = `Di usia Anda (${ageStr}) sebagai Pria, IMT Anda (${imt.toFixed(1)}) masuk kategori Overweight. Kurangi penumpukan lemak visceral dengan membatasi junk food serta tingkatkan kardio mingguan.`;
+              } else {
+                status = "Obesitas Pria";
+                analysisColor = "#EF4444";
+                suggestionText = `Peringatan! Sebagai Pria di usia ${ageStr}, IMT Anda (${imt.toFixed(1)}) tergolong Obesitas. Disarankan untuk membatasi porsi karbohidrat olahan dan lakukan konsultasi berkala dengan ahli gizi.`;
+              }
+            } else { // Wanita
+              if (imt < 18) {
+                status = "Kurus (Kurang Berat Badan Wanita)";
+                analysisColor = "#EF4444";
+                suggestionText = `Di usia Anda (${ageStr}) sebagai Wanita, IMT Anda (${imt.toFixed(1)}) tergolong Kurus. Wanita membutuhkan asupan lemak sehat (seperti alpukat, kacang-kacangan) demi menjaga keseimbangan hormon tubuh.`;
+              } else if (imt >= 18 && imt < 24) {
+                status = "Normal (Berat Badan Wanita Ideal)";
+                analysisColor = "#10B981";
+                suggestionText = `Luar biasa! Di usia Anda (${ageStr}) sebagai Wanita, IMT Anda (${imt.toFixed(1)}) tergolong Normal/Ideal. Persentase lemak tubuh Anda seimbang. Pertahankan dengan konsumsi serat dan kalsium yang cukup.`;
+              } else if (imt >= 24 && imt < 29) {
+                status = "Kelebihan Berat Badan (Overweight Wanita)";
+                analysisColor = "#F59E0B";
+                suggestionText = `Di usia Anda (${ageStr}) sebagai Wanita, IMT Anda (${imt.toFixed(1)}) masuk kategori Overweight. Disarankan untuk melakukan defisit kalori ringan (-200 kkal) dan rutin berjalan kaki/senam aerobik.`;
+              } else {
+                status = "Obesitas Wanita";
+                analysisColor = "#EF4444";
+                suggestionText = `Peringatan! Sebagai Wanita di usia ${ageStr}, IMT Anda (${imt.toFixed(1)}) tergolong Obesitas. Fokus pada pola makan rendah glikemik untuk kestabilan energi dan metabolisme tubuh.`;
+              }
             }
             analysisTitle = `Status IMT: ${status}`;
           }
@@ -352,6 +401,7 @@ export default function ProfileScreen({ navigation }) {
             <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: analysisColor }]}>
               <Text style={[styles.cardTitle, { color: '#0F172A' }]}>Saran Gizi Pintar</Text>
               <Text style={styles.suggestionAgeLabel}>Usia Anda saat ini: <Text style={{ fontWeight: '800', color: '#4F46E5' }}>{ageStr}</Text></Text>
+              {jenisKelamin ? <Text style={styles.suggestionAgeLabel}>Jenis Kelamin: <Text style={{ fontWeight: '800', color: '#10B981' }}>{jenisKelamin}</Text></Text> : null}
               <Text style={[styles.suggestionStatusLabel, { color: analysisColor }]}>{analysisTitle}</Text>
               <Text style={styles.suggestionDescText}>{suggestionText}</Text>
             </View>
@@ -542,6 +592,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4B5563',
     lineHeight: 18,
+  },
+  genderRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  genderOptionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    paddingVertical: 8,
+    backgroundColor: '#F8FAFC',
+  },
+  genderOptionBtnActive: {
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
+  },
+  genderOptionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  genderOptionTextActive: {
+    color: '#FFFFFF',
   },
   datePickerToggleBtn: {
     flexDirection: 'row',

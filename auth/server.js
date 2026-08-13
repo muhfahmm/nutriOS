@@ -158,7 +158,7 @@ app.post('/api/login', async (req, res) => {
       return res.status(500).json({ message: 'Database tidak terkoneksi.' });
     }
 
-    const [rows] = await pool.execute('SELECT id, nama_lengkap, username, email, password, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, last_username_change, last_name_change FROM users WHERE username = ?', [username]);
+    const [rows] = await pool.execute('SELECT id, nama_lengkap, username, email, password, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, jenis_kelamin, last_username_change, last_name_change FROM users WHERE username = ?', [username]);
     if (rows.length === 0) {
       return res.status(401).json({ message: 'Username atau password salah.' });
     }
@@ -178,6 +178,7 @@ app.post('/api/login', async (req, res) => {
       tinggi_badan: user.tinggi_badan,
       berat_badan: user.berat_badan,
       tanggal_lahir: user.tanggal_lahir,
+      jenis_kelamin: user.jenis_kelamin,
       last_username_change: user.last_username_change,
       last_name_change: user.last_name_change,
     };
@@ -336,11 +337,11 @@ app.get('/api/ganti-password', async (req, res) => {
 
 
 
-// Update profil detail user (tinggi badan, berat badan, tanggal lahir, nama, username, foto)
+// Update profil detail user (tinggi badan, berat badan, tanggal lahir, nama, username, foto, gender)
 app.post('/api/users/update', async (req, res) => {
   try {
     console.log('[API] POST /api/users/update - Request userId:', req.body.userId);
-    const { userId, tinggi_badan, berat_badan, tanggal_lahir, nama_lengkap, username, foto_profil } = req.body;
+    const { userId, tinggi_badan, berat_badan, tanggal_lahir, nama_lengkap, username, foto_profil, jenis_kelamin } = req.body;
     if (!userId) {
       return res.status(400).json({ message: 'User ID wajib disertakan.' });
     }
@@ -359,12 +360,13 @@ app.post('/api/users/update', async (req, res) => {
     const updates = [];
     const params = [];
 
-    // Proses Tinggi, Berat, Lahir, Foto Profil
-    updates.push('tinggi_badan = ?', 'berat_badan = ?', 'tanggal_lahir = ?');
+    // Proses Tinggi, Berat, Lahir, Foto Profil, Jenis Kelamin
+    updates.push('tinggi_badan = ?', 'berat_badan = ?', 'tanggal_lahir = ?', 'jenis_kelamin = ?');
     params.push(
       (tinggi_badan && tinggi_badan !== '') ? tinggi_badan : null,
       (berat_badan && berat_badan !== '') ? berat_badan : null,
-      (tanggal_lahir && tanggal_lahir !== '') ? tanggal_lahir : null
+      (tanggal_lahir && tanggal_lahir !== '') ? tanggal_lahir : null,
+      (jenis_kelamin && jenis_kelamin !== '') ? jenis_kelamin : null
     );
 
     if (foto_profil !== undefined) {
@@ -418,7 +420,7 @@ app.post('/api/users/update', async (req, res) => {
 
     // Ambil data user yang terbaru untuk dikembalikan ke client
     const [rows] = await pool.execute(
-      'SELECT id, nama_lengkap, username, email, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, last_username_change, last_name_change FROM users WHERE id = ?',
+      'SELECT id, nama_lengkap, username, email, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, jenis_kelamin, last_username_change, last_name_change FROM users WHERE id = ?',
       [userId]
     );
 

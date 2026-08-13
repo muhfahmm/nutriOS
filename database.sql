@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     tinggi_badan DECIMAL(5,2) DEFAULT NULL,
     berat_badan DECIMAL(5,2) DEFAULT NULL,
     tanggal_lahir DATE DEFAULT NULL,
+    jenis_kelamin ENUM('Pria', 'Wanita') DEFAULT NULL,
     last_username_change TIMESTAMP NULL DEFAULT NULL,
     last_name_change TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
