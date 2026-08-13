@@ -7,6 +7,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from './auth/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from './auth/api';
 
 if (Text && !Text.defaultProps) {
   Text.defaultProps = {};
@@ -98,10 +99,7 @@ const LiquidGlassTabButton = ({ children, onPress, onLongPress, ...props }) => {
       activeOpacity={0.8}
       style={[props.style, { 
         position: 'relative', 
-        overflow: 'hidden', 
-        flex: 1, 
-        alignItems: 'center', 
-        justifyContent: 'center' 
+        overflow: 'hidden',
       }]}
     >
       {children}
@@ -110,16 +108,16 @@ const LiquidGlassTabButton = ({ children, onPress, onLongPress, ...props }) => {
           position: 'absolute',
           top: 0,
           bottom: 0,
-          width: 80,
-          backgroundColor: 'rgba(255, 255, 255, 0.5)',
+          width: 50,
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
           transform: [
             {
               translateX: shineAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [-80, 200],
+                outputRange: [-80, 150],
               }),
             },
-            { rotate: '30deg' },
+            { rotate: '25deg' },
           ],
           opacity: shineAnim.interpolate({
             inputRange: [0, 0.4, 1],
@@ -155,8 +153,10 @@ export function HomeScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   const greetingName = user?.nama_lengkap ? `Hai, ${user.nama_lengkap}` : 'Hai, user';
 
-  // --- Streak dari AsyncStorage (sinkron dengan halaman Olahraga) ---
+  // --- Streak & Total Latihan ---
   const [streakCount, setStreakCount] = useState(0);
+  const [totalWorkoutMinutes, setTotalWorkoutMinutes] = useState(0);
+  const [workoutHistory, setWorkoutHistory] = useState([]);
 
   useEffect(() => {
     const updateStreak = async () => {
@@ -183,12 +183,41 @@ export function HomeScreen({ navigation }) {
         console.warn('Gagal membaca streak di homepage:', e);
       }
     };
+
+    const loadWorkoutHistory = async () => {
+      try {
+        // Fallback local
+        const stored = await AsyncStorage.getItem('olahraga_history');
+        let rawHistory = [];
+        if (stored) {
+          rawHistory = JSON.parse(stored);
+          setWorkoutHistory(rawHistory.slice(0, 3));
+        }
+
+        // Ambil DB
+        const userIdVal = user ? user.id : 'null';
+        const response = await fetch(`${API_BASE_URL}/api/riwayat-olahraga/${userIdVal}`);
+        if (response.ok) {
+          const data = await response.json();
+          rawHistory = data;
+          setWorkoutHistory(data.slice(0, 3));
+        }
+
+        // Hitung akumulasi total menit olahraga harian/mingguan dari seluruh riwayat
+        const totalSec = rawHistory.reduce((sum, item) => sum + (parseInt(item.sets || 1) * parseInt(item.duration || 0)), 0);
+        setTotalWorkoutMinutes(Math.ceil(totalSec / 60));
+      } catch (err) {
+        console.warn('Gagal memuat histori olahraga di homepage:', err);
+      }
+    };
+
     updateStreak();
-  }, []);
+    loadWorkoutHistory();
+  }, [user]);
 
   const streakStats = [
     { icon: 'flame', label: 'Hari Aktif', value: `${streakCount} Hari`, note: 'berturut-turut', color: '#F97316' },
-    { icon: 'time', label: 'Total Olahraga', value: '38 Menit', note: 'minggu ini', color: '#3B82F6' },
+    { icon: 'time', label: 'Total Olahraga', value: `${totalWorkoutMinutes} Menit`, note: 'keseluruhan', color: '#3B82F6' },
     { icon: 'restaurant', label: 'Makan Tercatat', value: '95%', note: 'minggu ini', color: '#10B981' },
   ];
 
@@ -278,12 +307,39 @@ export function HomeScreen({ navigation }) {
           </View>
         </View>
 
+        {/* --- HISTORI OLAHRAGA TERAKHIR --- */}
+        <View style={styles.historySection}>
+          <Text style={styles.infoTitle}>Histori Olahraga Terakhir</Text>
+          {workoutHistory.length === 0 ? (
+            <View style={styles.emptyHistoryCard}>
+              <Ionicons name="barbell-outline" size={24} color="#9CA3AF" />
+              <Text style={styles.emptyHistoryText}>Belum ada histori latihan olahraga.</Text>
+            </View>
+          ) : (
+            workoutHistory.map((item) => (
+              <View key={item.id} style={styles.homeHistoryCard}>
+                <View style={styles.homeHistoryIconWrap}>
+                  <Ionicons name={item.icon || 'barbell'} size={20} color="#2563EB" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.homeHistoryName}>{item.name}</Text>
+                  <Text style={styles.homeHistoryDate}>{item.date}</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={styles.homeHistorySets}>{item.sets} Set</Text>
+                  <Text style={styles.homeHistoryDuration}>{item.duration}s / Set</Text>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
         <View style={styles.infoSection}>
           <Text style={styles.infoTitle}>Tips & Edukasi Kesehatan Harian</Text>
           <View style={styles.carouselContainer}>
             {tipsData.map((tip, index) => (
               <View key={index} style={styles.tipCard}>
-                <Text style={styles.tipBadge}>Tip #{index + 1}</Text>
+                <Text style={tipBadge => styles.tipBadge}>Tip #{index + 1}</Text>
                 <Text style={styles.tipText}>{tip}</Text>
               </View>
             ))}
@@ -703,5 +759,69 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#4B5563',
     lineHeight: 20,
+  },
+  
+  // --- HOME WORKOUT HISTORY STYLES ---
+  historySection: {
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  emptyHistoryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  emptyHistoryText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    marginTop: 8,
+  },
+  homeHistoryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    borderRadius: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  homeHistoryIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#EFF3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  homeHistoryName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  homeHistoryDate: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginTop: 2,
+  },
+  homeHistorySets: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  homeHistoryDuration: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
   },
 });

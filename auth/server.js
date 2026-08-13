@@ -8,7 +8,8 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Database configuration
 const dbConfig = {
@@ -157,7 +158,7 @@ app.post('/api/login', async (req, res) => {
       return res.status(500).json({ message: 'Database tidak terkoneksi.' });
     }
 
-    const [rows] = await pool.execute('SELECT id, nama_lengkap, username, email, password, foto_profil FROM users WHERE username = ?', [username]);
+    const [rows] = await pool.execute('SELECT id, nama_lengkap, username, email, password, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, last_username_change, last_name_change FROM users WHERE username = ?', [username]);
     if (rows.length === 0) {
       return res.status(401).json({ message: 'Username atau password salah.' });
     }
@@ -174,6 +175,11 @@ app.post('/api/login', async (req, res) => {
       username: user.username,
       email: user.email,
       foto_profil: user.foto_profil,
+      tinggi_badan: user.tinggi_badan,
+      berat_badan: user.berat_badan,
+      tanggal_lahir: user.tanggal_lahir,
+      last_username_change: user.last_username_change,
+      last_name_change: user.last_name_change,
     };
 
     return res.json({ message: 'Login berhasil.', user: safeUser });
@@ -325,6 +331,101 @@ app.get('/api/ganti-password', async (req, res) => {
   } catch (error) {
     console.error('Error changing password:', error);
     return res.status(500).json({ message: 'Terjadi kesalahan server saat memperbarui password.' });
+  }
+});
+
+
+
+// Update profil detail user (tinggi badan, berat badan, tanggal lahir, nama, username, foto)
+app.post('/api/users/update', async (req, res) => {
+  try {
+    console.log('[API] POST /api/users/update - Request userId:', req.body.userId);
+    const { userId, tinggi_badan, berat_badan, tanggal_lahir, nama_lengkap, username, foto_profil } = req.body;
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID wajib disertakan.' });
+    }
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    // 1. Ambil data lama user untuk verifikasi nama_lengkap / username change cooldown
+    const [userRows] = await pool.execute(
+      'SELECT username, nama_lengkap, last_username_change, last_name_change FROM users WHERE id = ?',
+      [userId]
+    );
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+    const currentUser = userRows[0];
+
+    const updates = [];
+    const params = [];
+
+    // Proses Tinggi, Berat, Lahir, Foto Profil
+    updates.push('tinggi_badan = ?', 'berat_badan = ?', 'tanggal_lahir = ?');
+    params.push(
+      (tinggi_badan && tinggi_badan !== '') ? tinggi_badan : null,
+      (berat_badan && berat_badan !== '') ? berat_badan : null,
+      (tanggal_lahir && tanggal_lahir !== '') ? tanggal_lahir : null
+    );
+
+    if (foto_profil !== undefined) {
+      updates.push('foto_profil = ?');
+      params.push(foto_profil || null);
+    }
+
+    // 2. Cek Cooldown Nama Lengkap (7 Hari)
+    if (nama_lengkap && nama_lengkap !== currentUser.nama_lengkap) {
+      if (currentUser.last_name_change) {
+        const lastChange = new Date(currentUser.last_name_change);
+        const nextAllowed = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
+        if (new Date() < nextAllowed) {
+          const diffDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
+          return res.status(400).json({ 
+            message: `Gagal mengubah nama lengkap. Anda baru saja menggantinya. Tunggu ${diffDays} hari lagi.` 
+          });
+        }
+      }
+      updates.push('nama_lengkap = ?', 'last_name_change = NOW()');
+      params.push(nama_lengkap);
+    }
+
+    // 3. Cek Cooldown Username (14 Hari) + Cek Ketersediaan Username Unik
+    if (username && username !== currentUser.username) {
+      // Periksa apakah username sudah dipakai orang lain
+      const [takenRows] = await pool.execute('SELECT id FROM users WHERE username = ? AND id != ?', [username, userId]);
+      if (takenRows.length > 0) {
+        return res.status(400).json({ message: 'Username sudah digunakan oleh akun lain.' });
+      }
+
+      if (currentUser.last_username_change) {
+        const lastChange = new Date(currentUser.last_username_change);
+        const nextAllowed = new Date(lastChange.getTime() + 14 * 24 * 60 * 60 * 1000);
+        if (new Date() < nextAllowed) {
+          const diffDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
+          return res.status(400).json({ 
+            message: `Gagal mengubah username. Anda baru saja menggantinya. Tunggu ${diffDays} hari lagi.` 
+          });
+        }
+      }
+      updates.push('username = ?', 'last_username_change = NOW()');
+      params.push(username);
+    }
+
+    if (updates.length > 0) {
+      params.push(userId);
+      const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
+      await pool.execute(query, params);
+    }
+
+    // Ambil data user yang terbaru untuk dikembalikan ke client
+    const [rows] = await pool.execute(
+      'SELECT id, nama_lengkap, username, email, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, last_username_change, last_name_change FROM users WHERE id = ?',
+      [userId]
+    );
+
+    return res.json({ message: 'Profil berhasil diperbarui.', user: rows[0] });
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat memperbarui profil.' });
   }
 });
 

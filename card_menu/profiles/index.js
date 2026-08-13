@@ -1,12 +1,13 @@
-import React, { useContext } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../auth/AuthContext';
 import { logoutUser } from '../../auth/logout';
 import { LogoutConfirmModal, LogoutSuccessModal, MenuModal, ChangePasswordModal } from '../../auth/AuthModals';
-import { useState } from 'react';
 import { API_BASE_URL } from '../../auth/api';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen({ navigation }) {
   const { user, setUser } = useContext(AuthContext);
@@ -15,6 +16,95 @@ export default function ProfileScreen({ navigation }) {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isChangePasswordVisible, setIsChangePasswordVisible] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+
+  // State untuk form detail tubuh & data akun
+  const [namaLengkapInput, setNamaLengkapInput] = useState('');
+  const [usernameInput, setUsernameInput] = useState('');
+  const [fotoProfilUri, setFotoProfilUri] = useState('');
+
+  const [tinggiInput, setTinggiInput] = useState('');
+  const [beratInput, setBeratInput] = useState('');
+  const [tglLahirInput, setTglLahirInput] = useState('');
+  const [dateValue, setDateValue] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Sinkronkan state input saat data user dimuat
+  useEffect(() => {
+    if (user) {
+      setNamaLengkapInput(user.nama_lengkap || '');
+      setUsernameInput(user.username || '');
+      setFotoProfilUri(user.foto_profil || '');
+      setTinggiInput(user.tinggi_badan ? user.tinggi_badan.toString() : '');
+      setBeratInput(user.berat_badan ? user.berat_badan.toString() : '');
+      setTglLahirInput(user.tanggal_lahir || '');
+      if (user.tanggal_lahir) {
+        setDateValue(new Date(user.tanggal_lahir));
+      }
+    }
+  }, [user]);
+
+  // Fungsi mengambil/mengunggah foto profil dari galeri HP
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Perizinan Ditolak', 'Aplikasi membutuhkan akses galeri untuk mengganti foto profil.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true, // Ubah ke base64 agar dapat ditransfer lewat query string
+    });
+
+    if (!result.canceled && result.assets && result.assets[0]) {
+      const selected = result.assets[0];
+      const base64Data = `data:image/jpeg;base64,${selected.base64}`;
+      setFotoProfilUri(base64Data);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          tinggi_badan: tinggiInput || null,
+          berat_badan: beratInput || null,
+          tanggal_lahir: tglLahirInput || null,
+          nama_lengkap: namaLengkapInput,
+          username: usernameInput,
+          foto_profil: fotoProfilUri || null,
+        })
+      });
+      const result = await response.json();
+      if (response.ok && result.user) {
+        setUser(result.user);
+        Alert.alert('Sukses', 'Detail akun Anda berhasil diperbarui!');
+      } else {
+        Alert.alert('Gagal', result.message || 'Gagal memperbarui profil.');
+      }
+    } catch (e) {
+      console.warn('Error updating profile:', e);
+      Alert.alert('Error', 'Gagal menghubungi server.');
+    }
+  };
+
+  const onDateChange = (event, selectedDate) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setDateValue(selectedDate);
+      const yyyy = selectedDate.getFullYear();
+      const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(selectedDate.getDate()).padStart(2, '0');
+      setTglLahirInput(`${yyyy}-${mm}-${dd}`);
+    }
+  };
 
   const handleLogout = () => {
     setIsLogoutConfirmVisible(true);
@@ -62,9 +152,18 @@ export default function ProfileScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.profileHeader}>
-        <View style={[styles.profileAvatar, user && styles.profileAvatarActive]}>
-          <Ionicons name={user ? "person" : "person-outline"} size={44} color="#FFFFFF" />
-        </View>
+        <TouchableOpacity onPress={user ? handlePickImage : null} activeOpacity={0.8} style={[styles.profileAvatar, user && styles.profileAvatarActive]}>
+          {fotoProfilUri ? (
+            <Image source={{ uri: fotoProfilUri }} style={styles.avatarImage} />
+          ) : (
+            <Ionicons name={user ? "person" : "person-outline"} size={44} color="#FFFFFF" />
+          )}
+          {user && (
+            <View style={styles.cameraIconBadge}>
+              <Ionicons name="camera" size={14} color="#FFFFFF" />
+            </View>
+          )}
+        </TouchableOpacity>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>
             {user ? user.nama_lengkap : 'Profil Pengguna'}
@@ -91,7 +190,12 @@ export default function ProfileScreen({ navigation }) {
                 <Ionicons name="card-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                 <View style={styles.infoCol}>
                   <Text style={styles.infoLabel}>Nama Lengkap</Text>
-                  <Text style={styles.infoValue}>{user.nama_lengkap}</Text>
+                  <TextInput
+                    style={styles.profileInputInline}
+                    placeholder="Masukkan nama lengkap"
+                    value={namaLengkapInput}
+                    onChangeText={setNamaLengkapInput}
+                  />
                 </View>
               </View>
 
@@ -99,17 +203,75 @@ export default function ProfileScreen({ navigation }) {
                 <Ionicons name="at-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                 <View style={styles.infoCol}>
                   <Text style={styles.infoLabel}>Username</Text>
-                  <Text style={styles.infoValue}>{user.username}</Text>
+                  <TextInput
+                    style={styles.profileInputInline}
+                    placeholder="Masukkan username"
+                    autoCapitalize="none"
+                    value={usernameInput}
+                    onChangeText={setUsernameInput}
+                  />
                 </View>
               </View>
 
               <View style={[styles.rowItem, styles.rowSeparator]}>
-                <Ionicons name="key-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                <Ionicons name="resize-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                 <View style={styles.infoCol}>
-                  <Text style={styles.infoLabel}>Status Keanggotaan</Text>
-                  <Text style={[styles.infoValue, { color: '#10B981', fontWeight: 'bold' }]}>Anggota Aktif Cloud Sync</Text>
+                  <Text style={styles.infoLabel}>Tinggi Badan (cm)</Text>
+                  <TextInput
+                    style={styles.profileInputInline}
+                    placeholder="Contoh: 170 (Opsional)"
+                    keyboardType="numeric"
+                    value={tinggiInput}
+                    onChangeText={setTinggiInput}
+                  />
                 </View>
               </View>
+
+              <View style={[styles.rowItem, styles.rowSeparator]}>
+                <Ionicons name="fitness-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                <View style={styles.infoCol}>
+                  <Text style={styles.infoLabel}>Berat Badan (kg)</Text>
+                  <TextInput
+                    style={styles.profileInputInline}
+                    placeholder="Contoh: 60 (Opsional)"
+                    keyboardType="numeric"
+                    value={beratInput}
+                    onChangeText={setBeratInput}
+                  />
+                </View>
+              </View>
+
+              <View style={[styles.rowItem, styles.rowSeparator]}>
+                <Ionicons name="calendar-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                <View style={styles.infoCol}>
+                  <Text style={styles.infoLabel}>Tanggal Lahir</Text>
+                  <TouchableOpacity 
+                    style={styles.datePickerToggleBtn}
+                    onPress={() => setShowDatePicker(true)}
+                  >
+                    <Text style={styles.datePickerToggleBtnText}>
+                      {tglLahirInput ? tglLahirInput : 'Pilih Tanggal Lahir (Opsional)'}
+                    </Text>
+                    <Ionicons name="calendar" size={16} color="#4F46E5" />
+                  </TouchableOpacity>
+                  
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={dateValue}
+                      mode="date"
+                      display="default"
+                      maximumDate={new Date()}
+                      onChange={onDateChange}
+                    />
+                  )}
+                </View>
+              </View>
+
+              {/* Tombol Simpan Perubahan Profil */}
+              <TouchableOpacity style={styles.saveProfileBtn} onPress={handleUpdateProfile}>
+                <Ionicons name="save-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.saveProfileBtnText}>Simpan Detail Akun</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Tombol Logout */}
@@ -142,12 +304,59 @@ export default function ProfileScreen({ navigation }) {
           </View>
         )}
 
-        {/* Tentang Aplikasi */}
-        <View style={[styles.card, { marginTop: user ? 0 : 20 }]}>
-          <Text style={styles.cardTitle}>Tentang Aplikasi</Text>
-          <Text style={styles.cardText}>Versi aplikasi: 1.0.0</Text>
-          <Text style={styles.cardText}>Fitur inti: Jadwal Tidur (Smart Alarm), Kalkulator Gizi & IMT, Pola Olahraga, Pengelola Stres, dan KMS Digital Terintegrasi MySQL.</Text>
-        </View>
+        {/* --- USIA & SARAN GIZI PINTAR --- */}
+        {user && (() => {
+          // Hitung Usia Dinamis
+          if (!tglLahirInput) return null;
+          const birthDate = new Date(tglLahirInput);
+          const today = new Date();
+          let ageYears = today.getFullYear() - birthDate.getFullYear();
+          let ageMonths = today.getMonth() - birthDate.getMonth();
+          if (ageMonths < 0 || (ageMonths === 0 && today.getDate() < birthDate.getDate())) {
+            ageYears--;
+            ageMonths = 12 + ageMonths;
+          }
+          
+          const ageStr = `${ageYears} Tahun ${ageMonths} Bulan`;
+          const h = parseFloat(tinggiInput) / 100; // in meter
+          const w = parseFloat(beratInput);
+
+          let analysisTitle = "Analisis Berat & Tinggi Badan";
+          let analysisColor = "#6B7280";
+          let suggestionText = "Masukkan Tinggi Badan (TB) dan Berat Badan (BB) Anda untuk mendapatkan saran gizi personal.";
+
+          if (h > 0 && w > 0) {
+            const imt = w / (h * h);
+            let status = "";
+            if (imt < 18.5) {
+              status = "Kurus (Kurang Berat Badan)";
+              analysisColor = "#EF4444";
+              suggestionText = `Berdasarkan usia Anda (${ageStr}), IMT Anda (${imt.toFixed(1)}) tergolong Kurus. Sangat disarankan untuk meningkatkan konsumsi protein berkualitas tinggi dan kalori sehat secara bertahap.`;
+            } else if (imt >= 18.5 && imt < 25) {
+              status = "Normal (Berat Badan Ideal)";
+              analysisColor = "#10B981";
+              suggestionText = `Luar biasa! Di usia Anda (${ageStr}), IMT Anda (${imt.toFixed(1)}) tergolong Normal/Ideal. Pertahankan pola makan gizi seimbang saat ini dan olahraga secara rutin.`;
+            } else if (imt >= 25 && imt < 30) {
+              status = "Kelebihan Berat Badan (Overweight)";
+              analysisColor = "#F59E0B";
+              suggestionText = `Berdasarkan usia Anda (${ageStr}), IMT Anda (${imt.toFixed(1)}) masuk kategori Overweight. Disarankan untuk membatasi makanan tinggi gula/lemak jenuh serta meningkatkan intensitas kardio.`;
+            } else {
+              status = "Obesitas";
+              analysisColor = "#EF4444";
+              suggestionText = `Peringatan! Berdasarkan usia Anda (${ageStr}), IMT Anda (${imt.toFixed(1)}) tergolong Obesitas. Disarankan untuk berkonsultasi dengan ahli gizi, kurangi porsi karbohidrat simpleks, serta aktif bergerak.`;
+            }
+            analysisTitle = `Status IMT: ${status}`;
+          }
+
+          return (
+            <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: analysisColor }]}>
+              <Text style={[styles.cardTitle, { color: '#0F172A' }]}>Saran Gizi Pintar</Text>
+              <Text style={styles.suggestionAgeLabel}>Usia Anda saat ini: <Text style={{ fontWeight: '800', color: '#4F46E5' }}>{ageStr}</Text></Text>
+              <Text style={[styles.suggestionStatusLabel, { color: analysisColor }]}>{analysisTitle}</Text>
+              <Text style={styles.suggestionDescText}>{suggestionText}</Text>
+            </View>
+          );
+        })()}
 
       </ScrollView>
 
@@ -289,6 +498,84 @@ const styles = StyleSheet.create({
     borderTopColor: '#F1F5F9',
     paddingTop: 12,
     marginTop: 4,
+  },
+  profileInputInline: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#334155',
+    marginTop: 2,
+    padding: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingVertical: 2,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
+  },
+  cameraIconBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
+    width: 22,
+    height: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  suggestionAgeLabel: {
+    fontSize: 13,
+    color: '#4B5563',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  suggestionStatusLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  suggestionDescText: {
+    fontSize: 13,
+    color: '#4B5563',
+    lineHeight: 18,
+  },
+  datePickerToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingVertical: 6,
+    marginTop: 2,
+  },
+  datePickerToggleBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  saveProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4F46E5',
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginTop: 16,
+    shadowColor: '#4F46E5',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  saveProfileBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
+    fontFamily: 'Roboto',
   },
   authButtonRow: {
     flexDirection: 'row',

@@ -72,6 +72,8 @@ export function LogoutSuccessModal({ visible, onClose }) {
   );
 }
 
+import { TouchableWithoutFeedback } from 'react-native';
+
 // 3. MODAL MENU OPSI (MENU MODAL)
 export function MenuModal({ visible, onClose, title, menus }) {
   return (
@@ -81,47 +83,56 @@ export function MenuModal({ visible, onClose, title, menus }) {
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.bottomOverlay}>
-        <View style={styles.sheetContent}>
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>{title || 'Menu Opsi'}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={24} color="#0F172A" />
-            </TouchableOpacity>
-          </View>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.bottomOverlay}>
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <View style={styles.sheetContent}>
+              {/* Garis drag area untuk gestur menggeser sheet kebawah */}
+              <View style={styles.dragIndicatorWrapper}>
+                <View style={styles.dragIndicator} />
+              </View>
 
-          <View style={styles.sheetBody}>
-            {menus && menus.map((menu, index) => (
-              <TouchableOpacity 
-                key={index} 
-                style={[
-                  styles.menuItem, 
-                  index > 0 && styles.menuItemSeparator,
-                  menu.style === 'destructive' && styles.menuItemDestructive
-                ]}
-                onPress={() => {
-                  onClose();
-                  if (menu.onPress) menu.onPress();
-                }}
-              >
-                <Ionicons 
-                  name={menu.icon || 'ellipse'} 
-                  size={20} 
-                  color={menu.style === 'destructive' ? '#EF4444' : '#4F46E5'} 
-                  style={{ marginRight: 12 }} 
-                />
-                <Text style={[
-                  styles.menuText, 
-                  menu.style === 'destructive' && styles.menuTextDestructive
-                ]}>
-                  {menu.label}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
-              </TouchableOpacity>
-            ))}
-          </View>
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle}>{title || 'Menu Opsi'}</Text>
+                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                  <Ionicons name="close" size={24} color="#0F172A" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.sheetBody}>
+                {menus && menus.map((menu, index) => (
+                  <TouchableOpacity 
+                    key={index} 
+                    style={[
+                      styles.menuItem, 
+                      index > 0 && styles.menuItemSeparator,
+                      menu.style === 'destructive' && styles.menuItemDestructive
+                    ]}
+                    onPress={() => {
+                      onClose();
+                      if (menu.onPress) menu.onPress();
+                    }}
+                  >
+                    <Ionicons 
+                      name={menu.icon || 'ellipse'} 
+                      size={20} 
+                      color={menu.style === 'destructive' ? '#EF4444' : '#4F46E5'} 
+                      style={{ marginRight: 12 }} 
+                    />
+                    <Text style={[
+                      styles.menuText, 
+                      menu.style === 'destructive' && styles.menuTextDestructive
+                    ]}>
+                      {menu.label}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }
@@ -356,6 +367,17 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     width: '100%',
     paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+  },
+  dragIndicatorWrapper: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    width: '100%',
+  },
+  dragIndicator: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#CBD5E1',
   },
   sheetHeader: {
     flexDirection: 'row',

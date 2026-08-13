@@ -36,6 +36,7 @@ function resolvePortFromManifest(manifest) {
   const portCandidates = [
     manifest.extra?.API_PORT,
     manifest.extra?.apiPort,
+    manifest.extra?.expoClient?.extra?.API_PORT, // Key path manifest2
   ];
 
   for (const candidate of portCandidates) {
@@ -56,18 +57,19 @@ function resolvePortFromManifest(manifest) {
 function resolveExpoHost() {
   // Check candidates in prioritized order
   const hostCandidates = [
-    Constants.expoGoConfig?.debuggerHost,
-    Constants.expoGoConfig?.hostUri,
-    Constants.hostUri,
-    Constants.manifest2?.extra?.expoGo?.debuggerHost,
-    Constants.manifest?.debuggerHost,
-    Constants.manifest?.packagerOpts?.packagerHost,
-    Constants.manifest?.hostUri,
-    Constants.expoConfig?.hostUri,
     Constants.expoConfig?.extra?.API_HOST,
     Constants.expoConfig?.extra?.apiHost,
     Constants.expoConfig?.extra?.API_BASE_URL,
     Constants.expoConfig?.extra?.apiBaseUrl,
+    Constants.manifest2?.extra?.expoClient?.extra?.API_HOST, // Key path untuk manifest2 / Expo modern
+    Constants.manifest2?.extra?.expoGo?.debuggerHost,
+    Constants.expoGoConfig?.debuggerHost,
+    Constants.expoGoConfig?.hostUri,
+    Constants.hostUri,
+    Constants.manifest?.debuggerHost,
+    Constants.manifest?.packagerOpts?.packagerHost,
+    Constants.manifest?.hostUri,
+    Constants.expoConfig?.hostUri,
   ];
 
   let host = null;
@@ -89,12 +91,13 @@ function resolveExpoHost() {
 
 const isDevice = Constants.isDevice ?? false;
 const { host: resolvedHost, port: resolvedPort } = resolveExpoHost();
-const host = resolvedHost || (Platform.OS === 'android' && !isDevice ? '10.0.2.2' : '127.0.0.1');
+// Menggunakan IP lokal PC 192.168.100.3 untuk pengujian menggunakan HP Fisik (Real Device) agar bisa saling terhubung dalam 1 jaringan Wi-Fi LAN
+const host = '192.168.100.3';
 const port = resolvedPort || 3000;
 export const API_BASE_URL = `http://${host}:${port}`;
 
 if (__DEV__) {
-  console.log('[auth/api] resolved API host:', host);
+  console.log('[auth/api] FORCED API host to PC Local IP:', host);
   console.log('[auth/api] resolved API port:', port);
   console.log('[auth/api] API_BASE_URL:', API_BASE_URL);
 }

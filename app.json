@@ -33,7 +33,9 @@
     "extra": {
       "API_HOST": "192.168.100.3",
       "API_PORT": 3000
-    }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }
-
