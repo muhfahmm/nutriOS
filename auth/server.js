@@ -28,16 +28,16 @@ async function initializeDatabase() {
     console.log(`   User: ${dbConfig.user}`);
     console.log(`   Database: ${dbConfig.database}`);
     console.log(`   Port: ${dbConfig.port}`);
-    
+
     pool = mysql.createPool({
       ...dbConfig,
       connectionLimit: 10,
     });
-    
+
     // Test the connection
     const connection = await pool.getConnection();
     console.log('✅ Koneksi ke database MySQL berhasil.');
-    
+
     // Try to query the jadwal_tidur table to verify it exists
     try {
       const [tables] = await connection.execute('SHOW TABLES LIKE "jadwal_tidur"');
@@ -50,7 +50,7 @@ async function initializeDatabase() {
     } catch (tableError) {
       console.warn('⚠️  Tidak bisa memverifikasi tabel jadwal_tidur:', tableError.message);
     }
-    
+
     connection.release();
   } catch (error) {
     console.error('');
@@ -61,7 +61,7 @@ async function initializeDatabase() {
     console.error(`   Message: ${error.message}`);
     console.error('');
     console.error('Kemungkinan penyebab:');
-    
+
     if (error.code === 'PROTOCOL_CONNECTION_LOST') {
       console.error('   1. MySQL service tidak berjalan');
       console.error('   2. Host/Port tidak benar');
@@ -73,7 +73,7 @@ async function initializeDatabase() {
       console.error('   1. Database belum dibuat');
       console.error('   2. Nama database di .env tidak benar');
     }
-    
+
     console.error('');
     console.error('Solusi:');
     console.error('   1. Pastikan XAMPP MySQL sudah running');
@@ -86,8 +86,8 @@ async function initializeDatabase() {
 initializeDatabase();
 
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     database: pool ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString(),
     api_base_url: `${req.protocol}://${req.get('host')}`,
@@ -97,8 +97,11 @@ app.get('/api/health', (req, res) => {
 // Registrasi User baru ke database
 app.post('/api/register', async (req, res) => {
   try {
-    const { nama_lengkap, username, password } = req.body;
-    if (!nama_lengkap || !username || !password) {
+    const { nama_lengkap, username, email, password } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email wajib diisi.' });
+    }
+    if (!nama_lengkap || !username || !email || !password) {
       return res.status(400).json({ message: 'Nama lengkap, username, dan password wajib diisi.' });
     }
 
@@ -113,8 +116,8 @@ app.post('/api/register', async (req, res) => {
 
     const passwordHash = bcrypt.hashSync(password, 12);
     const [result] = await pool.execute(
-      'INSERT INTO users (nama_lengkap, username, password) VALUES (?, ?, ?)',
-      [nama_lengkap, username, passwordHash]
+      'INSERT INTO users (nama_lengkap, username, email, password) VALUES (?, ?, ?, ?)',
+      [nama_lengkap, username, email, passwordHash]
     );
 
     return res.status(201).json({ message: 'Registrasi berhasil.', userId: result.insertId });
@@ -184,9 +187,9 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/jadwal-tidur', async (req, res) => {
   try {
     console.log('[API] POST /api/jadwal-tidur - Request body:', JSON.stringify(req.body));
-    
+
     const { userId, sleepTime, wakeTime, ageGroup, notifBedtime, notifScreenFree } = req.body;
-    
+
     // Validasi input
     if (!sleepTime || !wakeTime) {
       console.log('[API] Validation error: sleepTime atau wakeTime missing');
@@ -205,7 +208,7 @@ app.post('/api/jadwal-tidur', async (req, res) => {
     if (userId) {
       console.log('[API] User login - mencari record untuk user_id:', userId);
       const [existing] = await pool.execute('SELECT id FROM jadwal_tidur WHERE user_id = ?', [userId]);
-      
+
       if (existing.length > 0) {
         console.log('[API] Record sudah ada, UPDATE...');
         await pool.execute(
@@ -230,7 +233,7 @@ app.post('/api/jadwal-tidur', async (req, res) => {
       // User tidak login: simpan sebagai data guest baru atau perbarui record guest terakhir (user_id IS NULL)
       console.log('[API] User guest - mencari record dengan user_id IS NULL');
       const [existingGuest] = await pool.execute('SELECT id FROM jadwal_tidur WHERE user_id IS NULL ORDER BY id DESC LIMIT 1');
-      
+
       if (existingGuest.length > 0) {
         console.log('[API] Guest record sudah ada, UPDATE...');
         await pool.execute(
@@ -244,7 +247,7 @@ app.post('/api/jadwal-tidur', async (req, res) => {
       } else {
         console.log('[API] Guest record belum ada, INSERT...');
         await pool.execute(
-          `INSERT INTO jadwal_tidur (user_id, sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free) 
+          ` jadwal_tidur (user_id, sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free) 
            VALUES (NULL, ?, ?, ?, ?, ?)`,
           [sleepTime, wakeTime, ageGroup || 'Dewasa', notifBedtime ? 1 : 0, notifScreenFree ? 1 : 0]
         );
@@ -255,7 +258,7 @@ app.post('/api/jadwal-tidur', async (req, res) => {
   } catch (error) {
     console.error('[API] Error saving sleep schedule:', error.message);
     console.error('[API] Full error stack:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       message: 'Terjadi kesalahan server saat menyimpan jadwal tidur.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -294,7 +297,7 @@ app.get('/api/jadwal-tidur/:userId', async (req, res) => {
 app.get('/api/ganti-password', async (req, res) => {
   try {
     const { userId, oldPassword, newPassword } = req.query;
-    
+
     if (!userId || !oldPassword || !newPassword) {
       return res.status(400).json({ message: 'User ID, password lama, dan password baru wajib diisi.' });
     }
@@ -335,7 +338,7 @@ app.get('/api/anak/:userId', async (req, res) => {
     if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
 
     const [rows] = await pool.execute(
-      'SELECT id, nama_anak, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, jenis_kelamin, status_z_score FROM anak WHERE user_id = ? ORDER BY created_at DESC', 
+      'SELECT id, nama_anak, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, jenis_kelamin, status_z_score FROM anak WHERE user_id = ? ORDER BY created_at DESC',
       [userId]
     );
     return res.json(rows);
@@ -359,9 +362,9 @@ app.post('/api/anak', async (req, res) => {
       [userId, nama_anak, tanggal_lahir || null, jenis_kelamin || null, status_z_score || 'Normal']
     );
 
-    return res.status(201).json({ 
-      message: 'Profil anak berhasil ditambahkan.', 
-      anakId: result.insertId 
+    return res.status(201).json({
+      message: 'Profil anak berhasil ditambahkan.',
+      anakId: result.insertId
     });
   } catch (error) {
     console.error('Error adding child:', error);
@@ -452,7 +455,7 @@ app.post('/api/pertumbuhan-anak', async (req, res) => {
       'INSERT INTO riwayat_pertumbuhan_anak (anak_id, berat_badan, tinggi_badan, umur_bulan, status_gizi) VALUES (?, ?, ?, ?, ?)',
       [anakId, berat_badan, tinggi_badan, umur_bulan, status_gizi || 'Normal']
     );
-    
+
     // Update status Z-Score terakhir di profil anak
     await pool.execute('UPDATE anak SET status_z_score = ? WHERE id = ?', [status_gizi || 'Normal', anakId]);
 

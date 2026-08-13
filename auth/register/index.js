@@ -71,16 +71,29 @@ export default function RegisterScreen({ navigation }) {
   const strength = getPasswordStrength(password);
 
   const handleRegister = async () => {
+    // 1. Validasi kelima input sudah diisi
     if (!name || !email || !username || !password || !confirmPassword) {
       setMessageType('error');
       setMessage('Harap isi semua kolom wajib.');
       return;
     }
+
+    // 2. Validasi format email (tambahan untuk keamanan data)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setMessageType('error');
+      setMessage('Format email tidak valid.');
+      return;
+    }
+
+    // 3. Validasi username
     if (isUsernameTaken) {
       setMessageType('error');
       setMessage('Username sudah digunakan oleh user lain.');
       return;
     }
+
+    // 4. Validasi kecocokan password
     if (password !== confirmPassword) {
       setMessageType('error');
       setMessage('Password dan konfirmasi tidak cocok.');
@@ -108,6 +121,7 @@ export default function RegisterScreen({ navigation }) {
       if (response.ok) {
         setMessageType('success');
         setMessage('Registrasi berhasil! Silakan masuk.');
+        // Navigasi ke halaman Login setelah 1.5 detik
         setTimeout(() => {
           if (navigation) {
             navigation.navigate('Login');
@@ -141,6 +155,7 @@ export default function RegisterScreen({ navigation }) {
           </View>
 
           <View style={styles.form}>
+            {/* Input Nama Lengkap */}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Nama Lengkap *</Text>
               <View style={styles.inputContainer}>
@@ -155,6 +170,24 @@ export default function RegisterScreen({ navigation }) {
               </View>
             </View>
 
+            {/* Tambahan: Input Email */}
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Email *</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="mail-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="example@email.com"
+                  placeholderTextColor="#9CA3AF"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
+            </View>
+
+            {/* Input Username */}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Username *</Text>
               <View style={[
@@ -191,6 +224,7 @@ export default function RegisterScreen({ navigation }) {
               )}
             </View>
 
+            {/* Input Password */}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Password *</Text>
               <View style={styles.inputContainer}>
@@ -226,6 +260,7 @@ export default function RegisterScreen({ navigation }) {
               )}
             </View>
 
+            {/* Input Konfirmasi Password */}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Konfirmasi Password *</Text>
               <View style={styles.inputContainer}>
@@ -249,12 +284,14 @@ export default function RegisterScreen({ navigation }) {
               </View>
             </View>
 
-             {message ? (
+            {/* Pesan Error / Sukses */}
+            {message ? (
               <Text style={[styles.message, messageType === 'success' && styles.messageSuccess]}>
                 {message}
               </Text>
             ) : null}
 
+            {/* Tombol Daftar */}
             <TouchableOpacity 
               style={[styles.buttonPrimary, loading && styles.buttonDisabled]} 
               onPress={handleRegister} 
@@ -268,6 +305,7 @@ export default function RegisterScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
+          {/* Footer Masuk */}
           <TouchableOpacity 
             style={styles.footer} 
             onPress={() => navigation && navigation.navigate('Login')}
