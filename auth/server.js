@@ -356,6 +356,8 @@ app.post('/api/users/update', async (req, res) => {
       return res.status(404).json({ message: 'User tidak ditemukan.' });
     }
     const currentUser = userRows[0];
+    console.log('[API] Current User in DB:', currentUser);
+    console.log('[API] Payload Nama:', nama_lengkap, 'Payload Username:', username);
 
     const updates = [];
     const params = [];

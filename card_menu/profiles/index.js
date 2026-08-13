@@ -90,9 +90,15 @@ export default function ProfileScreen({ navigation }) {
         setUser(result.user);
         Alert.alert('Sukses', 'Detail akun Anda berhasil diperbarui!');
       } else {
+        // Rollback state ke data user saat ini jika gagal disimpan akibat cooldown
+        setNamaLengkapInput(user.nama_lengkap || '');
+        setUsernameInput(user.username || '');
         Alert.alert('Gagal', result.message || 'Gagal memperbarui profil.');
       }
     } catch (e) {
+      // Rollback jika terjadi error koneksi
+      setNamaLengkapInput(user.nama_lengkap || '');
+      setUsernameInput(user.username || '');
       console.warn('Error updating profile:', e);
       Alert.alert('Error', 'Gagal menghubungi server.');
     }
@@ -189,32 +195,82 @@ export default function ProfileScreen({ navigation }) {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Detail Akun Anda</Text>
               
-              <View style={styles.rowItem}>
-                <Ionicons name="card-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
-                <View style={styles.infoCol}>
-                  <Text style={styles.infoLabel}>Nama Lengkap</Text>
-                  <TextInput
-                    style={styles.profileInputInline}
-                    placeholder="Masukkan nama lengkap"
-                    value={namaLengkapInput}
-                    onChangeText={setNamaLengkapInput}
-                  />
-                </View>
-              </View>
+              {/* Nama Lengkap */}
+              {(() => {
+                let nameCooldownActive = false;
+                let nameRemainingDays = 0;
+                let nameUnlockDateStr = "";
+                
+                if (user && user.last_name_change) {
+                  const lastChange = new Date(user.last_name_change);
+                  const nextAllowed = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
+                  if (new Date() < nextAllowed) {
+                    nameCooldownActive = true;
+                    nameRemainingDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
+                    nameUnlockDateStr = nextAllowed.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                  }
+                }
 
-              <View style={[styles.rowItem, styles.rowSeparator]}>
-                <Ionicons name="at-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
-                <View style={styles.infoCol}>
-                  <Text style={styles.infoLabel}>Username</Text>
-                  <TextInput
-                    style={styles.profileInputInline}
-                    placeholder="Masukkan username"
-                    autoCapitalize="none"
-                    value={usernameInput}
-                    onChangeText={setUsernameInput}
-                  />
-                </View>
-              </View>
+                return (
+                  <View style={styles.rowItem}>
+                    <Ionicons name="card-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                    <View style={styles.infoCol}>
+                      <Text style={styles.infoLabel}>Nama Lengkap</Text>
+                      <TextInput
+                        style={[styles.profileInputInline, nameCooldownActive && styles.profileInputDisabled]}
+                        placeholder="Masukkan nama lengkap"
+                        value={namaLengkapInput}
+                        onChangeText={setNamaLengkapInput}
+                        editable={!nameCooldownActive}
+                      />
+                      {nameCooldownActive && (
+                        <Text style={styles.cooldownWarningText}>
+                          Terkunci: ganti lagi dalam {nameRemainingDays} hari ({nameUnlockDateStr})
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              })()}
+
+              {/* Username */}
+              {(() => {
+                let userCooldownActive = false;
+                let userRemainingDays = 0;
+                let userUnlockDateStr = "";
+
+                if (user && user.last_username_change) {
+                  const lastChange = new Date(user.last_username_change);
+                  const nextAllowed = new Date(lastChange.getTime() + 14 * 24 * 60 * 60 * 1000);
+                  if (new Date() < nextAllowed) {
+                    userCooldownActive = true;
+                    userRemainingDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
+                    userUnlockDateStr = nextAllowed.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                  }
+                }
+
+                return (
+                  <View style={[styles.rowItem, styles.rowSeparator]}>
+                    <Ionicons name="at-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                    <View style={styles.infoCol}>
+                      <Text style={styles.infoLabel}>Username</Text>
+                      <TextInput
+                        style={[styles.profileInputInline, userCooldownActive && styles.profileInputDisabled]}
+                        placeholder="Masukkan username"
+                        autoCapitalize="none"
+                        value={usernameInput}
+                        onChangeText={setUsernameInput}
+                        editable={!userCooldownActive}
+                      />
+                      {userCooldownActive && (
+                        <Text style={styles.cooldownWarningText}>
+                          Terkunci: ganti lagi dalam {userRemainingDays} hari ({userUnlockDateStr})
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              })()}
 
               <View style={[styles.rowItem, styles.rowSeparator]}>
                 <Ionicons name="resize-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
@@ -333,9 +389,20 @@ export default function ProfileScreen({ navigation }) {
 
         {/* --- USIA & SARAN GIZI PINTAR --- */}
         {user && (() => {
-          // Hitung Usia Dinamis
-          if (!tglLahirInput) return null;
-          const birthDate = new Date(tglLahirInput);
+          // Hanya berikan rekomendasi jika data sudah disimpan di database (dikonfirmasi)
+          if (!user.tanggal_lahir || !user.tinggi_badan || !user.berat_badan || !user.jenis_kelamin) {
+            return (
+              <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: '#6B7280' }]}>
+                <Text style={[styles.cardTitle, { color: '#0F172A' }]}>Saran Gizi Pintar</Text>
+                <Text style={styles.suggestionDescText}>
+                  Silakan lengkapi dan simpan detail akun Anda (Tinggi Badan, Berat Badan, Tanggal Lahir, dan Jenis Kelamin) terlebih dahulu untuk memunculkan Saran Gizi Pintar dari AI.
+                </Text>
+              </View>
+            );
+          }
+
+          // Hitung Usia Dinamis berdasarkan tanggal lahir terkonfirmasi di database
+          const birthDate = new Date(user.tanggal_lahir);
           const today = new Date();
           let ageYears = today.getFullYear() - birthDate.getFullYear();
           let ageMonths = today.getMonth() - birthDate.getMonth();
@@ -345,57 +412,55 @@ export default function ProfileScreen({ navigation }) {
           }
           
           const ageStr = `${ageYears} Tahun ${ageMonths} Bulan`;
-          const h = parseFloat(tinggiInput) / 100; // in meter
-          const w = parseFloat(beratInput);
+          const h = parseFloat(user.tinggi_badan) / 100; // in meter
+          const w = parseFloat(user.berat_badan);
 
           let analysisTitle = "Analisis Berat & Tinggi Badan";
           let analysisColor = "#6B7280";
-          let suggestionText = "Masukkan Tinggi Badan (TB), Berat Badan (BB), dan Jenis Kelamin Anda untuk mendapatkan saran gizi personal.";
+          let suggestionText = "";
 
-          if (h > 0 && w > 0 && jenisKelamin) {
-            const imt = w / (h * h);
-            let status = "";
-            
-            // Evaluasi dengan memperhitungkan gender secara biologis
-            if (jenisKelamin === 'Pria') {
-              if (imt < 18.5) {
-                status = "Kurus (Kurang Berat Badan Pria)";
-                analysisColor = "#EF4444";
-                suggestionText = `Di usia Anda (${ageStr}) sebagai Pria, IMT Anda (${imt.toFixed(1)}) tergolong Kurus. Pria disarankan menambah massa otot melalui asupan kalori surplus sehat (+300-500 kkal) dan latihan beban ringan.`;
-              } else if (imt >= 18.5 && imt < 25) {
-                status = "Normal (Berat Badan Pria Ideal)";
-                analysisColor = "#10B981";
-                suggestionText = `Luar biasa! Di usia Anda (${ageStr}) sebagai Pria, IMT Anda (${imt.toFixed(1)}) tergolong Normal/Ideal. Anda memiliki keseimbangan metabolisme yang optimal, pertahankan dengan asupan makro seimbang.`;
-              } else if (imt >= 25 && imt < 30) {
-                status = "Kelebihan Berat Badan (Overweight Pria)";
-                analysisColor = "#F59E0B";
-                suggestionText = `Di usia Anda (${ageStr}) sebagai Pria, IMT Anda (${imt.toFixed(1)}) masuk kategori Overweight. Kurangi penumpukan lemak visceral dengan membatasi junk food serta tingkatkan kardio mingguan.`;
-              } else {
-                status = "Obesitas Pria";
-                analysisColor = "#EF4444";
-                suggestionText = `Peringatan! Sebagai Pria di usia ${ageStr}, IMT Anda (${imt.toFixed(1)}) tergolong Obesitas. Disarankan untuk membatasi porsi karbohidrat olahan dan lakukan konsultasi berkala dengan ahli gizi.`;
-              }
-            } else { // Wanita
-              if (imt < 18) {
-                status = "Kurus (Kurang Berat Badan Wanita)";
-                analysisColor = "#EF4444";
-                suggestionText = `Di usia Anda (${ageStr}) sebagai Wanita, IMT Anda (${imt.toFixed(1)}) tergolong Kurus. Wanita membutuhkan asupan lemak sehat (seperti alpukat, kacang-kacangan) demi menjaga keseimbangan hormon tubuh.`;
-              } else if (imt >= 18 && imt < 24) {
-                status = "Normal (Berat Badan Wanita Ideal)";
-                analysisColor = "#10B981";
-                suggestionText = `Luar biasa! Di usia Anda (${ageStr}) sebagai Wanita, IMT Anda (${imt.toFixed(1)}) tergolong Normal/Ideal. Persentase lemak tubuh Anda seimbang. Pertahankan dengan konsumsi serat dan kalsium yang cukup.`;
-              } else if (imt >= 24 && imt < 29) {
-                status = "Kelebihan Berat Badan (Overweight Wanita)";
-                analysisColor = "#F59E0B";
-                suggestionText = `Di usia Anda (${ageStr}) sebagai Wanita, IMT Anda (${imt.toFixed(1)}) masuk kategori Overweight. Disarankan untuk melakukan defisit kalori ringan (-200 kkal) dan rutin berjalan kaki/senam aerobik.`;
-              } else {
-                status = "Obesitas Wanita";
-                analysisColor = "#EF4444";
-                suggestionText = `Peringatan! Sebagai Wanita di usia ${ageStr}, IMT Anda (${imt.toFixed(1)}) tergolong Obesitas. Fokus pada pola makan rendah glikemik untuk kestabilan energi dan metabolisme tubuh.`;
-              }
+          const imt = w / (h * h);
+          let status = "";
+          
+          // Evaluasi dengan memperhitungkan gender secara biologis
+          if (user.jenis_kelamin === 'Pria') {
+            if (imt < 18.5) {
+              status = "Kurus (Kurang Berat Badan Pria)";
+              analysisColor = "#EF4444";
+              suggestionText = `Di usia Anda (${ageStr}) sebagai Pria, IMT Anda (${imt.toFixed(1)}) tergolong Kurus. Pria disarankan menambah massa otot melalui asupan kalori surplus sehat (+300-500 kkal) dan latihan beban ringan.`;
+            } else if (imt >= 18.5 && imt < 25) {
+              status = "Normal (Berat Badan Pria Ideal)";
+              analysisColor = "#10B981";
+              suggestionText = `Luar biasa! Di usia Anda (${ageStr}) sebagai Pria, IMT Anda (${imt.toFixed(1)}) tergolong Normal/Ideal. Anda memiliki keseimbangan metabolisme yang optimal, pertahankan dengan asupan makro seimbang.`;
+            } else if (imt >= 25 && imt < 30) {
+              status = "Kelebihan Berat Badan (Overweight Pria)";
+              analysisColor = "#F59E0B";
+              suggestionText = `Di usia Anda (${ageStr}) sebagai Pria, IMT Anda (${imt.toFixed(1)}) masuk kategori Overweight. Kurangi penumpukan lemak visceral dengan membatasi junk food serta tingkatkan kardio mingguan.`;
+            } else {
+              status = "Obesitas Pria";
+              analysisColor = "#EF4444";
+              suggestionText = `Peringatan! Sebagai Pria di usia ${ageStr}, IMT Anda (${imt.toFixed(1)}) tergolong Obesitas. Disarankan untuk membatasi porsi karbohidrat olahan dan lakukan konsultasi berkala dengan ahli gizi.`;
             }
-            analysisTitle = `Status IMT: ${status}`;
+          } else { // Wanita
+            if (imt < 18) {
+              status = "Kurus (Kurang Berat Badan Wanita)";
+              analysisColor = "#EF4444";
+              suggestionText = `Di usia Anda (${ageStr}) sebagai Wanita, IMT Anda (${imt.toFixed(1)}) tergolong Kurus. Wanita membutuhkan asupan lemak sehat (seperti alpukat, kacang-kacangan) demi menjaga keseimbangan hormon tubuh.`;
+            } else if (imt >= 18 && imt < 24) {
+              status = "Normal (Berat Badan Wanita Ideal)";
+              analysisColor = "#10B981";
+              suggestionText = `Luar biasa! Di usia Anda (${ageStr}) sebagai Wanita, IMT Anda (${imt.toFixed(1)}) tergolong Normal/Ideal. Persentase lemak tubuh Anda seimbang. Pertahankan dengan konsumsi serat dan kalsium yang cukup.`;
+            } else if (imt >= 24 && imt < 29) {
+              status = "Kelebihan Berat Badan (Overweight Wanita)";
+              analysisColor = "#F59E0B";
+              suggestionText = `Di usia Anda (${ageStr}) sebagai Wanita, IMT Anda (${imt.toFixed(1)}) masuk kategori Overweight. Disarankan untuk melakukan defisit kalori ringan (-200 kkal) dan rutin berjalan kaki/senam aerobik.`;
+            } else {
+              status = "Obesitas Wanita";
+              analysisColor = "#EF4444";
+              suggestionText = `Peringatan! Sebagai Wanita di usia ${ageStr}, IMT Anda (${imt.toFixed(1)}) tergolong Obesitas. Fokus pada pola makan rendah glikemik untuk kestabilan energi dan metabolisme tubuh.`;
+            }
           }
+          analysisTitle = `Status IMT: ${status}`;
 
           return (
             <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: analysisColor }]}>
@@ -558,6 +623,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
     paddingVertical: 2,
+  },
+  profileInputDisabled: {
+    opacity: 0.5,
+    color: '#94A3B8',
+    borderBottomColor: 'transparent',
+  },
+  cooldownWarningText: {
+    fontSize: 10,
+    color: '#EF4444',
+    fontWeight: '700',
+    marginTop: 4,
   },
   avatarImage: {
     width: '100%',
