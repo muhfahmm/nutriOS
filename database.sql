@@ -64,4 +64,19 @@ CREATE TABLE IF NOT EXISTS riwayat_pertumbuhan_anak (
     status_gizi VARCHAR(50) DEFAULT 'Normal',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (anak_id) REFERENCES anak(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 7. Buat Tabel riwayat_olahraga untuk mencatat histori latihan user
+CREATE TABLE IF NOT EXISTS riwayat_olahraga (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    exercise_id VARCHAR(50) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    target VARCHAR(100) NOT NULL,
+    sets INT NOT NULL,
+    duration INT NOT NULL,
+    date VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

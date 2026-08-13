@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import {
   StyleSheet,
   Text,
@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthContext } from '../../auth/AuthContext';
+import { API_BASE_URL } from '../../auth/api';
 
 // ============================================================
 // 1. DATA GERAKAN — DIPERBANYAK (MIN 5, MAKS 10 PER TAB)
@@ -299,9 +301,13 @@ const CATEGORY_TABS = [
   { id: 'Otot perut', label: 'Otot perut', icon: 'triangle-outline' },
   { id: 'Lengan', label: 'Lengan', icon: 'flash-outline' },
   { id: 'Wishlist', label: 'Favorit', icon: 'bookmark-outline' },
+  { id: 'History', label: 'Histori', icon: 'time-outline' },
 ];
 
 export default function OlahragaScreen() {
+  // --- CONTEXT ---
+  const { user } = useContext(AuthContext);
+
   // --- STATE UTAMA ---
   const [activeTab, setActiveTab] = useState('Dada');
   const [wishlist, setWishlist] = useState([]);
@@ -313,6 +319,8 @@ export default function OlahragaScreen() {
   const [caloriesBurned, setCaloriesBurned] = useState(0);
   const [activeMinutes, setActiveMinutes] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [history, setHistory] = useState([]);
+  const [isSessionFinished, setIsSessionFinished] = useState(false);
   
   // --- STATE SUARA (TTS) ---
   const [selectedVoice, setSelectedVoice] = useState(null);
@@ -324,17 +332,24 @@ export default function OlahragaScreen() {
   const [sets, setSets] = useState('1');
   const [durationSeconds, setDurationSeconds] = useState('30');
 
+  // --- STATE MODE SETELAH LATIHAN ---
+  const [finishMode, setFinishMode] = useState('stop'); // 'stop', 'next', 'auto'
+  
   // --- STATE COUNTDOWN SEBELUM MULAI ---
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdownNum, setCountdownNum] = useState(null);
   const countdownTimeoutRef = useRef([]);
+
+  // --- STATE AUTO PLAY ---
+  const [autoPlay, setAutoPlay] = useState(false);
+  const autoPlayTimeoutRef = useRef(null);
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const timerRef = useRef(null);
   const spokenCountRef = useRef(new Set());
 
   // ============================================================
-  // 2. MEMUAT SUARA & STREAK HARIAN
+  // 2. MEMUAT SUARA & STREAK HARIAN & HISTORI
   // ============================================================
   useEffect(() => {
     const updateStreak = async () => {
@@ -378,14 +393,62 @@ export default function OlahragaScreen() {
       }
     };
 
+    const loadHistory = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('olahraga_history');
+        if (stored) setHistory(JSON.parse(stored));
+        const userIdVal = user ? user.id : 'null';
+        const response = await fetch(`${API_BASE_URL}/api/riwayat-olahraga/${userIdVal}`);
+        if (response.ok) {
+          const data = await response.json();
+          setHistory(data);
+        }
+      } catch (e) {
+        console.warn('Gagal memuat histori:', e);
+      }
+    };
+
     updateStreak();
     loadVoices();
+    loadHistory();
 
     return () => {
       clearInterval(timerRef.current);
       Speech.stop();
     };
-  }, []);
+  }, [user]);
+
+  const saveToHistory = async (exercise, setsCount, durationSec) => {
+    const formattedDate = new Date().toLocaleDateString('id-ID', {
+      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+    const newEntry = {
+      id: Date.now().toString(),
+      exerciseId: exercise.id,
+      name: exercise.name,
+      target: exercise.target,
+      icon: exercise.icon,
+      sets: setsCount,
+      duration: durationSec,
+      date: formattedDate
+    };
+    try {
+      const updatedHistory = [newEntry, ...history];
+      setHistory(updatedHistory);
+      await AsyncStorage.setItem('olahraga_history', JSON.stringify(updatedHistory));
+    } catch (e) { console.warn('Gagal menyimpan local history:', e); }
+    try {
+      const userIdVal = user ? user.id : null;
+      await fetch(`${API_BASE_URL}/api/riwayat-olahraga`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userIdVal, exerciseId: exercise.id, name: exercise.name, target: exercise.target,
+          sets: setsCount, duration: durationSec, date: formattedDate
+        })
+      });
+    } catch (e) { console.warn('Gagal menyimpan ke DB:', e); }
+  };
 
   // ============================================================
   // 3. FUNGSI UTAMA SUARA (Gaya Google)
@@ -393,23 +456,16 @@ export default function OlahragaScreen() {
   const speak = (text) => {
     try {
       Speech.speak(text, {
-        language: 'id-ID',
-        pitch: 1.0,
-        rate: 0.9,
-        voice: selectedVoice
+        language: 'id-ID', pitch: 1.0, rate: 0.9, voice: selectedVoice
       });
-    } catch (error) {
-      console.warn('Gagal memutar suara:', error);
-    }
+    } catch (error) { console.warn('Gagal memutar suara:', error); }
   };
 
   // ============================================================
   // 4. WISHLIST HANDLER
   // ============================================================
   const toggleWishlist = (id) => {
-    setWishlist((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    setWishlist((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
   };
 
   // ============================================================
@@ -419,35 +475,37 @@ export default function OlahragaScreen() {
     setSets('1');
     setDurationSeconds('30');
     setSelectedExerciseForModal(exercise);
+    setFinishMode('stop'); // Reset mode default saat membuka modal
     setModalVisible(true);
   };
 
   const confirmStartExercise = () => {
     const numSets = parseInt(sets);
     const numDurationSeconds = parseInt(durationSeconds);
-
-    if (isNaN(numSets) || numSets < 1 || isNaN(numDurationSeconds) || numDurationSeconds < 1) {
-      Alert.alert('Input Tidak Valid', 'Harap masukkan angka minimal 1 untuk Set dan Detik.');
-      return;
-    }
-
     const calculatedTotalDuration = numSets * numDurationSeconds;
     
     setModalVisible(false);
     setSelectedExerciseForModal(null);
 
+    // Sinkronkan state autoPlay dengan mode yang dipilih
+    if (finishMode === 'auto') {
+      setAutoPlay(true);
+    } else {
+      setAutoPlay(false);
+    }
+
+    saveToHistory(selectedExerciseForModal, numSets, numDurationSeconds);
     startExercise(selectedExerciseForModal, calculatedTotalDuration);
   };
 
   const startExercise = (exercise, duration) => {
-    // Bersihkan semua yang mungkin masih berjalan
+    // Bersihkan semua
     clearInterval(timerRef.current);
     countdownTimeoutRef.current.forEach(t => clearTimeout(t));
     countdownTimeoutRef.current = [];
     Speech.stop();
     spokenCountRef.current = new Set();
 
-    // Tampilkan kartu sesi, timer BELUM jalan
     setActiveExercise(exercise);
     setIsPaused(false);
     setTimeRemaining(duration);
@@ -455,20 +513,16 @@ export default function OlahragaScreen() {
     setIsCountingDown(false);
     setCountdownNum(null);
     progressAnim.setValue(0);
-
-    // ── Fungsi yang dijalankan setelah countdown selesai ──
+    setIsSessionFinished(false); // Reset session status di sini
+    
     const beginTimer = () => {
       setIsCountingDown(false);
       setCountdownNum(null);
       Speech.speak('Mulai!', {
-        language: 'id-ID',
-        rate: 1.0,
+        language: 'id-ID', rate: 1.0,
         onDone: () => {
           Animated.timing(progressAnim, {
-            toValue: 1,
-            duration: duration * 1000,
-            easing: Easing.linear,
-            useNativeDriver: false,
+            toValue: 1, duration: duration * 1000, easing: Easing.linear, useNativeDriver: false,
           }).start();
 
           timerRef.current = setInterval(() => {
@@ -481,10 +535,21 @@ export default function OlahragaScreen() {
               if (next > 0 && next <= 5) speak(`${next}`);
               if (next <= 0) {
                 clearInterval(timerRef.current);
+                setIsSessionFinished(true);
                 speak('Selesai! Kerja bagus.');
                 const multiplier = duration / 30;
                 setCaloriesBurned((c) => parseFloat((c + 1.5 * multiplier).toFixed(1)));
                 setActiveMinutes((m) => m + Math.floor(duration / 60));
+
+                // --- LOGIKA BERDASARKAN MODE YANG DIPILIH DI MODAL ---
+                if (finishMode === 'next') {
+                  setTimeout(() => handleNextExercise(), 600);
+                } else if (finishMode === 'auto') {
+                  if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
+                  autoPlayTimeoutRef.current = setTimeout(() => {
+                    handleNextExercise();
+                  }, 3000);
+                }
                 return 0;
               }
               return next;
@@ -494,74 +559,58 @@ export default function OlahragaScreen() {
       });
     };
 
-    // ── Countdown 1: angka "1" ──
     const sayOne = () => {
-      Speech.speak('1', {
-        language: 'id-ID',
-        rate: 1.0,
-        pitch: 1.2,
-        onStart: () => setCountdownNum(1),   // Nomor muncul SAAT suara mulai
-        onDone: beginTimer,
-      });
+      Speech.speak('1', { language: 'id-ID', rate: 1.0, pitch: 1.2, onStart: () => setCountdownNum(1), onDone: beginTimer });
     };
-
-    // ── Countdown 2: angka "2" ──
     const sayTwo = () => {
-      Speech.speak('2', {
-        language: 'id-ID',
-        rate: 1.0,
-        pitch: 1.1,
-        onStart: () => setCountdownNum(2),   // Nomor muncul SAAT suara mulai
-        onDone: sayOne,
-      });
+      Speech.speak('2', { language: 'id-ID', rate: 1.0, pitch: 1.1, onStart: () => setCountdownNum(2), onDone: sayOne });
     };
-
-    // ── Countdown 3: angka "3" ──
     const sayThree = () => {
       setIsCountingDown(true);
-      Speech.speak('3', {
-        language: 'id-ID',
-        rate: 1.0,
-        pitch: 1.0,
-        onStart: () => setCountdownNum(3),   // Nomor muncul SAAT suara mulai
-        onDone: sayTwo,
-      });
+      Speech.speak('3', { language: 'id-ID', rate: 1.0, pitch: 1.0, onStart: () => setCountdownNum(3), onDone: sayTwo });
     };
 
-    // ── Fase 1: Baca instruksi → setelah selesai langsung mulai countdown ──
     Speech.speak(`${exercise.name}. ${exercise.instruction}`, {
-      language: 'id-ID',
-      rate: 0.9,
-      onDone: sayThree,   // Countdown mulai SETELAH instruksi selesai dibacakan
+      language: 'id-ID', rate: 0.9, onDone: sayThree
     });
   };
-
-
-
 
   const handlePause = () => {
     setIsPaused(true);
     clearInterval(timerRef.current);
     progressAnim.stopAnimation();
     Speech.stop();
+    if (autoPlayTimeoutRef.current) {
+      clearTimeout(autoPlayTimeoutRef.current);
+      autoPlayTimeoutRef.current = null;
+    }
   };
 
   const handleResume = () => {
     if (!activeExercise) return;
     setIsPaused(false);
     speak('Lanjutkan gerakan.');
-
     timerRef.current = setInterval(() => {
       setTimeRemaining((prev) => {
         const next = prev - 1;
         if (next > 0 && next <= 5) speak(`${next}`);
         if (next <= 0) {
           clearInterval(timerRef.current);
+          setIsSessionFinished(true);
           speak('Selesai! Kerja bagus.');
           const baseDuration = 30;
           const multiplier = totalDuration / baseDuration;
           setCaloriesBurned((c) => parseFloat((c + 1.5 * multiplier).toFixed(1)));
           setActiveMinutes((m) => m + Math.floor(totalDuration / 60));
+
+          if (finishMode === 'next') {
+            setTimeout(() => handleNextExercise(), 600);
+          } else if (finishMode === 'auto') {
+            if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
+            autoPlayTimeoutRef.current = setTimeout(() => {
+              handleNextExercise();
+            }, 3000);
+          }
           return 0;
         }
         return next;
@@ -573,6 +622,10 @@ export default function OlahragaScreen() {
     clearInterval(timerRef.current);
     countdownTimeoutRef.current.forEach(t => clearTimeout(t));
     countdownTimeoutRef.current = [];
+    if (autoPlayTimeoutRef.current) {
+      clearTimeout(autoPlayTimeoutRef.current);
+      autoPlayTimeoutRef.current = null;
+    }
     progressAnim.stopAnimation();
     Speech.stop();
     setIsCountingDown(false);
@@ -580,6 +633,43 @@ export default function OlahragaScreen() {
     setActiveExercise(null);
     setIsPaused(false);
     setTimeRemaining(0);
+    setIsSessionFinished(false);
+    setAutoPlay(false);
+  };
+
+  const handleNextExercise = () => {
+    // --- PENTING: Cegah crash jika activeExercise null ---
+    if (!activeExercise) {
+      if (autoPlay) setAutoPlay(false);
+      return;
+    }
+    // ------------------------------------------------
+
+    const list = EXERCISE_DATA[activeTab] || [];
+    if (list.length === 0) {
+      handleStop();
+      return;
+    }
+
+    const currentIndex = list.findIndex(ex => ex.id === activeExercise.id);
+    let nextIndex = currentIndex + 1;
+    
+    if (nextIndex >= list.length) {
+      nextIndex = 0;
+      if (autoPlay) setAutoPlay(false);
+    }
+
+    const nextExercise = list[nextIndex];
+    Speech.stop();
+    Speech.speak('Latihan selanjutnya...', {
+      language: 'id-ID', rate: 0.9, pitch: 0.85,
+      onDone: () => {
+        const numSets = parseInt(sets) || 1;
+        const numDurationSeconds = parseInt(durationSeconds) || 30;
+        saveToHistory(nextExercise, numSets, numDurationSeconds);
+        startExercise(nextExercise, numSets * numDurationSeconds);
+      }
+    });
   };
 
   const formatTime = (seconds) => {
@@ -596,6 +686,7 @@ export default function OlahragaScreen() {
       const all = Object.values(EXERCISE_DATA).flat();
       return all.filter((ex) => wishlist.includes(ex.id));
     }
+    if (activeTab === 'History') return [];
     return EXERCISE_DATA[activeTab] || [];
   };
 
@@ -605,49 +696,20 @@ export default function OlahragaScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
-        {/* HEADER */}
         <View style={styles.header}>
           <Text style={styles.title}>Olahraga</Text>
           <Text style={styles.subtitle}>Aktivitas fisik ringan dengan panduan suara.</Text>
         </View>
 
-        {/* TOMBOL CEK SUARA */}
-        <TouchableOpacity 
-          style={styles.testVoiceBtn}
-          onPress={() => {
-            if (!isVoiceLoaded) {
-              Alert.alert("Memuat Suara", "Suara sedang dimuat, silakan tunggu sebentar...");
-              return;
-            }
-            speak('Halo, ini adalah tes suara. Aplikasi Olahraga siap digunakan!');
-          }}
-        >
-          <Ionicons name="volume-high" size={20} color="#2563EB" style={{ marginRight: 8 }} />
-          <Text style={styles.testVoiceBtnText}>Cek Suara / Test Voice</Text>
-        </TouchableOpacity>
-
-        {/* TAB KATEGORI (Bergaya Seperti Gambar) */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabRow}
-        >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabRow}>
           {CATEGORY_TABS.map((tab) => (
             <TouchableOpacity
               key={tab.id}
               style={[styles.tabChip, activeTab === tab.id && styles.tabChipActive]}
               onPress={() => setActiveTab(tab.id)}
             >
-              <Ionicons
-                name={tab.icon}
-                size={16}
-                color={activeTab === tab.id ? '#2563EB' : '#6B7280'}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
-                {tab.label}
-              </Text>
+              <Ionicons name={tab.icon} size={16} color={activeTab === tab.id ? '#2563EB' : '#6B7280'} style={{ marginRight: 6 }} />
+              <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>{tab.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -664,29 +726,15 @@ export default function OlahragaScreen() {
             </View>
 
             <View style={styles.timerContainer}>
-              <Animated.View
-                style={[
-                  styles.timerCircle,
-                  {
-                    width: progressAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ['0%', '100%'],
-                    }),
-                  },
-                ]}
-              />
+              <Animated.View style={[styles.timerCircle, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
               <View style={styles.timerTextWrap}>
                 {isCountingDown ? (
-                  // Tampilan countdown
                   <>
                     <Text style={styles.timerLabel}>Bersiap...</Text>
-                    <Text style={[styles.timerValue, { color: '#2563EB', fontSize: 64 }]}>
-                      {countdownNum ?? '...'}
-                    </Text>
+                    <Text style={[styles.timerValue, { color: '#2563EB', fontSize: 64 }]}>{countdownNum ?? '...'}</Text>
                     <Text style={styles.timerSubLabel}>Segera mulai</Text>
                   </>
                 ) : (
-                  // Tampilan timer normal
                   <>
                     <Text style={styles.timerLabel}>Sisa Waktu</Text>
                     <Text style={styles.timerValue}>{formatTime(timeRemaining)}</Text>
@@ -697,38 +745,85 @@ export default function OlahragaScreen() {
             </View>
 
             <View style={styles.controlRow}>
-              <TouchableOpacity
-                style={[styles.controlBtn, isCountingDown && { opacity: 0.4 }]}
-                onPress={isPaused ? handleResume : handlePause}
-                disabled={isCountingDown}
-              >
-                <Ionicons name={isPaused ? 'play' : 'pause'} size={22} color="#2563EB" />
-                <Text style={styles.controlBtnLabel}>{isPaused ? 'Lanjut' : 'Jeda'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.controlBtn, { borderColor: '#EF5350' }]}
-                onPress={handleStop}
-              >
-                <Ionicons name="stop" size={22} color="#EF5350" />
-                <Text style={[styles.controlBtnLabel, { color: '#EF5350' }]}>Stop</Text>
-              </TouchableOpacity>
+              {isSessionFinished ? (
+                <>
+                  <TouchableOpacity
+                    style={[styles.controlBtn, { borderColor: '#10B981', flex: 1 }]}
+                    onPress={() => {
+                      if (autoPlayTimeoutRef.current) { clearTimeout(autoPlayTimeoutRef.current); autoPlayTimeoutRef.current = null; }
+                      handleNextExercise();
+                    }}
+                  >
+                    <Ionicons name="play-skip-forward" size={22} color="#10B981" />
+                    <Text style={[styles.controlBtnLabel, { color: '#10B981' }]}>Latihan Selanjutnya</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.controlBtn, { borderColor: autoPlay ? '#F59E0B' : '#D1D5DB', flex: 1, backgroundColor: autoPlay ? '#FFFBEB' : 'transparent' }]}
+                    onPress={() => {
+                      setAutoPlay(!autoPlay);
+                      if (autoPlayTimeoutRef.current) {
+                        clearTimeout(autoPlayTimeoutRef.current);
+                        autoPlayTimeoutRef.current = null;
+                      } else {
+                        autoPlayTimeoutRef.current = setTimeout(() => {
+                          handleNextExercise();
+                        }, 3000);
+                      }
+                    }}
+                  >
+                    <Ionicons name={autoPlay ? 'play-forward' : 'play-forward-outline'} size={22} color={autoPlay ? '#F59E0B' : '#9CA3AF'} />
+                    <Text style={[styles.controlBtnLabel, { color: autoPlay ? '#F59E0B' : '#9CA3AF' }]}>{autoPlay ? 'Auto: Nyala' : 'Auto Play'}</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity style={[styles.controlBtn, isCountingDown && { opacity: 0.4 }]} onPress={isPaused ? handleResume : handlePause} disabled={isCountingDown}>
+                    <Ionicons name={isPaused ? 'play' : 'pause'} size={22} color="#2563EB" />
+                    <Text style={styles.controlBtnLabel}>{isPaused ? 'Lanjut' : 'Jeda'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.controlBtn, { borderColor: '#EF5350' }]} onPress={handleStop}>
+                    <Ionicons name="stop" size={22} color="#EF5350" />
+                    <Text style={[styles.controlBtnLabel, { color: '#EF5350' }]}>Stop</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </View>
         )}
 
-        {/* DAFTAR GERAKAN */}
+        {/* DAFTAR GERAKAN / HISTORI */}
         <View style={styles.listSection}>
           <Text style={styles.sectionLabel}>
-            {activeTab === 'Wishlist' ? 'Gerakan Favorit Saya' : `Latihan ${activeTab}`}
+            {activeTab === 'Wishlist' ? 'Gerakan Favorit Saya' : activeTab === 'History' ? 'Histori Latihan' : `Latihan ${activeTab}`}
           </Text>
-
-          {displayedExercises.length === 0 ? (
+          {activeTab === 'History' ? (
+            history.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="time-outline" size={40} color="#9CA3AF" />
+                <Text style={styles.emptyStateText}>Belum ada histori latihan.</Text>
+              </View>
+            ) : (
+              history.map((item) => (
+                <View key={item.id} style={styles.historyCard}>
+                  <View style={styles.exerciseIconWrap}><Ionicons name={item.icon} size={24} color="#2563EB" /></View>
+                  <View style={styles.exerciseInfo}>
+                    <Text style={styles.exerciseName}>{item.name}</Text>
+                    <Text style={styles.exerciseTarget}>{item.target}</Text>
+                    <Text style={styles.historyDate}>{item.date}</Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={styles.historySets}>{item.sets} Set</Text>
+                    <Text style={styles.historyDuration}>{item.duration}s / Set</Text>
+                  </View>
+                </View>
+              ))
+            )
+          ) : displayedExercises.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="bookmark-outline" size={32} color="#9CA3AF" />
+              <Ionicons name="heart-outline" size={40} color="#9CA3AF" />
               <Text style={styles.emptyStateText}>
-                {activeTab === 'Wishlist'
-                  ? 'Belum ada gerakan favorit. Tekan ikon hati pada card untuk menambahkan.'
-                  : 'Belum ada gerakan di kategori ini.'}
+                {activeTab === 'Wishlist' ? 'Belum ada gerakan favorit. Tekan ikon hati pada card untuk menambahkan.' : 'Belum ada gerakan di kategori ini.'}
               </Text>
             </View>
           ) : (
@@ -737,38 +832,17 @@ export default function OlahragaScreen() {
               const isThisActive = activeExercise?.id === ex.id;
               return (
                 <View key={ex.id} style={styles.exerciseCard}>
-                  <TouchableOpacity
-                    style={styles.wishlistBtn}
-                    onPress={() => toggleWishlist(ex.id)}
-                  >
-                    <Ionicons
-                      name={isFavorite ? 'heart' : 'heart-outline'}
-                      size={20}
-                      color={isFavorite ? '#EF5350' : '#9CA3AF'}
-                    />
+                  <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
+                    <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
                   </TouchableOpacity>
-
-                  <View style={styles.exerciseIconWrap}>
-                    <Ionicons name={ex.icon} size={26} color="#2563EB" />
-                  </View>
-
+                  <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
                   <View style={styles.exerciseInfo}>
                     <Text style={styles.exerciseName}>{ex.name}</Text>
                     <Text style={styles.exerciseTarget}>{ex.target}</Text>
                   </View>
-
-                  <TouchableOpacity
-                    style={[styles.startBtnSmall, isThisActive && styles.startBtnSmallActive]}
-                    onPress={() => openExerciseConfig(ex)}
-                  >
-                    <Ionicons
-                      name={isThisActive ? 'volume-high' : 'play'}
-                      size={16}
-                      color="#FFFFFF"
-                    />
-                    <Text style={styles.startBtnSmallText}>
-                      {isThisActive ? 'Aktif' : 'Mulai'}
-                    </Text>
+                  <TouchableOpacity style={[styles.startBtnSmall, isThisActive && styles.startBtnSmallActive]} onPress={() => openExerciseConfig(ex)}>
+                    <Ionicons name={isThisActive ? 'volume-high' : 'play'} size={16} color="#FFFFFF" />
+                    <Text style={styles.startBtnSmallText}>{isThisActive ? 'Aktif' : 'Mulai'}</Text>
                   </TouchableOpacity>
                 </View>
               );
@@ -797,73 +871,67 @@ export default function OlahragaScreen() {
             </View>
           </View>
         </View>
-
       </ScrollView>
 
-      {/* ============================================================
-          MODAL KONFIGURASI SET & DETIK
-         ============================================================ */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      {/* MODAL KONFIGURASI SET & DETIK + MODE SETELAH SELESAI */}
+      <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Atur Latihan</Text>
-            <Text style={styles.modalSubtitle}>
-              {selectedExerciseForModal ? selectedExerciseForModal.name : ''}
-            </Text>
+            <Text style={styles.modalSubtitle}>{selectedExerciseForModal ? selectedExerciseForModal.name : ''}</Text>
 
-            {/* Input Set */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Jumlah Set</Text>
               <View style={styles.counterRow}>
-                <TouchableOpacity 
-                  style={styles.counterBtn} 
-                  onPress={() => setSets(prev => Math.max(1, parseInt(prev || 1) - 1).toString())}
-                >
+                <TouchableOpacity style={styles.counterBtn} onPress={() => setSets(prev => Math.max(1, parseInt(prev || 1) - 1).toString())}>
                   <Ionicons name="remove" size={20} color="#2563EB" />
                 </TouchableOpacity>
-                <TextInput
-                  style={styles.counterInput}
-                  value={sets}
-                  onChangeText={setSets}
-                  keyboardType="numeric"
-                  textAlign="center"
-                />
-                <TouchableOpacity 
-                  style={styles.counterBtn} 
-                  onPress={() => setSets(prev => (parseInt(prev || 1) + 1).toString())}
-                >
+                <TextInput style={styles.counterInput} value={sets} onChangeText={setSets} keyboardType="numeric" textAlign="center" />
+                <TouchableOpacity style={styles.counterBtn} onPress={() => setSets(prev => (parseInt(prev || 1) + 1).toString())}>
                   <Ionicons name="add" size={20} color="#2563EB" />
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Input Durasi per Set (Detik) */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Durasi per Set (Detik)</Text>
               <View style={styles.counterRow}>
-                <TouchableOpacity 
-                  style={styles.counterBtn} 
-                  onPress={() => setDurationSeconds(prev => Math.max(5, (parseInt(prev || 30) - 5)).toString())}
-                >
+                <TouchableOpacity style={styles.counterBtn} onPress={() => setDurationSeconds(prev => Math.max(5, (parseInt(prev || 30) - 5)).toString())}>
                   <Ionicons name="remove" size={20} color="#2563EB" />
                 </TouchableOpacity>
-                <TextInput
-                  style={styles.counterInput}
-                  value={durationSeconds}
-                  onChangeText={setDurationSeconds}
-                  keyboardType="numeric"
-                  textAlign="center"
-                />
-                <TouchableOpacity 
-                  style={styles.counterBtn} 
-                  onPress={() => setDurationSeconds(prev => (parseInt(prev || 30) + 5).toString())}
-                >
+                <TextInput style={styles.counterInput} value={durationSeconds} onChangeText={setDurationSeconds} keyboardType="numeric" textAlign="center" />
+                <TouchableOpacity style={styles.counterBtn} onPress={() => setDurationSeconds(prev => (parseInt(prev || 30) + 5).toString())}>
                   <Ionicons name="add" size={20} color="#2563EB" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* PILIHAN MODE SETELAH LATIHAN */}
+            <View style={styles.modeSelectGroup}>
+              <Text style={styles.inputLabel}>Setelah latihan ini selesai:</Text>
+              <View style={styles.modeSelectRow}>
+                <TouchableOpacity
+                  style={[styles.modeBtn, finishMode === 'stop' && styles.modeBtnActiveStop]}
+                  onPress={() => setFinishMode('stop')}
+                >
+                  <Ionicons name="stop-circle-outline" size={18} color={finishMode === 'stop' ? '#EF4444' : '#6B7280'} />
+                  <Text style={[styles.modeBtnText, finishMode === 'stop' && styles.modeBtnTextActiveStop]}>Berhenti</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.modeBtn, finishMode === 'next' && styles.modeBtnActiveNext]}
+                  onPress={() => setFinishMode('next')}
+                >
+                  <Ionicons name="play-skip-forward-outline" size={18} color={finishMode === 'next' ? '#2563EB' : '#6B7280'} />
+                  <Text style={[styles.modeBtnText, finishMode === 'next' && styles.modeBtnTextActiveNext]}>Lanjut Manual</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modeBtn, finishMode === 'auto' && styles.modeBtnActiveAuto]}
+                  onPress={() => setFinishMode('auto')}
+                >
+                  <Ionicons name="play-forward" size={18} color={finishMode === 'auto' ? '#F59E0B' : '#6B7280'} />
+                  <Text style={[styles.modeBtnText, finishMode === 'auto' && styles.modeBtnTextActiveAuto]}>Auto Play</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -884,7 +952,7 @@ export default function OlahragaScreen() {
 }
 
 // ============================================================
-// 7. STYLES (Disesuaikan dengan Contoh Gambar)
+// 7. STYLES
 // ============================================================
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F7FF' },
@@ -893,70 +961,22 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },
   subtitle: { fontSize: 15, color: '#6B7280', lineHeight: 22 },
 
-  // TOMBOL TES SUARA
-  testVoiceBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#DBEAFE',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#93C5FD',
-  },
-  testVoiceBtnText: { fontWeight: '700', color: '#2563EB', fontSize: 14 },
-
-  // TAB - GAYA BARU
   tabRow: { paddingBottom: 16, gap: 8 },
-  tabChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    marginRight: 6,
-  },
-  tabChipActive: {
-    backgroundColor: '#F0F7FF',
-    borderWidth: 1.5,
-    borderColor: '#2563EB',
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  tabTextActive: {
-    color: '#2563EB',
-  },
+  tabChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', marginRight: 6 },
+  tabChipActive: { backgroundColor: '#F0F7FF', borderWidth: 1.5, borderColor: '#2563EB' },
+  tabText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
+  tabTextActive: { color: '#2563EB' },
 
-  // CARD UMUM
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
-    elevation: 4,
-  },
+  historyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 14, borderRadius: 16, marginBottom: 10, borderWidth: 1, borderColor: '#E5E7EB' },
+  historyDate: { fontSize: 11, color: '#9CA3AF', marginTop: 4 },
+  historySets: { fontSize: 13, fontWeight: '700', color: '#111827' },
+  historyDuration: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+
+  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, elevation: 4 },
   cardTitle: { fontSize: 17, fontWeight: '700', color: '#111827' },
 
-  // SESI AKTIF
   sessionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  voiceBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#10B981',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
+  voiceBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   voiceBadgeText: { color: '#FFFFFF', fontWeight: '600', fontSize: 10 },
   timerContainer: { height: 130, justifyContent: 'center', alignItems: 'center', marginBottom: 16, position: 'relative' },
   timerCircle: { position: 'absolute', bottom: 0, left: 0, height: 6, backgroundColor: '#2563EB', borderRadius: 6 },
@@ -966,166 +986,56 @@ const styles = StyleSheet.create({
   timerSubLabel: { fontSize: 13, color: '#9CA3AF' },
 
   controlRow: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
-  controlBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    paddingVertical: 12,
-    borderRadius: 14,
-    gap: 4,
-  },
+  controlBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#D1D5DB', paddingVertical: 12, borderRadius: 14, gap: 4 },
   controlBtnLabel: { fontSize: 13, fontWeight: '600', color: '#374151' },
 
-  // LIST GERAKAN
   listSection: { marginBottom: 16 },
   sectionLabel: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 10 },
-  exerciseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 2,
-  },
+  exerciseCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 12, marginBottom: 10, shadowColor: '#000', shadowOpacity: 0.03, shadowOffset: { width: 0, height: 4 }, shadowRadius: 8, elevation: 2 },
   wishlistBtn: { paddingRight: 10 },
-  exerciseIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#EFF3FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
+  exerciseIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#EFF3FF', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   exerciseInfo: { flex: 1 },
   exerciseName: { fontSize: 15, fontWeight: '700', color: '#111827' },
   exerciseTarget: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  startBtnSmall: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    gap: 4,
-  },
+  startBtnSmall: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, gap: 4 },
   startBtnSmallActive: { backgroundColor: '#10B981' },
   startBtnSmallText: { color: '#FFFFFF', fontWeight: '700', fontSize: 12 },
 
-  // EMPTY STATE
   emptyState: { alignItems: 'center', paddingVertical: 30, paddingHorizontal: 20 },
   emptyStateText: { textAlign: 'center', color: '#9CA3AF', fontSize: 13, marginTop: 10, lineHeight: 20 },
 
-  // METRIK
   metricRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 14 },
   metricItem: { flex: 1, alignItems: 'center', backgroundColor: '#F9FAFB', paddingVertical: 12, borderRadius: 14 },
   metricValue: { fontSize: 18, fontWeight: '700', color: '#111827', marginTop: 6 },
   metricUnit: { fontSize: 13, fontWeight: '400', color: '#6B7280' },
   metricLabel: { fontSize: 11, color: '#6B7280', marginTop: 2 },
 
-  // ===== STYLE MODAL =====
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '85%',
-    maxWidth: 380,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 20,
-  },
-  inputGroup: {
-    width: '100%',
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  counterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  counterBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EFF6FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  counterInput: {
-    width: 60,
-    height: 44,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginTop: 8,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-  },
-  cancelBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  confirmBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: '#2563EB',
-    alignItems: 'center',
-  },
-  confirmBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '85%', maxWidth: 380, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 10 },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 4 },
+  modalSubtitle: { fontSize: 14, color: '#6B7280', marginBottom: 20 },
+  inputGroup: { width: '100%', marginBottom: 16, alignItems: 'center' },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  counterRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  counterBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center' },
+  counterInput: { width: 60, height: 44, backgroundColor: '#F9FAFB', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', fontSize: 18, fontWeight: '700', color: '#111827' },
+  modalActions: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 12, marginTop: 8 },
+  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: '#F3F4F6', alignItems: 'center' },
+  cancelBtnText: { fontSize: 15, fontWeight: '600', color: '#4B5563' },
+  confirmBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: '#2563EB', alignItems: 'center' },
+  confirmBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+
+  modeSelectGroup: { width: '100%', marginBottom: 16, alignItems: 'center' },
+  modeSelectRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, flexWrap: 'wrap' },
+  modeBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1.5, borderColor: 'transparent', gap: 4 },
+  modeBtnText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  
+  modeBtnActiveStop: { backgroundColor: '#FEF2F2', borderColor: '#EF4444' },
+  modeBtnTextActiveStop: { color: '#EF4444' },
+  
+  modeBtnActiveNext: { backgroundColor: '#EFF6FF', borderColor: '#2563EB' },
+  modeBtnTextActiveNext: { color: '#2563EB' },
+  
+  modeBtnActiveAuto: { backgroundColor: '#FFFBEB', borderColor: '#F59E0B' },
+  modeBtnTextActiveAuto: { color: '#F59E0B' },
 });

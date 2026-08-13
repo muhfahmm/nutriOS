@@ -387,6 +387,57 @@ app.delete('/api/anak/:id', async (req, res) => {
 });
 
 
+
+// === ENDPOINT RIWAYAT OLAHRAGA (EXERCISE) ===
+
+app.get('/api/riwayat-olahraga/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    // Cek jika userId adalah guest atau 'null' string
+    const queryUserId = (userId === 'null' || !userId) ? null : userId;
+    
+    let rows;
+    if (queryUserId) {
+      [rows] = await pool.execute(
+        'SELECT id, exercise_id, name, target, sets, duration, date FROM riwayat_olahraga WHERE user_id = ? ORDER BY id DESC',
+        [queryUserId]
+      );
+    } else {
+      [rows] = await pool.execute(
+        'SELECT id, exercise_id, name, target, sets, duration, date FROM riwayat_olahraga WHERE user_id IS NULL ORDER BY id DESC'
+      );
+    }
+    return res.json(rows);
+  } catch (error) {
+    console.error('Error getting exercise history:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat mengambil riwayat olahraga.' });
+  }
+});
+
+app.post('/api/riwayat-olahraga', async (req, res) => {
+  try {
+    const { userId, exerciseId, name, target, sets, duration, date } = req.body;
+    if (!exerciseId || !name || !target || sets === undefined || duration === undefined) {
+      return res.status(400).json({ message: 'Data riwayat olahraga tidak lengkap.' });
+    }
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    const queryUserId = (userId === 'null' || !userId) ? null : userId;
+
+    await pool.execute(
+      'INSERT INTO riwayat_olahraga (user_id, exercise_id, name, target, sets, duration, date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [queryUserId, exerciseId, name, target, sets, duration, date || new Date().toISOString()]
+    );
+    return res.status(201).json({ message: 'Riwayat olahraga berhasil disimpan.' });
+  } catch (error) {
+    console.error('Error saving exercise record:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat menyimpan riwayat olahraga.' });
+  }
+});
+
+
 // === ENDPOINT RIWAYAT PERTUMBUHAN USER (IMT) ===
 
 app.get('/api/pertumbuhan-user/:userId', async (req, res) => {
