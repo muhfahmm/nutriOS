@@ -1,11 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Animated, Easing } from 'react-native';
-import { useState, useContext, useRef } from 'react';
+import { useState, useContext, useRef, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from './auth/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 if (Text && !Text.defaultProps) {
   Text.defaultProps = {};
@@ -154,8 +155,39 @@ export function HomeScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   const greetingName = user?.nama_lengkap ? `Hai, ${user.nama_lengkap}` : 'Hai, user';
 
+  // --- Streak dari AsyncStorage (sinkron dengan halaman Olahraga) ---
+  const [streakCount, setStreakCount] = useState(0);
+
+  useEffect(() => {
+    const updateStreak = async () => {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const stored = await AsyncStorage.getItem('olahraga_streak');
+        const data = stored ? JSON.parse(stored) : { count: 0, lastDate: null };
+
+        if (data.lastDate === today) {
+          setStreakCount(data.count);
+        } else {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+          const newCount =
+            data.lastDate === yesterdayStr ? data.count + 1 : 1;
+
+          const newData = { count: newCount, lastDate: today };
+          await AsyncStorage.setItem('olahraga_streak', JSON.stringify(newData));
+          setStreakCount(newCount);
+        }
+      } catch (e) {
+        console.warn('Gagal membaca streak di homepage:', e);
+      }
+    };
+    updateStreak();
+  }, []);
+
   const streakStats = [
-    { icon: 'flame', label: 'Hari Aktif', value: '5 Hari', note: 'berturut-turut', color: '#F97316' },
+    { icon: 'flame', label: 'Hari Aktif', value: `${streakCount} Hari`, note: 'berturut-turut', color: '#F97316' },
     { icon: 'time', label: 'Total Olahraga', value: '38 Menit', note: 'minggu ini', color: '#3B82F6' },
     { icon: 'restaurant', label: 'Makan Tercatat', value: '95%', note: 'minggu ini', color: '#10B981' },
   ];
