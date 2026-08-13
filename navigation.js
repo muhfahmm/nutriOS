@@ -15,6 +15,7 @@ if (Text && Text.defaultProps) {
 }
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import JadwalTidurScreen from './card_menu/1_jadwal_tidur';
+import JadwalTidurDetail from './card_menu/1_jadwal_tidur/JadwalTidurDetail';
 import KalkulatorPertumbuhanScreen from './card_menu/2_kalkulator_pertumbuhan';
 import OlahragaScreen from './card_menu/3_olahraga';
 import PengelolaStresScreen from './card_menu/4_pengelola_stres';
@@ -329,6 +330,7 @@ function HomeStack() {
     <HomeStackNavigator.Navigator screenOptions={{ headerShown: false }}>
       <HomeStackNavigator.Screen name="HomeMain" component={HomeScreen} />
       <HomeStackNavigator.Screen name="JadwalTidur" component={JadwalTidurScreen} />
+      <HomeStackNavigator.Screen name="JadwalTidurDetail" component={JadwalTidurDetail} />
       <HomeStackNavigator.Screen name="KalkulatorPertumbuhan" component={KalkulatorPertumbuhanScreen} />
       <HomeStackNavigator.Screen name="OlahragaMenu" component={OlahragaScreen} />
       <HomeStackNavigator.Screen name="PengelolaStres" component={PengelolaStresScreen} />

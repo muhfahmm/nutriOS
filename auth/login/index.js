@@ -138,6 +138,18 @@ export default function LoginScreen({ navigation }) {
             Belum punya akun? <Text style={styles.footerHighlight}>Daftar</Text>
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.footer, { marginTop: 12 }]} 
+          onPress={() => {
+            setUser(null); // Pastikan state diatur sebagai guest
+            if (navigation) navigation.replace('MainTabs');
+          }}
+        >
+          <Text style={[styles.footerHighlight, { color: '#10B981', fontWeight: '700' }]}>
+            Masuk sebagai Tamu (Guest)
+          </Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

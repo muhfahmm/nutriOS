@@ -54,9 +54,36 @@ function resolvePortFromManifest(manifest) {
 }
 
 function resolveExpoHost() {
+  // Check candidates in prioritized order
+  const hostCandidates = [
+    Constants.expoGoConfig?.debuggerHost,
+    Constants.expoGoConfig?.hostUri,
+    Constants.hostUri,
+    Constants.manifest2?.extra?.expoGo?.debuggerHost,
+    Constants.manifest?.debuggerHost,
+    Constants.manifest?.packagerOpts?.packagerHost,
+    Constants.manifest?.hostUri,
+    Constants.expoConfig?.hostUri,
+    Constants.expoConfig?.extra?.API_HOST,
+    Constants.expoConfig?.extra?.apiHost,
+    Constants.expoConfig?.extra?.API_BASE_URL,
+    Constants.expoConfig?.extra?.apiBaseUrl,
+  ];
+
+  let host = null;
+  for (const candidate of hostCandidates) {
+    if (typeof candidate === 'string' && candidate.length > 0) {
+      const cleaned = candidate.replace(/^https?:\/\//, '').split(':')[0];
+      if (cleaned.length > 0) {
+        host = cleaned;
+        break;
+      }
+    }
+  }
+
   const manifest = Constants.manifest || Constants.manifest2 || Constants.expoConfig;
-  const host = resolveHostFromManifest(manifest);
-  const port = resolvePortFromManifest(manifest);
+  const port = resolvePortFromManifest(manifest) || Constants.expoGoConfig?.extra?.expoConfig?.extra?.API_PORT;
+
   return { host, port };
 }
 

@@ -26,3 +26,17 @@ CREATE TABLE IF NOT EXISTS anak (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 4. Buat Tabel jadwal_tidur untuk menampung target tidur harian user (user_id NULL jika tidak login)
+CREATE TABLE IF NOT EXISTS jadwal_tidur (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    sleep_time VARCHAR(10) NOT NULL,
+    wake_time VARCHAR(10) NOT NULL,
+    age_group VARCHAR(50) NOT NULL,
+    notif_bedtime TINYINT(1) DEFAULT 1,
+    notif_screen_free TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
