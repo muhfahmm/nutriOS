@@ -313,6 +313,12 @@ export default function OlahragaScreen() {
   const [wishlist, setWishlist] = useState([]);
 
   const [activeExercise, setActiveExercise] = useState(null);
+  const activeExerciseRef = useRef(null);
+
+  const updateActiveExercise = (exercise) => {
+    setActiveExercise(exercise);
+    activeExerciseRef.current = exercise;
+  };
   const [isPaused, setIsPaused] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
@@ -334,6 +340,12 @@ export default function OlahragaScreen() {
 
   // --- STATE MODE SETELAH LATIHAN ---
   const [finishMode, setFinishMode] = useState('stop'); // 'stop', 'next', 'auto'
+  const finishModeRef = useRef('stop');
+
+  const updateFinishMode = (mode) => {
+    setFinishMode(mode);
+    finishModeRef.current = mode;
+  };
   
   // --- STATE COUNTDOWN SEBELUM MULAI ---
   const [isCountingDown, setIsCountingDown] = useState(false);
@@ -342,7 +354,13 @@ export default function OlahragaScreen() {
 
   // --- STATE AUTO PLAY ---
   const [autoPlay, setAutoPlay] = useState(false);
+  const autoPlayRef = useRef(false);
   const autoPlayTimeoutRef = useRef(null);
+
+  const updateAutoPlayState = (val) => {
+    setAutoPlay(val);
+    autoPlayRef.current = val;
+  };
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const timerRef = useRef(null);
@@ -475,27 +493,32 @@ export default function OlahragaScreen() {
     setSets('1');
     setDurationSeconds('30');
     setSelectedExerciseForModal(exercise);
-    setFinishMode('stop'); // Reset mode default saat membuka modal
+    // Sesuaikan pilihan default modal dengan status autoplay aktif saat ini
+    updateFinishMode(autoPlayRef.current ? 'auto' : 'stop');
     setModalVisible(true);
   };
 
   const confirmStartExercise = () => {
-    const numSets = parseInt(sets);
-    const numDurationSeconds = parseInt(durationSeconds);
+    const numSets = parseInt(sets) || 1;
+    const numDurationSeconds = parseInt(durationSeconds) || 30;
     const calculatedTotalDuration = numSets * numDurationSeconds;
+    
+    const exercise = selectedExerciseForModal; // Simpan copy lokal sebelum di-reset
     
     setModalVisible(false);
     setSelectedExerciseForModal(null);
 
     // Sinkronkan state autoPlay dengan mode yang dipilih
-    if (finishMode === 'auto') {
-      setAutoPlay(true);
+    if (finishModeRef.current === 'auto') {
+      updateAutoPlayState(true);
     } else {
-      setAutoPlay(false);
+      updateAutoPlayState(false);
     }
 
-    saveToHistory(selectedExerciseForModal, numSets, numDurationSeconds);
-    startExercise(selectedExerciseForModal, calculatedTotalDuration);
+    if (exercise) {
+      saveToHistory(exercise, numSets, numDurationSeconds);
+      startExercise(exercise, calculatedTotalDuration);
+    }
   };
 
   const startExercise = (exercise, duration) => {
@@ -506,7 +529,7 @@ export default function OlahragaScreen() {
     Speech.stop();
     spokenCountRef.current = new Set();
 
-    setActiveExercise(exercise);
+    updateActiveExercise(exercise);
     setIsPaused(false);
     setTimeRemaining(duration);
     setTotalDuration(duration);
@@ -518,61 +541,141 @@ export default function OlahragaScreen() {
     const beginTimer = () => {
       setIsCountingDown(false);
       setCountdownNum(null);
-      Speech.speak('Mulai!', {
-        language: 'id-ID', rate: 1.0,
-        onDone: () => {
-          Animated.timing(progressAnim, {
-            toValue: 1, duration: duration * 1000, easing: Easing.linear, useNativeDriver: false,
-          }).start();
+      
+      let timerStarted = false;
+      const startRunningTimer = () => {
+        if (timerStarted) return;
+        timerStarted = true;
+        Animated.timing(progressAnim, {
+          toValue: 1, duration: duration * 1000, easing: Easing.linear, useNativeDriver: false,
+        }).start();
 
-          timerRef.current = setInterval(() => {
-            setTimeRemaining((prev) => {
-              const next = prev - 1;
-              if (next === Math.floor(duration / 2) && !spokenCountRef.current.has('half')) {
-                spokenCountRef.current.add('half');
-                speak('Setengah jalan, tetap semangat!');
-              }
-              if (next > 0 && next <= 5) speak(`${next}`);
-              if (next <= 0) {
-                clearInterval(timerRef.current);
-                setIsSessionFinished(true);
-                speak('Selesai! Kerja bagus.');
+        timerRef.current = setInterval(() => {
+          setTimeRemaining((prev) => {
+            const next = prev - 1;
+            if (next === Math.floor(duration / 2) && !spokenCountRef.current.has('half')) {
+              spokenCountRef.current.add('half');
+              speak('Setengah jalan, tetap semangat!');
+            }
+            if (next > 0 && next <= 5) speak(`${next}`);
+            if (next <= 0) {
+              clearInterval(timerRef.current);
+              setIsSessionFinished(true);
+              
+              const playFinishedSpeechAndTransition = () => {
                 const multiplier = duration / 30;
                 setCaloriesBurned((c) => parseFloat((c + 1.5 * multiplier).toFixed(1)));
                 setActiveMinutes((m) => m + Math.floor(duration / 60));
 
-                // --- LOGIKA BERDASARKAN MODE YANG DIPILIH DI MODAL ---
-                if (finishMode === 'next') {
-                  setTimeout(() => handleNextExercise(), 600);
-                } else if (finishMode === 'auto') {
-                  if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
-                  autoPlayTimeoutRef.current = setTimeout(() => {
-                    handleNextExercise();
-                  }, 3000);
+                let speechFinishedCalled = false;
+                const onFinishedSpeechDone = () => {
+                  if (speechFinishedCalled) return;
+                  speechFinishedCalled = true;
+                  
+                  if (finishModeRef.current === 'auto') {
+                    if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
+                    autoPlayTimeoutRef.current = setTimeout(() => {
+                      handleNextExercise();
+                    }, 2500); // Jeda 2.5 detik setelah suara selesai berbicara
+                  }
+                };
+
+                const safetySpeech = setTimeout(onFinishedSpeechDone, 3000); // Pemicu cadangan 3s jika TTS mati
+
+                try {
+                  Speech.speak('Selesai! Kerja bagus.', {
+                    language: 'id-ID', rate: 1.0,
+                    onStart: () => {
+                      clearTimeout(safetySpeech);
+                    },
+                    onDone: () => {
+                      onFinishedSpeechDone();
+                    },
+                    onError: () => {
+                      onFinishedSpeechDone();
+                    }
+                  });
+                } catch (e) {
+                  console.warn('Speech.speak finish failed:', e);
+                  clearTimeout(safetySpeech);
+                  onFinishedSpeechDone();
                 }
-                return 0;
-              }
-              return next;
-            });
-          }, 1000);
-        },
-      });
+              };
+
+              playFinishedSpeechAndTransition();
+              return 0;
+            }
+            return next;
+          });
+        }, 1000);
+      };
+
+      // Fallback timer jika Speech 'Mulai!' gagal memicu
+      const safetyMulai = setTimeout(startRunningTimer, 2000);
+
+      try {
+        Speech.speak('Mulai!', {
+          language: 'id-ID', rate: 1.0,
+          onStart: () => {
+            clearTimeout(safetyMulai);
+          },
+          onDone: () => {
+            startRunningTimer();
+          },
+          onError: () => {
+            startRunningTimer();
+          }
+        });
+      } catch (e) {
+        console.warn('Speech.speak "Mulai!" failed:', e);
+        clearTimeout(safetyMulai);
+        startRunningTimer();
+      }
     };
 
-    const sayOne = () => {
-      Speech.speak('1', { language: 'id-ID', rate: 1.0, pitch: 1.2, onStart: () => setCountdownNum(1), onDone: beginTimer });
-    };
-    const sayTwo = () => {
-      Speech.speak('2', { language: 'id-ID', rate: 1.0, pitch: 1.1, onStart: () => setCountdownNum(2), onDone: sayOne });
-    };
-    const sayThree = () => {
+    const startCountdown = () => {
       setIsCountingDown(true);
-      Speech.speak('3', { language: 'id-ID', rate: 1.0, pitch: 1.0, onStart: () => setCountdownNum(3), onDone: sayTwo });
+      setCountdownNum(3);
+      speak('3');
+
+      let currentCount = 3;
+      const countdownInterval = setInterval(() => {
+        currentCount -= 1;
+        if (currentCount === 2) {
+          setCountdownNum(2);
+          speak('2');
+        } else if (currentCount === 1) {
+          setCountdownNum(1);
+          speak('1');
+        } else if (currentCount === 0) {
+          clearInterval(countdownInterval);
+          beginTimer();
+        }
+      }, 1000);
     };
 
-    Speech.speak(`${exercise.name}. ${exercise.instruction}`, {
-      language: 'id-ID', rate: 0.9, onDone: sayThree
-    });
+    let introCalled = false;
+    const goIntro = () => {
+      if (introCalled) return;
+      introCalled = true;
+      startCountdown();
+    };
+    const safetyIntro = setTimeout(goIntro, 8000); // Intro speech is longer, give it 8s fallback
+
+    try {
+      Speech.speak(`${exercise.name}. ${exercise.instruction}`, {
+        language: 'id-ID', rate: 0.9, 
+        onStart: () => {
+          clearTimeout(safetyIntro);
+        },
+        onDone: () => { goIntro(); },
+        onError: () => { goIntro(); }
+      });
+    } catch (e) {
+      console.warn('Speech.speak intro failed:', e);
+      clearTimeout(safetyIntro);
+      goIntro();
+    }
   };
 
   const handlePause = () => {
@@ -597,20 +700,49 @@ export default function OlahragaScreen() {
         if (next <= 0) {
           clearInterval(timerRef.current);
           setIsSessionFinished(true);
-          speak('Selesai! Kerja bagus.');
-          const baseDuration = 30;
-          const multiplier = totalDuration / baseDuration;
-          setCaloriesBurned((c) => parseFloat((c + 1.5 * multiplier).toFixed(1)));
-          setActiveMinutes((m) => m + Math.floor(totalDuration / 60));
+          
+          const playFinishedSpeechAndTransition = () => {
+            const baseDuration = 30;
+            const multiplier = totalDuration / baseDuration;
+            setCaloriesBurned((c) => parseFloat((c + 1.5 * multiplier).toFixed(1)));
+            setActiveMinutes((m) => m + Math.floor(totalDuration / 60));
 
-          if (finishMode === 'next') {
-            setTimeout(() => handleNextExercise(), 600);
-          } else if (finishMode === 'auto') {
-            if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
-            autoPlayTimeoutRef.current = setTimeout(() => {
-              handleNextExercise();
-            }, 3000);
-          }
+            let speechFinishedCalled = false;
+            const onFinishedSpeechDone = () => {
+              if (speechFinishedCalled) return;
+              speechFinishedCalled = true;
+              
+              if (finishModeRef.current === 'auto') {
+                if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
+                autoPlayTimeoutRef.current = setTimeout(() => {
+                  handleNextExercise();
+                }, 2500); // Jeda 2.5 detik setelah suara selesai berbicara
+              }
+            };
+
+            const safetySpeech = setTimeout(onFinishedSpeechDone, 3000); // Pemicu cadangan 3s jika TTS mati
+
+            try {
+              Speech.speak('Selesai! Kerja bagus.', {
+                language: 'id-ID', rate: 1.0,
+                onStart: () => {
+                  clearTimeout(safetySpeech);
+                },
+                onDone: () => {
+                  onFinishedSpeechDone();
+                },
+                onError: () => {
+                  onFinishedSpeechDone();
+                }
+              });
+            } catch (e) {
+              console.warn('Speech.speak finish failed:', e);
+              clearTimeout(safetySpeech);
+              onFinishedSpeechDone();
+            }
+          };
+
+          playFinishedSpeechAndTransition();
           return 0;
         }
         return next;
@@ -630,17 +762,19 @@ export default function OlahragaScreen() {
     Speech.stop();
     setIsCountingDown(false);
     setCountdownNum(null);
-    setActiveExercise(null);
+    updateActiveExercise(null);
     setIsPaused(false);
     setTimeRemaining(0);
     setIsSessionFinished(false);
-    setAutoPlay(false);
+    updateAutoPlayState(false);
+    updateFinishMode('stop');
   };
 
   const handleNextExercise = () => {
-    // --- PENTING: Cegah crash jika activeExercise null ---
-    if (!activeExercise) {
-      if (autoPlay) setAutoPlay(false);
+    // --- PENTING: Cegah crash jika activeExerciseRef.current null ---
+    const currentEx = activeExerciseRef.current;
+    if (!currentEx) {
+      if (autoPlayRef.current) updateAutoPlayState(false);
       return;
     }
     // ------------------------------------------------
@@ -651,25 +785,46 @@ export default function OlahragaScreen() {
       return;
     }
 
-    const currentIndex = list.findIndex(ex => ex.id === activeExercise.id);
+    const currentIndex = list.findIndex(ex => ex.id === currentEx.id);
     let nextIndex = currentIndex + 1;
     
     if (nextIndex >= list.length) {
       nextIndex = 0;
-      if (autoPlay) setAutoPlay(false);
+      if (autoPlayRef.current) updateAutoPlayState(false);
     }
 
     const nextExercise = list[nextIndex];
     Speech.stop();
-    Speech.speak('Latihan selanjutnya...', {
-      language: 'id-ID', rate: 0.9, pitch: 0.85,
-      onDone: () => {
-        const numSets = parseInt(sets) || 1;
-        const numDurationSeconds = parseInt(durationSeconds) || 30;
-        saveToHistory(nextExercise, numSets, numDurationSeconds);
-        startExercise(nextExercise, numSets * numDurationSeconds);
-      }
-    });
+
+    let nextSpeechDone = false;
+    const triggerNext = () => {
+      if (nextSpeechDone) return;
+      nextSpeechDone = true;
+      const numSets = parseInt(sets) || 1;
+      const numDurationSeconds = parseInt(durationSeconds) || 30;
+      saveToHistory(nextExercise, numSets, numDurationSeconds);
+      startExercise(nextExercise, numSets * numDurationSeconds);
+    };
+    const safetyNext = setTimeout(triggerNext, 2500); // 2.5 detik pemicu cadangan
+
+    try {
+      Speech.speak('Latihan selanjutnya...', {
+        language: 'id-ID', rate: 0.9, pitch: 0.85,
+        onStart: () => {
+          clearTimeout(safetyNext);
+        },
+        onDone: () => {
+          triggerNext();
+        },
+        onError: () => {
+          triggerNext();
+        }
+      });
+    } catch (e) {
+      console.warn('Speech.speak next failed:', e);
+      clearTimeout(safetyNext);
+      triggerNext();
+    }
   };
 
   const formatTime = (seconds) => {
@@ -761,11 +916,13 @@ export default function OlahragaScreen() {
                   <TouchableOpacity
                     style={[styles.controlBtn, { borderColor: autoPlay ? '#F59E0B' : '#D1D5DB', flex: 1, backgroundColor: autoPlay ? '#FFFBEB' : 'transparent' }]}
                     onPress={() => {
-                      setAutoPlay(!autoPlay);
+                      const newVal = !autoPlay;
+                      updateAutoPlayState(newVal);
+                      updateFinishMode(newVal ? 'auto' : 'stop');
                       if (autoPlayTimeoutRef.current) {
                         clearTimeout(autoPlayTimeoutRef.current);
                         autoPlayTimeoutRef.current = null;
-                      } else {
+                      } else if (newVal) {
                         autoPlayTimeoutRef.current = setTimeout(() => {
                           handleNextExercise();
                         }, 3000);
@@ -911,16 +1068,8 @@ export default function OlahragaScreen() {
               <Text style={styles.inputLabel}>Setelah latihan ini selesai:</Text>
               <View style={styles.modeSelectRow}>
                 <TouchableOpacity
-                  style={[styles.modeBtn, finishMode === 'stop' && styles.modeBtnActiveStop]}
-                  onPress={() => setFinishMode('stop')}
-                >
-                  <Ionicons name="stop-circle-outline" size={18} color={finishMode === 'stop' ? '#EF4444' : '#6B7280'} />
-                  <Text style={[styles.modeBtnText, finishMode === 'stop' && styles.modeBtnTextActiveStop]}>Berhenti</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
                   style={[styles.modeBtn, finishMode === 'next' && styles.modeBtnActiveNext]}
-                  onPress={() => setFinishMode('next')}
+                  onPress={() => updateFinishMode('next')}
                 >
                   <Ionicons name="play-skip-forward-outline" size={18} color={finishMode === 'next' ? '#2563EB' : '#6B7280'} />
                   <Text style={[styles.modeBtnText, finishMode === 'next' && styles.modeBtnTextActiveNext]}>Lanjut Manual</Text>
@@ -928,9 +1077,9 @@ export default function OlahragaScreen() {
 
                 <TouchableOpacity
                   style={[styles.modeBtn, finishMode === 'auto' && styles.modeBtnActiveAuto]}
-                  onPress={() => setFinishMode('auto')}
+                  onPress={() => updateFinishMode('auto')}
                 >
-                  <Ionicons name="play-forward" size={18} color={finishMode === 'auto' ? '#F59E0B' : '#6B7280'} />
+                  <Ionicons name="play-forward" size={18} color={finishMode === 'auto' ? '#10B981' : '#6B7280'} />
                   <Text style={[styles.modeBtnText, finishMode === 'auto' && styles.modeBtnTextActiveAuto]}>Auto Play</Text>
                 </TouchableOpacity>
               </View>
@@ -1036,6 +1185,6 @@ const styles = StyleSheet.create({
   modeBtnActiveNext: { backgroundColor: '#EFF6FF', borderColor: '#2563EB' },
   modeBtnTextActiveNext: { color: '#2563EB' },
   
-  modeBtnActiveAuto: { backgroundColor: '#FFFBEB', borderColor: '#F59E0B' },
-  modeBtnTextActiveAuto: { color: '#F59E0B' },
+  modeBtnActiveAuto: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
+  modeBtnTextActiveAuto: { color: '#10B981' },
 });
