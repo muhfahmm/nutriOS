@@ -11,6 +11,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -300,6 +301,7 @@ const CATEGORY_TABS = [
   { id: 'GPS', label: 'Running', icon: 'navigate-outline' },
   { id: 'Wishlist', label: 'Favorit', icon: 'bookmark-outline' },
   { id: 'History', label: 'Histori', icon: 'time-outline' },
+  { id: 'AI', label: 'AI Olahraga', icon: 'sparkles-outline' },
 ];
 
 export default function OlahragaScreen() {
@@ -325,6 +327,70 @@ export default function OlahragaScreen() {
   const [streak, setStreak] = useState(0);
   const [history, setHistory] = useState([]);
   const [isSessionFinished, setIsSessionFinished] = useState(false);
+  const [aiMessages, setAiMessages] = useState([
+    { id: 'greet', sender: 'ai', text: 'Halo! Saya **NutriOS AI Olahraga**. Tanyakan rekomendasi program latihan, cara melakukan gerakan tertentu dengan benar, atau cara melatih konsistensi olahraga Anda!' }
+  ]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleSendAi = async (textToSend) => {
+    const text = textToSend || aiInput;
+    if (!text.trim()) return;
+
+    setAiInput('');
+    const userMsgId = Date.now().toString();
+    setAiMessages(prev => [...prev, { id: userMsgId, sender: 'user', text }]);
+    setAiLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/ask-ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: text,
+          context: {
+            type: 'exercise',
+            caloriesBurned,
+            activeMinutes,
+            streak,
+            history
+          }
+        })
+      });
+
+      const data = await response.json();
+      const aiMsgId = (Date.now() + 1).toString();
+
+      if (response.ok && data.reply) {
+        setAiMessages(prev => [...prev, { id: aiMsgId, sender: 'ai', text: data.reply.trim() }]);
+      } else {
+        setAiMessages(prev => [...prev, { id: aiMsgId, sender: 'ai', text: `⚠️ Gagal mendapatkan saran AI: ${data.message || 'Error server'}` }]);
+      }
+    } catch (e) {
+      setAiMessages(prev => [...prev, { id: Date.now().toString(), sender: 'ai', text: `❌ Gagal terhubung ke server. Pastikan server dev Anda aktif.` }]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const renderAiMessageText = (text, isUser) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return (
+      <Text style={isUser ? styles.aiUserText : styles.aiAiText}>
+        {parts.map((part, index) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return (
+              <Text key={index} style={{ fontWeight: 'bold' }}>
+                {part.slice(2, -2)}
+              </Text>
+            );
+          }
+          return part;
+        })}
+      </Text>
+    );
+  };
 
 
   const [selectedVoice, setSelectedVoice] = useState(null);
@@ -960,7 +1026,7 @@ export default function OlahragaScreen() {
         )}
 
         {}
-        {activeTab !== 'GPS' && (
+        {activeTab !== 'GPS' && activeTab !== 'AI' && (
           <>
             <View style={styles.listSection}>
               <Text style={styles.sectionLabel}>
@@ -1077,6 +1143,69 @@ export default function OlahragaScreen() {
               </View>
             </View>
           </>
+        )}
+
+        {activeTab === 'AI' && (
+          <View style={styles.aiTabCard}>
+            <View style={styles.aiTabHeader}>
+              <Ionicons name="sparkles" size={20} color="#2563EB" style={{ marginRight: 8 }} />
+              <Text style={styles.aiTabTitle}>Asisten AI Olahraga</Text>
+            </View>
+            <Text style={styles.aiTabSubtitle}>Analisis riwayat latihan, rancang jadwal kebugaran mingguan, atau diskusikan teknik gerakan langsung dengan Gemini.</Text>
+
+            <View style={styles.chatArea}>
+              {aiMessages.map((msg) => (
+                <View key={msg.id} style={[styles.bubbleWrap, msg.sender === 'user' ? styles.userBubbleWrap : styles.aiBubbleWrap]}>
+                  {msg.sender === 'ai' && (
+                    <View style={styles.miniAvatar}>
+                      <Ionicons name="sparkles-outline" size={12} color="#2563EB" />
+                    </View>
+                  )}
+                  <View style={[styles.chatBubble, msg.sender === 'user' ? styles.userChatBubble : styles.aiChatBubble]}>
+                    {renderAiMessageText(msg.text, msg.sender === 'user')}
+                  </View>
+                </View>
+              ))}
+              {aiLoading && (
+                <View style={[styles.bubbleWrap, styles.aiBubbleWrap]}>
+                  <View style={styles.miniAvatar}>
+                    <Ionicons name="sparkles-outline" size={12} color="#2563EB" />
+                  </View>
+                  <View style={[styles.chatBubble, styles.aiChatBubble, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+                    <ActivityIndicator size="small" color="#2563EB" />
+                    <Text style={{ fontSize: 13, color: '#374151' }}>Memproses saran kebugaran...</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.quickAskRow}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                {[
+                  'Bantu buat jadwal latihan 15 menit/hari',
+                  'Bagaimana melakukan push up yang benar?',
+                  'Rekomendasi olahraga kardio ringan di rumah',
+                ].map((q, idx) => (
+                  <TouchableOpacity key={idx} style={styles.quickAskBtn} onPress={() => handleSendAi(q)}>
+                    <Text style={styles.quickAskText}>{q}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            <View style={styles.aiInputRow}>
+              <TextInput
+                style={styles.aiInputField}
+                value={aiInput}
+                onChangeText={setAiInput}
+                placeholder="Tanyakan program latihan Anda..."
+                placeholderTextColor="#9CA3AF"
+              />
+              <TouchableOpacity onPress={() => handleSendAi()} style={styles.aiSendBtn} disabled={!aiInput.trim()}>
+                <Ionicons name="send" size={16} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       </ScrollView>
 
@@ -1247,4 +1376,125 @@ const styles = StyleSheet.create({
 
   modeBtnActiveAuto: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
   modeBtnTextActiveAuto: { color: '#10B981' },
+
+  aiTabCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  aiTabHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  aiTabTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  aiTabSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  chatArea: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 12,
+    minHeight: 250,
+    gap: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  bubbleWrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    maxWidth: '85%',
+  },
+  aiBubbleWrap: {
+    alignSelf: 'flex-start',
+    gap: 6,
+  },
+  userBubbleWrap: {
+    alignSelf: 'flex-end',
+  },
+  miniAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  chatBubble: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 16,
+  },
+  aiChatBubble: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 3,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  userChatBubble: {
+    backgroundColor: '#2563EB',
+    borderBottomRightRadius: 3,
+  },
+  aiAiText: {
+    fontSize: 13,
+    color: '#1F2937',
+    lineHeight: 18,
+  },
+  aiUserText: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    lineHeight: 18,
+  },
+  quickAskRow: {
+    marginBottom: 12,
+  },
+  quickAskBtn: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  quickAskText: {
+    fontSize: 11,
+    color: '#4B5563',
+    fontWeight: '600',
+  },
+  aiInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  aiInputField: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    height: 40,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    fontSize: 13,
+    color: '#1F2937',
+  },
+  aiSendBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
