@@ -1,6 +1,5 @@
 // jaringan lan
-$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.99.254"
-npm start
+$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.99.254"; npm start
 
 npm start
 # atau

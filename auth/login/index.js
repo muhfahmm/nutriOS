@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../AuthContext';
-import { API_BASE_URL } from '../api';
+import { API_BASE_URL, fetchWithTimeout } from '../api';
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -35,7 +35,7 @@ export default function LoginScreen({ navigation }) {
     setMessage(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

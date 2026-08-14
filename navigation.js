@@ -22,6 +22,10 @@ import KalkulatorPertumbuhanScreen from './card_menu/2_kalkulator_pertumbuhan';
 import OlahragaScreen from './card_menu/3_olahraga';
 import PengelolaStresScreen from './card_menu/4_pengelola_stres';
 import PolaMakanScreen from './card_menu/5_pola_makan';
+import SarapanScreen from './card_menu/5_pola_makan/SarapanScreen';
+import MakanSiangScreen from './card_menu/5_pola_makan/MakanSiangScreen';
+import MakanMalamScreen from './card_menu/5_pola_makan/MakanMalamScreen';
+import TambahJadwalScreen from './card_menu/5_pola_makan/TambahJadwalScreen';
 import ProfilesScreen from './card_menu/profiles';
 import RekomendasiMakananScreen from './card_menu/6_rekomendasi_makanan';
 import LoginScreen from './auth/login';
@@ -407,6 +411,10 @@ function HomeStack() {
       <HomeStackNavigator.Screen name="OlahragaMenu" component={OlahragaScreen} />
       <HomeStackNavigator.Screen name="PengelolaStres" component={PengelolaStresScreen} />
       <HomeStackNavigator.Screen name="PolaMakan" component={PolaMakanScreen} />
+      <HomeStackNavigator.Screen name="Sarapan" component={SarapanScreen} />
+      <HomeStackNavigator.Screen name="MakanSiang" component={MakanSiangScreen} />
+      <HomeStackNavigator.Screen name="MakanMalam" component={MakanMalamScreen} />
+      <HomeStackNavigator.Screen name="TambahJadwal" component={TambahJadwalScreen} />
       <HomeStackNavigator.Screen name="RekomendasiMakanan" component={RekomendasiMakananScreen} />
     </HomeStackNavigator.Navigator>
   );

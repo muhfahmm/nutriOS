@@ -3,6 +3,8 @@ const cors = require('cors');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
 
 dotenv.config();
 
@@ -11,13 +13,47 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+function getXamppMysqlPort() {
+  const defaultPort = 3306;
+  const myIniPath = 'C:\\xampp\\mysql\\bin\\my.ini';
+  try {
+    if (fs.existsSync(myIniPath)) {
+      const content = fs.readFileSync(myIniPath, 'utf8');
+      const lines = content.split('\n');
+      let inMysqld = false;
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('[mysqld]')) {
+          inMysqld = true;
+          continue;
+        } else if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+          inMysqld = false;
+        }
+        if (inMysqld) {
+          const match = trimmed.match(/^port\s*=\s*(\d+)/i);
+          if (match) {
+            return parseInt(match[1], 10);
+          }
+        }
+      }
+      const generalMatch = content.match(/^\s*port\s*=\s*(\d+)/m);
+      if (generalMatch) {
+        return parseInt(generalMatch[1], 10);
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Gagal membaca port MySQL dari XAMPP my.ini:', err.message);
+  }
+  return defaultPort;
+}
+
 // Database configuration
 const dbConfig = {
   host: process.env.DB_HOST || '127.0.0.1',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'db_nutrios',
-  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : getXamppMysqlPort(),
 };
 
 let pool;
@@ -50,6 +86,14 @@ async function initializeDatabase() {
       }
     } catch (tableError) {
       console.warn('⚠️  Tidak bisa memverifikasi tabel jadwal_tidur:', tableError.message);
+    }
+
+    // Reset/TRUNCATE tabel jadwal_makan pada startup server
+    try {
+      await connection.execute('TRUNCATE TABLE jadwal_makan;');
+      console.log('🔄 Tabel jadwal_makan berhasil di-reset (di-truncate) pada startup server.');
+    } catch (resetError) {
+      console.warn('⚠️ Gagal melakukan reset tabel jadwal_makan:', resetError.message);
     }
 
     connection.release();
@@ -619,6 +663,109 @@ app.post('/api/pertumbuhan-anak', async (req, res) => {
   } catch (error) {
     console.error('Error adding child growth record:', error);
     return res.status(500).json({ message: 'Terjadi kesalahan server saat menyimpan riwayat anak.' });
+  }
+});
+
+// === ENDPOINTS POLA MAKAN ===
+
+app.get('/api/pola-makan/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const queryUserId = (userId === 'null' || userId === 'guest' || !userId) ? null : parseInt(userId, 10);
+    
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    // Ambil jadwal makan
+    let schedulesQuery;
+    let schedulesParams;
+    if (queryUserId) {
+      schedulesQuery = 'SELECT meal_type, meal_time, notif_enabled FROM jadwal_makan WHERE user_id = ?';
+      schedulesParams = [queryUserId];
+    } else {
+      schedulesQuery = 'SELECT meal_type, meal_time, notif_enabled FROM jadwal_makan WHERE user_id IS NULL';
+      schedulesParams = [];
+    }
+    const [schedules] = await pool.execute(schedulesQuery, schedulesParams);
+
+    return res.json({ schedules });
+  } catch (error) {
+    console.error('Error fetching pola makan:', error);
+    return res.status(500).json({ message: 'Gagal mengambil data pola makan.' });
+  }
+});
+
+app.post('/api/jadwal-makan', async (req, res) => {
+  try {
+    const { userId, mealType, mealTime, notifEnabled } = req.body;
+    const queryUserId = (userId === 'null' || userId === 'guest' || !userId) ? null : parseInt(userId, 10);
+    
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    let existingQuery;
+    let existingParams;
+    if (queryUserId) {
+      existingQuery = 'SELECT id FROM jadwal_makan WHERE user_id = ? AND meal_type = ?';
+      existingParams = [queryUserId, mealType];
+    } else {
+      existingQuery = 'SELECT id FROM jadwal_makan WHERE user_id IS NULL AND meal_type = ?';
+      existingParams = [mealType];
+    }
+    const [existing] = await pool.execute(existingQuery, existingParams);
+
+    if (existing.length > 0) {
+      let updateQuery;
+      let updateParams;
+      if (queryUserId) {
+        updateQuery = 'UPDATE jadwal_makan SET meal_time = ?, notif_enabled = ? WHERE user_id = ? AND meal_type = ?';
+        updateParams = [mealTime, notifEnabled ? 1 : 0, queryUserId, mealType];
+      } else {
+        updateQuery = 'UPDATE jadwal_makan SET meal_time = ?, notif_enabled = ? WHERE user_id IS NULL AND meal_type = ?';
+        updateParams = [mealTime, notifEnabled ? 1 : 0, mealType];
+      }
+      await pool.execute(updateQuery, updateParams);
+    } else {
+      await pool.execute(
+        'INSERT INTO jadwal_makan (user_id, meal_type, meal_time, notif_enabled) VALUES (?, ?, ?, ?)',
+        [queryUserId, mealType, mealTime, notifEnabled ? 1 : 0]
+      );
+    }
+
+    return res.json({ message: 'Jadwal makan berhasil disimpan.' });
+  } catch (error) {
+    console.error('Error saving jadwal makan:', error);
+    return res.status(500).json({ message: 'Gagal menyimpan jadwal makan.' });
+  }
+});
+
+app.post('/api/log-makanan', async (req, res) => {
+  try {
+    const { userId, mealType, foodName } = req.body;
+    const queryUserId = (userId === 'null' || userId === 'guest' || !userId) ? null : parseInt(userId, 10);
+
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    const [result] = await pool.execute(
+      'INSERT INTO log_makanan (user_id, meal_type, food_name) VALUES (?, ?, ?)',
+      [queryUserId, mealType, foodName]
+    );
+
+    return res.status(201).json({ message: 'Menu makanan berhasil dicatat.', logId: result.insertId });
+  } catch (error) {
+    console.error('Error saving log makanan:', error);
+    return res.status(500).json({ message: 'Gagal mencatat makanan.' });
+  }
+});
+
+app.delete('/api/log-makanan/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+
+    await pool.execute('DELETE FROM log_makanan WHERE id = ?', [id]);
+    return res.json({ message: 'Menu makanan berhasil dihapus.' });
+  } catch (error) {
+    console.error('Error deleting log makanan:', error);
+    return res.status(500).json({ message: 'Gagal menghapus makanan.' });
   }
 });
 

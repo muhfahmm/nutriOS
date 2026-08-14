@@ -492,70 +492,63 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
         )}
 
         {/* 4. SEKTOR MANAJEMEN ANAK */}
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.cardTitle}>Data Tumbuh Kembang Anak</Text>
-            <TouchableOpacity 
-              style={styles.addChildButton} 
-              onPress={() => {
-                if (!userId) {
-                  setIsLoginPromptVisible(true);
-                } else {
-                  setIsAddChildVisible(true);
-                }
-              }}
-            >
-              <Ionicons name="add" size={16} color="#FFFFFF" />
-              <Text style={styles.addChildButtonText}>Tambah Anak</Text>
-            </TouchableOpacity>
-          </View>
-
-          {!userId ? (
-            <View style={styles.guestWarningBox}>
-              <Ionicons name="lock-closed" size={24} color="#64748B" />
-              <Text style={styles.guestWarningText}>Fitur manajemen anak memerlukan login akun agar data tersimpan dengan aman ke server database.</Text>
-            </View>
-          ) : isLoadingChildren ? (
-            <ActivityIndicator size="small" color="#2563EB" style={{ marginVertical: 20 }} />
-          ) : children.length === 0 ? (
-            <View style={styles.emptyChildrenBox}>
-              <Ionicons name="people-outline" size={32} color="#94A3B8" />
-              <Text style={styles.emptyChildrenText}>Belum ada profil anak terdaftar. Klik "+ Tambah Anak" untuk membuat profil anak Anda.</Text>
-            </View>
-          ) : (
-            children.map((anak) => (
+        {userId && (
+          <View style={styles.card}>
+            <View style={styles.rowBetween}>
+              <Text style={styles.cardTitle}>Data Tumbuh Kembang Anak</Text>
               <TouchableOpacity 
-                key={anak.id} 
-                style={styles.childItemRow}
-                onPress={() => handleOpenAnakDetail(anak)}
-                activeOpacity={0.7}
+                style={styles.addChildButton} 
+                onPress={() => {
+                  setIsAddChildVisible(true);
+                }}
               >
-                <View style={styles.childInfoLeft}>
-                  <View style={styles.childAvatarContainer}>
-                    <Ionicons 
-                      name={anak.jenis_kelamin === 'Laki-laki' ? 'boy' : 'girl'} 
-                      size={24} 
-                      color={anak.jenis_kelamin === 'Laki-laki' ? '#2563EB' : '#EC4899'} 
-                    />
-                  </View>
-                  <View>
-                    <Text style={styles.childNameText}>{anak.nama_anak}</Text>
-                    <Text style={styles.childAgeText}>
-                      Lahir: {anak.tanggal_lahir ? new Date(anak.tanggal_lahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'} ({calculateAgeInMonths(anak.tanggal_lahir)} Bulan)
-                    </Text>
-                  </View>
-                </View>
-                
-                <View style={styles.childInfoRight}>
-                  <View style={styles.miniStatusBadge}>
-                    <Text style={styles.miniStatusBadgeText}>{anak.status_z_score}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color="#64748B" />
-                </View>
+                <Ionicons name="add" size={16} color="#FFFFFF" />
+                <Text style={styles.addChildButtonText}>Tambah Anak</Text>
               </TouchableOpacity>
-            ))
-          )}
-        </View>
+            </View>
+
+            {isLoadingChildren ? (
+              <ActivityIndicator size="small" color="#2563EB" style={{ marginVertical: 20 }} />
+            ) : children.length === 0 ? (
+              <View style={styles.emptyChildrenBox}>
+                <Ionicons name="people-outline" size={32} color="#94A3B8" />
+                <Text style={styles.emptyChildrenText}>Belum ada profil anak terdaftar. Klik "+ Tambah Anak" untuk membuat profil anak Anda.</Text>
+              </View>
+            ) : (
+              children.map((anak) => (
+                <TouchableOpacity 
+                  key={anak.id} 
+                  style={styles.childItemRow}
+                  onPress={() => handleOpenAnakDetail(anak)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.childInfoLeft}>
+                    <View style={styles.childAvatarContainer}>
+                      <Ionicons 
+                        name={anak.jenis_kelamin === 'Laki-laki' ? 'boy' : 'girl'} 
+                        size={24} 
+                        color={anak.jenis_kelamin === 'Laki-laki' ? '#2563EB' : '#EC4899'} 
+                      />
+                    </View>
+                    <View>
+                      <Text style={styles.childNameText}>{anak.nama_anak}</Text>
+                      <Text style={styles.childAgeText}>
+                        Lahir: {anak.tanggal_lahir ? new Date(anak.tanggal_lahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'} ({calculateAgeInMonths(anak.tanggal_lahir)} Bulan)
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.childInfoRight}>
+                    <View style={styles.miniStatusBadge}>
+                      <Text style={styles.miniStatusBadgeText}>{anak.status_z_score}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#64748B" />
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        )}
 
       </ScrollView>
 

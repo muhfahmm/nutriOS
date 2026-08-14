@@ -91,10 +91,27 @@ function resolveExpoHost() {
 
 const isDevice = Constants.isDevice ?? false;
 const { host: resolvedHost, port: resolvedPort } = resolveExpoHost();
-// Menggunakan IP lokal PC 192.168.100.3 untuk pengujian menggunakan HP Fisik (Real Device) agar bisa saling terhubung dalam 1 jaringan Wi-Fi LAN
-const host = '192.168.100.3';
+// Mendeteksi IP Host PC secara otomatis agar dinamis mengikuti jaringan yang digunakan
+const host = resolvedHost || '127.0.0.1';
 const port = resolvedPort || 3000;
 export const API_BASE_URL = `http://${host}:${port}`;
+
+export async function fetchWithTimeout(resource, options = {}) {
+  const { timeout = 5000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(resource, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
 
 if (__DEV__) {
   console.log('[auth/api] FORCED API host to PC Local IP:', host);

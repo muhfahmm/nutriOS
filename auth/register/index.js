@@ -12,7 +12,7 @@ import {
   ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { API_BASE_URL } from '../api';
+import { API_BASE_URL, fetchWithTimeout } from '../api';
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -37,7 +37,7 @@ export default function RegisterScreen({ navigation }) {
 
     const delayDebounce = setTimeout(async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/check-username?username=${encodeURIComponent(username)}`);
+        const response = await fetchWithTimeout(`${API_BASE_URL}/api/check-username?username=${encodeURIComponent(username)}`, { timeout: 3000 });
         if (response.ok) {
           const data = await response.json();
           setIsUsernameTaken(data.taken);
@@ -104,7 +104,7 @@ export default function RegisterScreen({ navigation }) {
     setMessage(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/register`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

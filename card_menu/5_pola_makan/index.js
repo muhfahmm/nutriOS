@@ -1,83 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   StyleSheet, 
   Text, 
   View, 
   ScrollView, 
   TouchableOpacity, 
-  TextInput
+  TextInput,
+  Switch,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { scheduleMealReminders } from '../../components/MealNotificationManager';
+import { AuthContext } from '../../auth/AuthContext';
+import { API_BASE_URL } from '../../auth/api';
 
-export default function PolaMakanScreen() {
+export default function PolaMakanScreen({ navigation, route }) {
+  const { user } = useContext(AuthContext);
+  const userId = user?.id || 'guest';
+
   // --- STATE MOCK (INTERAKTIF) ---
   // 1. Scheduler State
   const [schedule, setSchedule] = useState({
-    breakfast: '07.00',
-    lunch: '12.30',
-    dinner: '18.30',
-    snack1: '09.30',
-    snack2: '15.00'
+    breakfast: '-',
+    lunch: '-',
+    dinner: '-',
   });
 
-  // 2. Notifikasi Cerdas State
-  const [snoozeActive, setSnoozeActive] = useState(false);
+  const [notifStates, setNotifStates] = useState({
+    breakfast: false,
+    lunch: false,
+    dinner: false,
+  });
 
-  // 3. Food Logging State
-  const [foodSearch, setFoodSearch] = useState('');
-  const [portion, setPortion] = useState('1 Porsi');
-  const [isHealthy, setIsHealthy] = useState(null); // null = belum pilih, true = Ya, false = Tidak
-
-  // 4. Dashboard Mock Data
-  const nutrition = {
-    calories: { current: 1200, target: 2100, color: '#3B82F6' },
-    protein: { current: 55, target: 75, color: '#10B981' }, // Hijau Emerald
-    carbs: { current: 160, target: 250, color: '#10B981' },
-    fat: { current: 45, target: 70, color: '#F59E0B' }, // Kuning Amber
-  };
-
-  // --- FUNGSI INTERAKSI ---
-  const updateSchedule = (meal) => {
-    // Simulasi drag-and-drop/ketuk: memutar waktu (06.00 - 22.00 dengan step 30 menit)
-    let currentTime = parseInt(schedule[meal].replace(':', ''));
-    let newTime = currentTime + 30;
-    if (newTime >= 2200) newTime = 600; // Putar balik ke 06.00
-    const formattedTime = (newTime < 1000 ? '0' : '') + String(newTime).slice(0, 2) + '.' + String(newTime).slice(2);
-    setSchedule({ ...schedule, [meal]: formattedTime });
-  };
-
-  const handleSnooze = () => {
-    setSnoozeActive(true);
-    setTimeout(() => setSnoozeActive(false), 5000); // Mock notifikasi kembali setelah 5 detik
-  };
-
-  const handleLogFood = () => {
-    if (!foodSearch) {
-      alert('Silakan ketik nama makanan terlebih dahulu!');
-      return;
+  const fetchPolaMakan = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/pola-makan/${userId}`);
+      if (response.ok) {
+        const { schedules } = await response.json();
+        const mappedSchedule = {
+          breakfast: '-',
+          lunch: '-',
+          dinner: '-',
+        };
+        const mappedNotif = {
+          breakfast: false,
+          lunch: false,
+          dinner: false,
+        };
+        schedules.forEach(item => {
+          if (item.meal_type === 'breakfast') {
+            mappedSchedule.breakfast = item.meal_time;
+            mappedNotif.breakfast = item.notif_enabled === 1;
+          }
+          else if (item.meal_type === 'lunch') {
+            mappedSchedule.lunch = item.meal_time;
+            mappedNotif.lunch = item.notif_enabled === 1;
+          }
+          else if (item.meal_type === 'dinner') {
+            mappedSchedule.dinner = item.meal_time;
+            mappedNotif.dinner = item.notif_enabled === 1;
+          }
+        });
+        setSchedule(mappedSchedule);
+        setNotifStates(mappedNotif);
+      }
+    } catch (error) {
+      console.log('Error fetching pola makan:', error);
     }
-    alert(`✅ Berhasil log: ${foodSearch} (${portion}) - Sehat: ${isHealthy === true ? 'Ya' : isHealthy === false ? 'Tidak' : 'Tidak dinilai'}`);
-    setFoodSearch('');
-    setPortion('1 Porsi');
-    setIsHealthy(null);
   };
 
-  // --- HELPER FORMAT ---
-  const renderProgressBar = (label, value, max, color, unit) => {
-    const percentage = Math.min((value / max) * 100, 100);
-    return (
-      <View style={styles.progressWrapper}>
-        <View style={styles.progressLabelRow}>
-          <Text style={styles.progressLabel}>{label}</Text>
-          <Text style={styles.progressValue}>{value}/{max} {unit}</Text>
-        </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${percentage}%`, backgroundColor: color }]} />
-        </View>
-      </View>
-    );
-  };
+  useEffect(() => {
+    fetchPolaMakan();
+  }, [userId]);
+
+  useEffect(() => {
+    if (route.params?.updatedMeal && route.params?.updatedTime) {
+      fetchPolaMakan();
+      navigation.setParams({ updatedMeal: undefined, updatedTime: undefined });
+    }
+  }, [route.params]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -86,20 +88,28 @@ export default function PolaMakanScreen() {
         {/* HEADER */}
         <View style={styles.header}>
           <Text style={styles.title}>Pola Makan</Text>
-          <Text style={styles.subtitle}>Atur jadwal, catat asupan, dan pantau nutrisi harian.</Text>
+          <Text style={styles.subtitle}>Atur jadwal dan pantau pengingat nutrisi harian.</Text>
         </View>
-
+ 
         {/* 1. SCHEDULER PENGINGAT MAKAN */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>⏰ Scheduler Makan</Text>
-          <Text style={styles.subCardTitle}>Ketuk jam untuk menggeser waktu pengingat</Text>
+          <View style={styles.cardHeaderRow}>
+            <Ionicons name="time" size={22} color="#2563EB" style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>Scheduler Makan</Text>
+          </View>
+          <Text style={styles.subCardTitle}>Ketuk kategori makan untuk mengatur jam pengingat</Text>
           
           <View style={styles.scheduleGrid}>
             {Object.entries(schedule).map(([key, time]) => {
-              const icons = { breakfast: 'cafe-outline', lunch: 'restaurant-outline', dinner: 'moon-outline', snack1: 'nutrition-outline', snack2: 'ice-cream-outline' };
-              const labels = { breakfast: 'Sarapan', lunch: 'Makan Siang', dinner: 'Makan Malam', snack1: 'Snack 1', snack2: 'Snack 2' };
+              const icons = { breakfast: 'cafe-outline', lunch: 'restaurant-outline', dinner: 'moon-outline' };
+              const labels = { breakfast: 'Sarapan', lunch: 'Makan Siang', dinner: 'Makan Malam' };
+              const screenNames = { breakfast: 'Sarapan', lunch: 'MakanSiang', dinner: 'MakanMalam' };
               return (
-                <TouchableOpacity key={key} style={styles.scheduleItem} onPress={() => updateSchedule(key)}>
+                <TouchableOpacity 
+                  key={key} 
+                  style={styles.scheduleItem} 
+                  onPress={() => navigation.navigate(screenNames[key])}
+                >
                   <View style={styles.scheduleIconWrap}>
                     <Ionicons name={icons[key]} size={20} color="#2563EB" />
                   </View>
@@ -110,127 +120,65 @@ export default function PolaMakanScreen() {
                 </TouchableOpacity>
               );
             })}
+
+            {/* Tombol Tambah Jadwal (+ Icon) */}
+            <TouchableOpacity 
+              style={styles.scheduleItem} 
+              onPress={() => navigation.navigate('TambahJadwal')}
+            >
+              <View style={[styles.scheduleIconWrap, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="add" size={24} color="#0284C7" />
+              </View>
+              <Text style={styles.scheduleLabel}>Tambah</Text>
+              <View style={[styles.scheduleTimeBox, { backgroundColor: '#F0F9FF' }]}>
+                <Text style={[styles.scheduleTime, { color: '#0284C7' }]}>Kustom</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* 2. NOTIFIKASI CERDAS (FITUR KUNCI) */}
+        {/* DETAIL PENGINGAT MAKAN TABLE */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>🔔 Notifikasi Cerdas</Text>
-          <View style={styles.notifBox}>
-            <Ionicons name="notifications" size={20} color="#2563EB" style={{ marginRight: 10 }} />
-            <View style={styles.notifContent}>
-              <Text style={styles.notifTitle}>Sudah waktunya makan siang!</Text>
-              <Text style={styles.notifBody}>Bagaimana kalau seporsi nasi merah + ayam bakar + sayur bayam hari ini?</Text>
-            </View>
+          <View style={styles.cardHeaderRow}>
+            <Ionicons name="notifications-outline" size={22} color="#2563EB" style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>Daftar Pengingat Aktif</Text>
+          </View>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Kategori</Text>
+            <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'center' }]}>Waktu</Text>
+            <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'right' }]}>Notifikasi</Text>
           </View>
           
-          <View style={[styles.notifBox, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }]}>
-            <Ionicons name="warning" size={20} color="#D97706" style={{ marginRight: 10 }} />
-            <View style={styles.notifContent}>
-              <Text style={[styles.notifTitle, { color: '#92400E' }]}>Sepertinya Anda belum makan siang!</Text>
-              <Text style={[styles.notifBody, { color: '#78350F' }]}>Perut pasti sudah keroncongan, yuk segera isi energi!</Text>
-            </View>
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, { flex: 2, fontWeight: '700' }]}>☕ Sarapan</Text>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', color: '#2563EB', fontWeight: '700' }]}>
+              {schedule.breakfast}
+            </Text>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right', fontWeight: '700', color: notifStates.breakfast ? '#10B981' : '#EF4444' }]}>
+              {notifStates.breakfast ? 'Aktif' : 'Nonaktif'}
+            </Text>
           </View>
 
-          <View style={styles.snoozeRow}>
-            <TouchableOpacity style={[styles.snoozeBtn, snoozeActive && styles.snoozeBtnActive]} onPress={handleSnooze} disabled={snoozeActive}>
-              <Text style={styles.snoozeText}>{snoozeActive ? 'Snooze (15m) Aktif' : 'Tunda 15 Menit'}</Text>
-            </TouchableOpacity>
-            <Text style={styles.snoozeNote}>*Jika terlalu sering ditunda, sistem mencatat sebagai "Melewatkan Makan"</Text>
-          </View>
-        </View>
-
-        {/* 3. LOG MAKANAN HARIAN */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>📝 Log Makanan Harian</Text>
-          <Text style={styles.subCardTitle}>Cari makanan dan pilih porsi</Text>
-          
-          <TextInput
-            style={styles.foodInput}
-            placeholder="Ketik nama makanan (misal: Nasi goreng)"
-            placeholderTextColor="#9CA3AF"
-            value={foodSearch}
-            onChangeText={setFoodSearch}
-          />
-
-          <Text style={styles.smallLabel}>Porsi:</Text>
-          <View style={styles.portionRow}>
-            {['½ Porsi', '1 Porsi', '1.5 Porsi'].map((p) => (
-              <TouchableOpacity 
-                key={p} 
-                style={[styles.portionBtn, portion === p && styles.portionBtnActive]}
-                onPress={() => setPortion(p)}
-              >
-                <Text style={[styles.portionText, portion === p && styles.portionTextActive]}>{p}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, { flex: 2, fontWeight: '700' }]}>🍽️ Makan Siang</Text>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', color: '#2563EB', fontWeight: '700' }]}>
+              {schedule.lunch}
+            </Text>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right', fontWeight: '700', color: notifStates.lunch ? '#10B981' : '#EF4444' }]}>
+              {notifStates.lunch ? 'Aktif' : 'Nonaktif'}
+            </Text>
           </View>
 
-          <Text style={styles.smallLabel}>Apakah ini makanan sehat?</Text>
-          <View style={styles.healthyRow}>
-            <TouchableOpacity style={[styles.healthyBtn, isHealthy === true && styles.healthyBtnActive]} onPress={() => setIsHealthy(true)}>
-              <Ionicons name={isHealthy === true ? "checkmark-circle" : "checkmark-circle-outline"} size={20} color={isHealthy === true ? "#FFFFFF" : "#6B7280"} />
-              <Text style={[styles.healthyText, isHealthy === true && styles.healthyTextActive]}>Ya</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.healthyBtn, isHealthy === false && styles.healthyBtnActiveDanger]} onPress={() => setIsHealthy(false)}>
-              <Ionicons name={isHealthy === false ? "close-circle" : "close-circle-outline"} size={20} color={isHealthy === false ? "#FFFFFF" : "#6B7280"} />
-              <Text style={[styles.healthyText, isHealthy === false && styles.healthyTextActive]}>Tidak</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity style={styles.logBtn} onPress={handleLogFood}>
-            <Text style={styles.logBtnText}>Simpan Log Makanan</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 4. DASHBOARD RINGKASAN NUTRISI */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>📊 Ringkasan Nutrisi Harian</Text>
-          
-          <View style={styles.caloriesTargetRow}>
-            <Text style={styles.caloriesTitle}>Total Kalori</Text>
-            <Text style={styles.caloriesValue}>{nutrition.calories.current} / {nutrition.calories.target} kcal</Text>
-          </View>
-          <View style={[styles.progressTrack, { height: 12, marginBottom: 16 }]}>
-            <View style={[styles.progressFill, { width: `${(nutrition.calories.current/nutrition.calories.target)*100}%`, backgroundColor: nutrition.calories.color }]} />
-          </View>
-
-          <View style={styles.macroContainer}>
-            {renderProgressBar('Protein', nutrition.protein.current, nutrition.protein.target, nutrition.protein.color, 'gr')}
-            {renderProgressBar('Karbohidrat', nutrition.carbs.current, nutrition.carbs.target, nutrition.carbs.color, 'gr')}
-            {renderProgressBar('Lemak', nutrition.fat.current, nutrition.fat.target, nutrition.fat.color, 'gr')}
-          </View>
-
-          <View style={styles.insightSuggestion}>
-            <Ionicons name="bulb-outline" size={18} color="#2563EB" style={{ marginRight: 8 }} />
-            <Text style={styles.suggestionText}>
-              Konsumsi protein Anda masih kurang 20gr hari ini. Coba tambahkan 1 butir telur rebus pada snack sore!
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, { flex: 2, fontWeight: '700' }]}>🌙 Makan Malam</Text>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', color: '#2563EB', fontWeight: '700' }]}>
+              {schedule.dinner}
+            </Text>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right', fontWeight: '700', color: notifStates.dinner ? '#10B981' : '#EF4444' }]}>
+              {notifStates.dinner ? 'Aktif' : 'Nonaktif'}
             </Text>
           </View>
         </View>
-
-        {/* 5. SKIPPED MEAL TRACKER & ANALISIS RISIKO */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>⚠️ Analisis Makan Terlewat</Text>
-          <View style={styles.skipStatsRow}>
-            <View style={styles.skipStatItem}>
-              <Text style={styles.skipStatValue}>3x</Text>
-              <Text style={styles.skipStatLabel}>Minggu ini</Text>
-            </View>
-            <View style={styles.skipStatItem}>
-              <Text style={styles.skipStatValue}>Makan Siang</Text>
-              <Text style={styles.skipStatLabel}>Paling sering terlewat</Text>
-            </View>
-          </View>
-          
-          <View style={styles.stressCorrelation}>
-            <Ionicons name="heart-dislike-outline" size={22} color="#EF5350" style={{ marginRight: 10 }} />
-            <Text style={styles.stressCorrelationText}>
-              "Anda melewatkan makan siang 3 kali minggu ini. Tahukah Anda? Perut kosong bisa memicu produksi hormon stres (kortisol) meningkat!"
-            </Text>
-          </View>
-        </View>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -272,11 +220,41 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 4,
   },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
   cardTitle: {
     fontSize: 17,
     fontWeight: '700',
     color: '#111827',
+    marginBottom: 0,
+  },
+  notifToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     marginBottom: 14,
+  },
+  notifToggleTextCol: {
+    flex: 1,
+    marginRight: 10,
+  },
+  notifToggleLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#374151',
+    marginBottom: 2,
+  },
+  notifToggleDesc: {
+    fontSize: 11,
+    color: '#6B7280',
   },
   subCardTitle: {
     fontSize: 14,
@@ -545,5 +523,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#991B1B',
     lineHeight: 20,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 2,
+    borderBottomColor: '#E5E7EB',
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  tableHeaderCell: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#4B5563',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  tableCell: {
+    fontSize: 14,
+    color: '#1F2937',
   },
 });
