@@ -821,7 +821,7 @@ app.post('/api/ask-ai', async (req, res) => {
     return res.json({ reply: responseText });
   } catch (error) {
     console.error('Error calling Gemini API:', error);
-    return res.status(500).json({ message: 'Gagal mendapatkan respon dari AI.' });
+    return res.status(500).json({ message: 'Gagal mendapatkan respon dari AI.', error: error.message });
   }
 });
 
