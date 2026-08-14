@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
+import GpsTrackerScreen from './GpsTrackerScreen';
 import {
   StyleSheet,
   Text,
@@ -300,6 +301,7 @@ const CATEGORY_TABS = [
   { id: 'Bahu & Punggung', label: 'Bahu & Punggung', icon: 'body-outline' },
   { id: 'Otot perut', label: 'Otot perut', icon: 'triangle-outline' },
   { id: 'Lengan', label: 'Lengan', icon: 'flash-outline' },
+  { id: 'GPS', label: 'GPS Tracker', icon: 'navigate-outline' },
   { id: 'Wishlist', label: 'Favorit', icon: 'bookmark-outline' },
   { id: 'History', label: 'Histori', icon: 'time-outline' },
 ];
@@ -949,85 +951,94 @@ export default function OlahragaScreen() {
           </View>
         )}
 
-        {/* DAFTAR GERAKAN / HISTORI */}
-        <View style={styles.listSection}>
-          <Text style={styles.sectionLabel}>
-            {activeTab === 'Wishlist' ? 'Gerakan Favorit Saya' : activeTab === 'History' ? 'Histori Latihan' : `Latihan ${activeTab}`}
-          </Text>
-          {activeTab === 'History' ? (
-            history.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="time-outline" size={40} color="#9CA3AF" />
-                <Text style={styles.emptyStateText}>Belum ada histori latihan.</Text>
-              </View>
-            ) : (
-              history.map((item) => (
-                <View key={item.id} style={styles.historyCard}>
-                  <View style={styles.exerciseIconWrap}><Ionicons name={item.icon} size={24} color="#2563EB" /></View>
-                  <View style={styles.exerciseInfo}>
-                    <Text style={styles.exerciseName}>{item.name}</Text>
-                    <Text style={styles.exerciseTarget}>{item.target}</Text>
-                    <Text style={styles.historyDate}>{item.date}</Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.historySets}>{item.sets} Set</Text>
-                    <Text style={styles.historyDuration}>{item.duration}s / Set</Text>
-                  </View>
-                </View>
-              ))
-            )
-          ) : displayedExercises.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="heart-outline" size={40} color="#9CA3AF" />
-              <Text style={styles.emptyStateText}>
-                {activeTab === 'Wishlist' ? 'Belum ada gerakan favorit. Tekan ikon hati pada card untuk menambahkan.' : 'Belum ada gerakan di kategori ini.'}
-              </Text>
-            </View>
-          ) : (
-            displayedExercises.map((ex) => {
-              const isFavorite = wishlist.includes(ex.id);
-              const isThisActive = activeExercise?.id === ex.id;
-              return (
-                <View key={ex.id} style={styles.exerciseCard}>
-                  <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
-                    <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
-                  </TouchableOpacity>
-                  <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
-                  <View style={styles.exerciseInfo}>
-                    <Text style={styles.exerciseName}>{ex.name}</Text>
-                    <Text style={styles.exerciseTarget}>{ex.target}</Text>
-                  </View>
-                  <TouchableOpacity style={[styles.startBtnSmall, isThisActive && styles.startBtnSmallActive]} onPress={() => openExerciseConfig(ex)}>
-                    <Ionicons name={isThisActive ? 'volume-high' : 'play'} size={16} color="#FFFFFF" />
-                    <Text style={styles.startBtnSmallText}>{isThisActive ? 'Aktif' : 'Mulai'}</Text>
-                  </TouchableOpacity>
-                </View>
-              );
-            })
-          )}
-        </View>
+        {/* GPS TRACKER TAB */}
+        {activeTab === 'GPS' && (
+          <GpsTrackerScreen />
+        )}
 
-        {/* METRIK PROGRES */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Progres & Metrik</Text>
-          <View style={styles.metricRow}>
-            <View style={styles.metricItem}>
-              <Ionicons name="flame-outline" size={24} color="#EF5350" />
-              <Text style={styles.metricValue}>{caloriesBurned} <Text style={styles.metricUnit}>kcal</Text></Text>
-              <Text style={styles.metricLabel}>Terbakar</Text>
+        {/* DAFTAR GERAKAN / HISTORI */}
+        {activeTab !== 'GPS' && (
+          <>
+            <View style={styles.listSection}>
+              <Text style={styles.sectionLabel}>
+                {activeTab === 'Wishlist' ? 'Gerakan Favorit Saya' : activeTab === 'History' ? 'Histori Latihan' : `Latihan ${activeTab}`}
+              </Text>
+              {activeTab === 'History' ? (
+                history.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="time-outline" size={40} color="#9CA3AF" />
+                    <Text style={styles.emptyStateText}>Belum ada histori latihan.</Text>
+                  </View>
+                ) : (
+                  history.map((item) => (
+                    <View key={item.id} style={styles.historyCard}>
+                      <View style={styles.exerciseIconWrap}><Ionicons name={item.icon} size={24} color="#2563EB" /></View>
+                      <View style={styles.exerciseInfo}>
+                        <Text style={styles.exerciseName}>{item.name}</Text>
+                        <Text style={styles.exerciseTarget}>{item.target}</Text>
+                        <Text style={styles.historyDate}>{item.date}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={styles.historySets}>{item.sets} Set</Text>
+                        <Text style={styles.historyDuration}>{item.duration}s / Set</Text>
+                      </View>
+                    </View>
+                  ))
+                )
+              ) : displayedExercises.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="heart-outline" size={40} color="#9CA3AF" />
+                  <Text style={styles.emptyStateText}>
+                    {activeTab === 'Wishlist' ? 'Belum ada gerakan favorit. Tekan ikon hati pada card untuk menambahkan.' : 'Belum ada gerakan di kategori ini.'}
+                  </Text>
+                </View>
+              ) : (
+                displayedExercises.map((ex) => {
+                  const isFavorite = wishlist.includes(ex.id);
+                  const isThisActive = activeExercise?.id === ex.id;
+                  return (
+                    <View key={ex.id} style={styles.exerciseCard}>
+                      <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
+                        <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
+                      </TouchableOpacity>
+                      <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
+                      <View style={styles.exerciseInfo}>
+                        <Text style={styles.exerciseName}>{ex.name}</Text>
+                        <Text style={styles.exerciseTarget}>{ex.target}</Text>
+                      </View>
+                      <TouchableOpacity style={[styles.startBtnSmall, isThisActive && styles.startBtnSmallActive]} onPress={() => openExerciseConfig(ex)}>
+                        <Ionicons name={isThisActive ? 'volume-high' : 'play'} size={16} color="#FFFFFF" />
+                        <Text style={styles.startBtnSmallText}>{isThisActive ? 'Aktif' : 'Mulai'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })
+              )}
             </View>
-            <View style={styles.metricItem}>
-              <Ionicons name="time-outline" size={24} color="#2563EB" />
-              <Text style={styles.metricValue}>{activeMinutes} <Text style={styles.metricUnit}>min</Text></Text>
-              <Text style={styles.metricLabel}>Aktif Hari Ini</Text>
+
+            {/* METRIK PROGRES */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Progres & Metrik</Text>
+              <View style={styles.metricRow}>
+                <View style={styles.metricItem}>
+                  <Ionicons name="flame-outline" size={24} color="#EF5350" />
+                  <Text style={styles.metricValue}>{caloriesBurned} <Text style={styles.metricUnit}>kcal</Text></Text>
+                  <Text style={styles.metricLabel}>Terbakar</Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Ionicons name="time-outline" size={24} color="#2563EB" />
+                  <Text style={styles.metricValue}>{activeMinutes} <Text style={styles.metricUnit}>min</Text></Text>
+                  <Text style={styles.metricLabel}>Aktif Hari Ini</Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Ionicons name="stats-chart" size={24} color="#F59E0B" />
+                  <Text style={styles.metricValue}>{streak} <Text style={styles.metricUnit}>hari</Text></Text>
+                  <Text style={styles.metricLabel}>Streak 🔥</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.metricItem}>
-              <Ionicons name="stats-chart" size={24} color="#F59E0B" />
-              <Text style={styles.metricValue}>{streak} <Text style={styles.metricUnit}>hari</Text></Text>
-              <Text style={styles.metricLabel}>Streak 🔥</Text>
-            </View>
-          </View>
-        </View>
+          </>
+        )}
       </ScrollView>
 
       {/* MODAL KONFIGURASI SET & DETIK + MODE SETELAH SELESAI */}

@@ -35,7 +35,13 @@
       "API_PORT": 3000
     },
     "plugins": [
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "NutriOS membutuhkan akses lokasi GPS untuk merekam rute aktivitasmu."
+        }
+      ]
     ]
   }
 }
