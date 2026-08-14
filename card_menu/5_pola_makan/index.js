@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleMealReminders } from '../../components/MealNotificationManager';
 import { AuthContext } from '../../auth/AuthContext';
 import { API_BASE_URL } from '../../auth/api';
+import GeminiConsultantModal from '../../components/GeminiConsultantModal';
 
 export default function PolaMakanScreen({ navigation, route }) {
   const { user } = useContext(AuthContext);
@@ -38,6 +39,7 @@ export default function PolaMakanScreen({ navigation, route }) {
 
   const [foodLog, setFoodLog] = useState([]);
   const [foodModalVisible, setFoodModalVisible] = useState(false);
+  const [isAiModalVisible, setIsAiModalVisible] = useState(false);
   const [foodName, setFoodName] = useState('');
   const [portion, setPortion] = useState('Sedang');
   const [mealTime, setMealTime] = useState('');
@@ -290,6 +292,25 @@ export default function PolaMakanScreen({ navigation, route }) {
             ))
           )}
         </View>
+
+        <View style={[styles.card, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', borderWidth: 1 }]}>
+          <View style={styles.cardHeaderRow}>
+            <Ionicons name="sparkles" size={22} color="#2563EB" style={{ marginRight: 8 }} />
+            <Text style={[styles.cardTitle, { color: '#1E3A8A' }]}>Konsultan Pola Makan AI</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: '#1E40AF', lineHeight: 18, marginBottom: 12 }}>
+            Konsultasikan rencana diet, resep MPASI anak, atau tanyakan kandungan gizi makanan langsung pada Gemini AI.
+          </Text>
+          <TouchableOpacity
+            style={styles.aiEvalBtn}
+            onPress={() => {
+              setIsAiModalVisible(true);
+            }}
+          >
+            <Ionicons name="chatbox-ellipses" size={18} color="#FFF" style={{ marginRight: 6 }} />
+            <Text style={styles.aiEvalBtnText}>Mulai Konsultasi Gemini</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       {}
@@ -354,6 +375,17 @@ export default function PolaMakanScreen({ navigation, route }) {
           </View>
         </View>
       </Modal>
+
+      <GeminiConsultantModal
+        visible={isAiModalVisible}
+        onClose={() => setIsAiModalVisible(false)}
+        context={{
+          type: 'food',
+          foodLog: foodLog
+        }}
+        title="NutriOS AI: Pola Makan & Gizi"
+        systemPrompt="Evaluasi pola makan harian pengguna dan rekomendasikan asupan gizi seimbang."
+      />
     </SafeAreaView>
   );
 }
@@ -563,6 +595,24 @@ const styles = StyleSheet.create({
   },
   portionTextActive: {
     color: '#FFFFFF',
+  },
+  aiEvalBtn: {
+    backgroundColor: '#2563EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 14,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  aiEvalBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
   healthyRow: {
     flexDirection: 'row',

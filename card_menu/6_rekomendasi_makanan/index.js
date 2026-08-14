@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import GeminiConsultantModal from '../../components/GeminiConsultantModal';
 
 
 const foodDB = {
@@ -93,7 +94,7 @@ const RecipeModal = ({ visible, foodName, onClose }) => {
 
 
 export default function RekomendasiMakananScreen() {
-
+  const [isAiModalVisible, setIsAiModalVisible] = useState(false);
   const [alergies, setAlergies] = useState({ seafood: false, kacang: false, susu: false, kedelai: false });
   const [budget, setBudget] = useState('Sedang');
   const [isVegetarian, setIsVegetarian] = useState(false);
@@ -277,6 +278,25 @@ export default function RekomendasiMakananScreen() {
           </View>
         </View>
 
+        <View style={[styles.card, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', borderWidth: 1 }]}>
+          <View style={styles.cardHeaderRow}>
+            <Ionicons name="sparkles" size={22} color="#2563EB" style={{ marginRight: 8 }} />
+            <Text style={[styles.cardTitle, { color: '#1E3A8A', marginBottom: 0 }]}>Rekomendasi Resep AI (Gemini)</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: '#1E40AF', lineHeight: 18, marginBottom: 12 }}>
+            Ingin membuat resep khusus untuk anak atau menanyakan ide masak berbasis bahan-bahan yang ada di kulkas Anda? Tanyakan langsung ke Gemini AI!
+          </Text>
+          <TouchableOpacity
+            style={styles.aiRecipeBtn}
+            onPress={() => {
+              setIsAiModalVisible(true);
+            }}
+          >
+            <Ionicons name="chatbox-ellipses" size={18} color="#FFF" style={{ marginRight: 6 }} />
+            <Text style={styles.aiRecipeBtnText}>Tanya Resep Cerdas AI</Text>
+          </TouchableOpacity>
+        </View>
+
         {}
         <RecipeModal
           visible={selectedRecipe !== null}
@@ -285,6 +305,17 @@ export default function RekomendasiMakananScreen() {
         />
 
       </ScrollView>
+
+      <GeminiConsultantModal
+        visible={isAiModalVisible}
+        onClose={() => setIsAiModalVisible(false)}
+        context={{
+          type: 'food',
+          currentMenu: currentMenu
+        }}
+        title="NutriOS AI: Rekomendasi Resep"
+        systemPrompt="Berikan ide resep makanan lokal Indonesia sehat dan bergizi seimbang berdasarkan kebutuhan nutrisi."
+      />
     </SafeAreaView>
   );
 }
@@ -330,6 +361,29 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
     marginBottom: 14,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  aiRecipeBtn: {
+    backgroundColor: '#2563EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 14,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  aiRecipeBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
 
 

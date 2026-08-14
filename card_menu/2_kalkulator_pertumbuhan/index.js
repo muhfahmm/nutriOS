@@ -18,6 +18,7 @@ import { AuthContext } from '../../auth/AuthContext';
 import { API_BASE_URL } from '../../auth/api';
 import { LoginPromptModal, AddChildModal } from './GrowthModals';
 import { getAISuggestions, classifyUserIMT } from './suggestion_AI';
+import GeminiConsultantModal from '../../components/GeminiConsultantModal';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -33,6 +34,8 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
   const [isUserCalculated, setIsUserCalculated] = useState(false);
   const [userHistory, setUserHistory] = useState([]);
   const [isLoadingUserHistory, setIsLoadingUserHistory] = useState(false);
+  const [isAiModalVisible, setIsAiModalVisible] = useState(false);
+  const [aiContext, setAiContext] = useState(null);
 
   const [children, setChildren] = useState([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(false);
@@ -444,6 +447,24 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                       <Text style={styles.aiItemDesc}>{suggestions.tambahan.desc}</Text>
                     </View>
                   </View>
+
+                  <TouchableOpacity
+                    style={styles.aiConsultBtn}
+                    onPress={() => {
+                      setAiContext({
+                        type: 'adult',
+                        weight: userWeight,
+                        height: userHeight,
+                        age: userAge,
+                        gender: userGender,
+                        status: userImtResult.status,
+                      });
+                      setIsAiModalVisible(true);
+                    }}
+                  >
+                    <Ionicons name="sparkles" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.aiConsultBtnText}>Tanya Gemini AI (Konsultasi Instan)</Text>
+                  </TouchableOpacity>
                 </View>
               );
             })()}
@@ -710,6 +731,23 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                             <Text style={styles.aiItemDesc}>{suggestions.tambahan.desc}</Text>
                           </View>
                         </View>
+
+                        <TouchableOpacity
+                          style={styles.aiConsultBtn}
+                          onPress={() => {
+                            setAiContext({
+                              type: 'child',
+                              name: selectedAnak.nama_anak,
+                              gender: selectedAnak.jenis_kelamin,
+                              status: selectedAnak.status_z_score,
+                              age: calculateAgeInMonths(selectedAnak.tanggal_lahir),
+                            });
+                            setIsAiModalVisible(true);
+                          }}
+                        >
+                          <Ionicons name="sparkles" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                          <Text style={styles.aiConsultBtnText}>Konsultasikan Gizi Anak via Gemini</Text>
+                        </TouchableOpacity>
                       </View>
                     );
                   })()}
@@ -730,6 +768,13 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
         </View>
       </Modal>
 
+      <GeminiConsultantModal
+        visible={isAiModalVisible}
+        onClose={() => setIsAiModalVisible(false)}
+        context={aiContext}
+        title={aiContext?.type === 'child' ? `NutriOS AI: Tumbuh Kembang ${aiContext.name}` : "NutriOS AI: Konsultan Gizi Anda"}
+        systemPrompt="Berikan konsultasi gizi terperinci berdasarkan hasil IMT / pertumbuhan."
+      />
     </SafeAreaView>
   );
 }
@@ -1186,5 +1231,24 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 2,
     fontFamily: 'Roboto',
+  },
+  aiConsultBtn: {
+    backgroundColor: '#2563EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginTop: 16,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  aiConsultBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });
