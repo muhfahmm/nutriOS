@@ -19,7 +19,7 @@ import { API_BASE_URL } from '../../auth/api';
 import GeminiConsultantModal from '../../components/GeminiConsultantModal';
 
 export default function PolaMakanScreen({ navigation, route }) {
-  const { user } = useContext(AuthContext);
+  const { user, isDarkMode } = useContext(AuthContext);
   const userId = user?.id || 'guest';
 
 
@@ -148,14 +148,14 @@ export default function PolaMakanScreen({ navigation, route }) {
   }, [route.params]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {}
         <View style={styles.headerRow}>
           <View style={styles.header}>
-            <Text style={styles.title}>Pola Makan</Text>
-            <Text style={styles.subtitle}>Atur jadwal dan pantau pengingat nutrisi harian.</Text>
+            <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Pola Makan</Text>
+            <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Atur jadwal dan pantau pengingat nutrisi harian.</Text>
           </View>
           <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setIsAiModalVisible(true)}>
             <Ionicons name="sparkles" size={16} color="#FFF" />
@@ -163,12 +163,12 @@ export default function PolaMakanScreen({ navigation, route }) {
         </View>
 
         {}
-        <View style={styles.card}>
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="time" size={22} color="#2563EB" style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>Scheduler Makan</Text>
+            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Scheduler Makan</Text>
           </View>
-          <Text style={styles.subCardTitle}>Ketuk kategori makan untuk mengatur jam pengingat</Text>
+          <Text style={[styles.subCardTitle, isDarkMode && { color: '#94A3B8' }]}>Ketuk kategori makan untuk mengatur jam pengingat</Text>
 
           <View style={styles.scheduleGrid}>
             {Object.entries(schedule).map(([key, time]) => {
@@ -209,12 +209,12 @@ export default function PolaMakanScreen({ navigation, route }) {
         </View>
 
         {}
-        <View style={styles.card}>
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="notifications-outline" size={22} color="#2563EB" style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>Daftar Pengingat Aktif</Text>
+            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Daftar Pengingat Aktif</Text>
           </View>
-          <View style={styles.tableHeader}>
+          <View style={[styles.tableHeader, isDarkMode && { backgroundColor: '#334155' }]}>
             <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Kategori</Text>
             <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'center' }]}>Waktu</Text>
             <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'right' }]}>Notifikasi</Text>
@@ -252,11 +252,11 @@ export default function PolaMakanScreen({ navigation, route }) {
         </View>
 
         {}
-        <View style={styles.card}>
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <View style={[styles.cardHeaderRow, { justifyContent: 'space-between', marginBottom: 12, alignItems: 'center' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="book" size={22} color="#10B981" style={{ marginRight: 8 }} />
-              <Text style={styles.cardTitle}>Catatan Makan Hari Ini</Text>
+              <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Catatan Makan Hari Ini</Text>
             </View>
             <TouchableOpacity
               style={styles.addFoodBtn}
@@ -298,12 +298,12 @@ export default function PolaMakanScreen({ navigation, route }) {
           )}
         </View>
 
-        <View style={[styles.card, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', borderWidth: 1 }]}>
+        <View style={[styles.card, isDarkMode ? { backgroundColor: '#1E3A8A', borderColor: '#2563EB', borderWidth: 1 } : { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', borderWidth: 1 }]}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="sparkles" size={22} color="#2563EB" style={{ marginRight: 8 }} />
-            <Text style={[styles.cardTitle, { color: '#1E3A8A' }]}>Konsultan Pola Makan AI</Text>
+            <Ionicons name="sparkles" size={22} color={isDarkMode ? '#93C5FD' : '#2563EB'} style={{ marginRight: 8 }} />
+            <Text style={[styles.cardTitle, { color: isDarkMode ? '#DBEAFE' : '#1E3A8A' }]}>Konsultan Pola Makan AI</Text>
           </View>
-          <Text style={{ fontSize: 13, color: '#1E40AF', lineHeight: 18, marginBottom: 12 }}>
+          <Text style={{ fontSize: 13, color: isDarkMode ? '#BFDBFE' : '#1E40AF', lineHeight: 18, marginBottom: 12 }}>
             Konsultasikan rencana diet, resep MPASI anak, atau tanyakan kandungan gizi makanan langsung pada Gemini AI.
           </Text>
           <TouchableOpacity
@@ -326,14 +326,14 @@ export default function PolaMakanScreen({ navigation, route }) {
         onRequestClose={() => setFoodModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Catat Asupan Makan</Text>
-            <Text style={styles.modalSubtitle}>Masukkan detail makanan yang Anda konsumsi</Text>
+          <View style={[styles.modalContent, isDarkMode && { backgroundColor: '#1E293B' }]}>
+            <Text style={[styles.modalTitle, isDarkMode && { color: '#F8FAFC' }]}>Catat Asupan Makan</Text>
+            <Text style={[styles.modalSubtitle, isDarkMode && { color: '#94A3B8' }]}>Masukkan detail makanan yang Anda konsumsi</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Nama Makanan</Text>
+              <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Nama Makanan</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569', color: '#F8FAFC' }]}
                 placeholder="Misal: Roti & Susu, Nasi Goreng"
                 value={foodName}
                 onChangeText={setFoodName}
@@ -342,9 +342,9 @@ export default function PolaMakanScreen({ navigation, route }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Waktu Makan (HH:MM)</Text>
+              <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Waktu Makan (HH:MM)</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569', color: '#F8FAFC' }]}
                 placeholder="Misal: 07:30"
                 value={mealTime}
                 onChangeText={setMealTime}
@@ -353,7 +353,7 @@ export default function PolaMakanScreen({ navigation, route }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Ukuran Porsi</Text>
+              <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Ukuran Porsi</Text>
               <View style={styles.portionRow}>
                 {['Kecil', 'Sedang', 'Besar'].map((p) => (
                   <TouchableOpacity

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,6 +12,7 @@ import {
   ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AuthContext } from '../AuthContext';
 import { API_BASE_URL, fetchWithTimeout } from '../api';
 
 export default function RegisterScreen({ navigation }) {
@@ -27,6 +28,8 @@ export default function RegisterScreen({ navigation }) {
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const [isUsernameChecked, setIsUsernameChecked] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const { isDarkMode } = useContext(AuthContext);
 
   useEffect(() => {
     if (!username) {
@@ -136,7 +139,7 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -146,18 +149,18 @@ export default function RegisterScreen({ navigation }) {
             <View style={styles.iconWrapper}>
               <Ionicons name="person-add" size={44} color="#3B82F6" />
             </View>
-            <Text style={styles.title}>Daftar Akun</Text>
-            <Text style={styles.subtitle}>Buat akun baru untuk mulai menggunakan aplikasi.</Text>
+            <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Daftar Akun</Text>
+            <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Buat akun baru untuk mulai menggunakan aplikasi.</Text>
           </View>
 
-          <View style={styles.form}>
+          <View style={[styles.form, isDarkMode && { backgroundColor: '#1E293B' }]}>
             {}
             <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Nama Lengkap *</Text>
-              <View style={styles.inputContainer}>
+              <Text style={[styles.label, isDarkMode && { color: '#CBD5E1' }]}>Nama Lengkap *</Text>
+              <View style={[styles.inputContainer, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
                 <Ionicons name="person-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isDarkMode && { color: '#F8FAFC' }]}
                   value={name}
                   onChangeText={setName}
                   placeholder="Nama Lengkap"
@@ -168,11 +171,11 @@ export default function RegisterScreen({ navigation }) {
 
             {}
             <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Email *</Text>
-              <View style={styles.inputContainer}>
+              <Text style={[styles.label, isDarkMode && { color: '#CBD5E1' }]}>Email *</Text>
+              <View style={[styles.inputContainer, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
                 <Ionicons name="mail-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isDarkMode && { color: '#F8FAFC' }]}
                   value={email}
                   onChangeText={setEmail}
                   placeholder="example@email.com"
@@ -185,9 +188,10 @@ export default function RegisterScreen({ navigation }) {
 
             {}
             <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Username *</Text>
+              <Text style={[styles.label, isDarkMode && { color: '#CBD5E1' }]}>Username *</Text>
               <View style={[
                 styles.inputContainer,
+                isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' },
                 isUsernameChecked && (isUsernameTaken ? styles.inputContainerError : styles.inputContainerSuccess)
               ]}>
                 <Ionicons
@@ -197,7 +201,7 @@ export default function RegisterScreen({ navigation }) {
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isDarkMode && { color: '#F8FAFC' }]}
                   autoCapitalize="none"
                   value={username}
                   onChangeText={setUsername}
@@ -222,11 +226,11 @@ export default function RegisterScreen({ navigation }) {
 
             {}
             <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Password *</Text>
-              <View style={styles.inputContainer}>
+              <Text style={[styles.label, isDarkMode && { color: '#CBD5E1' }]}>Password *</Text>
+              <View style={[styles.inputContainer, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
                 <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isDarkMode && { color: '#F8FAFC' }]}
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
@@ -258,11 +262,11 @@ export default function RegisterScreen({ navigation }) {
 
             {}
             <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Konfirmasi Password *</Text>
-              <View style={styles.inputContainer}>
+              <Text style={[styles.label, isDarkMode && { color: '#CBD5E1' }]}>Konfirmasi Password *</Text>
+              <View style={[styles.inputContainer, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
                 <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isDarkMode && { color: '#F8FAFC' }]}
                   secureTextEntry={!showConfirmPassword}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
@@ -306,7 +310,7 @@ export default function RegisterScreen({ navigation }) {
             style={styles.footer}
             onPress={() => navigation && navigation.navigate('Login')}
           >
-            <Text style={styles.footerText}>
+            <Text style={[styles.footerText, isDarkMode && { color: '#94A3B8' }]}>
               Sudah punya akun? <Text style={styles.footerHighlight}>Masuk</Text>
             </Text>
           </TouchableOpacity>

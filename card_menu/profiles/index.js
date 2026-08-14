@@ -87,13 +87,11 @@ export default function ProfileScreen({ navigation }) {
         setUser(result.user);
         Alert.alert('Sukses', 'Detail akun Anda berhasil diperbarui!');
       } else {
-
         setNamaLengkapInput(user.nama_lengkap || '');
         setUsernameInput(user.username || '');
         Alert.alert('Gagal', result.message || 'Gagal memperbarui profil.');
       }
     } catch (e) {
-
       setNamaLengkapInput(user.nama_lengkap || '');
       setUsernameInput(user.username || '');
       console.warn('Error updating profile:', e);
@@ -186,16 +184,13 @@ export default function ProfileScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {}
+        {/* JIKA USER SUDAH LOGIN */}
         {user ? (
           <View>
-            {}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Detail Akun Anda</Text>
+            <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B' }]}>
+              <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Detail Akun Anda</Text>
 
-              {}
               <View style={styles.flexRow}>
-                {}
                 <View style={styles.flexCol}>
                   {(() => {
                     let nameCooldownActive = false;
@@ -218,8 +213,9 @@ export default function ProfileScreen({ navigation }) {
                         <View style={styles.infoCol}>
                           <Text style={styles.infoLabel}>Nama Lengkap</Text>
                           <TextInput
-                            style={[styles.profileInputInline, nameCooldownActive && styles.profileInputDisabled]}
+                            style={[styles.profileInputInline, nameCooldownActive && styles.profileInputDisabled, isDarkMode && { color: '#F8FAFC', borderBottomColor: '#334155' }]}
                             placeholder="Masukkan nama lengkap"
+                            placeholderTextColor={isDarkMode ? '#64748B' : '#9CA3AF'}
                             value={namaLengkapInput}
                             onChangeText={setNamaLengkapInput}
                             editable={!nameCooldownActive}
@@ -235,7 +231,6 @@ export default function ProfileScreen({ navigation }) {
                   })()}
                 </View>
 
-                {}
                 <View style={styles.flexCol}>
                   {(() => {
                     let userCooldownActive = false;
@@ -258,8 +253,9 @@ export default function ProfileScreen({ navigation }) {
                         <View style={styles.infoCol}>
                           <Text style={styles.infoLabel}>Username</Text>
                           <TextInput
-                            style={[styles.profileInputInline, userCooldownActive && styles.profileInputDisabled]}
+                            style={[styles.profileInputInline, userCooldownActive && styles.profileInputDisabled, isDarkMode && { color: '#F8FAFC', borderBottomColor: '#334155' }]}
                             placeholder="Masukkan username"
+                            placeholderTextColor={isDarkMode ? '#64748B' : '#9CA3AF'}
                             autoCapitalize="none"
                             value={usernameInput}
                             onChangeText={setUsernameInput}
@@ -277,17 +273,16 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {}
               <View style={[styles.flexRow, { marginTop: 4 }]}>
-                {}
                 <View style={styles.flexCol}>
                   <View style={[styles.rowItem, styles.rowSeparatorFlex]}>
                     <Ionicons name="resize-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                     <View style={styles.infoCol}>
                       <Text style={styles.infoLabel}>Tinggi Badan (cm)</Text>
                       <TextInput
-                        style={styles.profileInputInline}
+                        style={[styles.profileInputInline, isDarkMode && { color: '#F8FAFC', borderBottomColor: '#334155' }]}
                         placeholder="Contoh: 170 (Opsional)"
+                        placeholderTextColor={isDarkMode ? '#64748B' : '#9CA3AF'}
                         keyboardType="numeric"
                         value={tinggiInput}
                         onChangeText={setTinggiInput}
@@ -296,15 +291,15 @@ export default function ProfileScreen({ navigation }) {
                   </View>
                 </View>
 
-                {}
                 <View style={styles.flexCol}>
                   <View style={[styles.rowItem, styles.rowSeparatorFlex]}>
                     <Ionicons name="fitness-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                     <View style={styles.infoCol}>
                       <Text style={styles.infoLabel}>Berat Badan (kg)</Text>
                       <TextInput
-                        style={styles.profileInputInline}
+                        style={[styles.profileInputInline, isDarkMode && { color: '#F8FAFC', borderBottomColor: '#334155' }]}
                         placeholder="Contoh: 60 (Opsional)"
+                        placeholderTextColor={isDarkMode ? '#64748B' : '#9CA3AF'}
                         keyboardType="numeric"
                         value={beratInput}
                         onChangeText={setBeratInput}
@@ -314,7 +309,6 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {}
               <View style={[styles.rowItem, styles.rowSeparator]}>
                 <Ionicons name="calendar-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                 <View style={styles.infoCol}>
@@ -323,7 +317,7 @@ export default function ProfileScreen({ navigation }) {
                     style={styles.datePickerToggleBtn}
                     onPress={() => setShowDatePicker(true)}
                   >
-                    <Text style={styles.datePickerToggleBtnText}>
+                    <Text style={[styles.datePickerToggleBtnText, isDarkMode && { color: '#F8FAFC' }]}>
                       {tglLahirInput ? tglLahirInput : 'Pilih Tanggal Lahir (Opsional)'}
                     </Text>
                     <Ionicons name="calendar" size={16} color="#4F46E5" />
@@ -341,7 +335,6 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {}
               <View style={[styles.rowItem, styles.rowSeparator]}>
                 <Ionicons name="people-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                 <View style={styles.infoCol}>
@@ -365,32 +358,32 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {}
               <TouchableOpacity style={styles.saveProfileBtn} onPress={handleUpdateProfile}>
                 <Ionicons name="save-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
                 <Text style={styles.saveProfileBtnText}>Simpan Detail Akun</Text>
               </TouchableOpacity>
             </View>
 
-            {}
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
               <Text style={styles.logoutButtonText}>Keluar dari Akun</Text>
             </TouchableOpacity>
           </View>
         ) : (
-
+          /* JIKA USER BELUM LOGIN (Guest) - PERBAIKAN DARK MODE DITERAPKAN DISINI */
           <View>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Silakan masuk</Text>
-              <Text style={styles.cardText}>Masuk untuk menyimpan progres pertumbuhan, mengelola jadwal tidur, dan menyinkronkan data KMS anak Anda ke server.</Text>
+            <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B' }]}>
+              <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Silakan masuk</Text>
+              <Text style={[styles.cardText, isDarkMode && { color: '#94A3B8' }]}>
+                Masuk untuk menyimpan progres pertumbuhan, mengelola jadwal tidur, dan menyinkronkan data KMS anak Anda ke server.
+              </Text>
 
               <View style={styles.authButtonRow}>
                 <TouchableOpacity style={styles.buttonPrimary} onPress={() => navigation.navigate('Login')}>
                   <Text style={styles.buttonText}>Login</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.buttonSecondary} onPress={() => navigation.navigate('Register')}>
-                  <Text style={styles.buttonTextSecondary}>Register</Text>
+                <TouchableOpacity style={[styles.buttonSecondary, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#475569' }]} onPress={() => navigation.navigate('Register')}>
+                  <Text style={[styles.buttonTextSecondary, isDarkMode && { color: '#60A5FA' }]}>Register</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -402,14 +395,14 @@ export default function ProfileScreen({ navigation }) {
           </View>
         )}
 
-        {}
+        {/* SARAN GIZI PINTAR (AI) */}
         {user && (() => {
 
           if (!user.tanggal_lahir || !user.tinggi_badan || !user.berat_badan || !user.jenis_kelamin) {
             return (
-              <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: '#6B7280', marginBottom: 40 }]}>
-                <Text style={[styles.cardTitle, { color: '#0F172A' }]}>Saran Gizi Pintar</Text>
-                <Text style={styles.suggestionDescText}>
+              <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B' }, { borderLeftWidth: 5, borderLeftColor: '#6B7280', marginBottom: 40 }]}>
+                <Text style={[styles.cardTitle, { color: '#0F172A' }, isDarkMode && { color: '#F8FAFC' }]}>Saran Gizi Pintar</Text>
+                <Text style={[styles.suggestionDescText, isDarkMode && { color: '#94A3B8' }]}>
                   Silakan lengkapi dan simpan detail akun Anda (Tinggi Badan, Berat Badan, Tanggal Lahir, dan Jenis Kelamin) terlebih dahulu untuk memunculkan Saran Gizi Pintar dari AI.
                 </Text>
               </View>
@@ -476,32 +469,29 @@ export default function ProfileScreen({ navigation }) {
           analysisTitle = `Status IMT: ${status}`;
 
           return (
-            <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: analysisColor, marginBottom: 40 }]}>
-              <Text style={[styles.cardTitle, { color: '#0F172A' }]}>Saran Gizi Pintar</Text>
-              <Text style={styles.suggestionAgeLabel}>Usia Anda saat ini: <Text style={{ fontWeight: '800', color: '#4F46E5' }}>{ageStr}</Text></Text>
-              {jenisKelamin ? <Text style={styles.suggestionAgeLabel}>Jenis Kelamin: <Text style={{ fontWeight: '800', color: '#10B981' }}>{jenisKelamin}</Text></Text> : null}
+            <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B' }, { borderLeftWidth: 5, borderLeftColor: analysisColor, marginBottom: 40 }]}>
+              <Text style={[styles.cardTitle, { color: '#0F172A' }, isDarkMode && { color: '#F8FAFC' }]}>Saran Gizi Pintar</Text>
+              <Text style={[styles.suggestionAgeLabel, isDarkMode && { color: '#94A3B8' }]}>Usia Anda saat ini: <Text style={{ fontWeight: '800', color: '#4F46E5' }}>{ageStr}</Text></Text>
+              {jenisKelamin ? <Text style={[styles.suggestionAgeLabel, isDarkMode && { color: '#94A3B8' }]}>Jenis Kelamin: <Text style={{ fontWeight: '800', color: '#10B981' }}>{jenisKelamin}</Text></Text> : null}
               <Text style={[styles.suggestionStatusLabel, { color: analysisColor }]}>{analysisTitle}</Text>
-              <Text style={styles.suggestionDescText}>{suggestionText}</Text>
+              <Text style={[styles.suggestionDescText, isDarkMode && { color: '#94A3B8' }]}>{suggestionText}</Text>
             </View>
           );
         })()}
 
       </ScrollView>
 
-      {}
       <LogoutConfirmModal
         visible={isLogoutConfirmVisible}
         onClose={() => setIsLogoutConfirmVisible(false)}
         onConfirm={handleConfirmLogout}
       />
 
-      {}
       <LogoutSuccessModal
         visible={isLogoutSuccessVisible}
         onClose={() => setIsLogoutSuccessVisible(false)}
       />
 
-      {}
       <MenuModal
         visible={isMenuVisible}
         onClose={() => setIsMenuVisible(false)}
@@ -509,7 +499,6 @@ export default function ProfileScreen({ navigation }) {
         menus={profileMenus}
       />
 
-      {}
       <ChangePasswordModal
         visible={isChangePasswordVisible}
         onClose={() => setIsChangePasswordVisible(false)}

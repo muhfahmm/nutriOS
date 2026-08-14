@@ -34,7 +34,7 @@ export default function LoginScreen({ navigation }) {
   const [messageType, setMessageType] = useState('error');
   const [loading, setLoading] = useState(false);
 
-  const { setUser } = useContext(AuthContext);
+  const { setUser, isDarkMode } = useContext(AuthContext);
 
   useEffect(() => {
     if (GoogleSignin) {
@@ -195,7 +195,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -204,17 +204,17 @@ export default function LoginScreen({ navigation }) {
           <View style={styles.iconWrapper}>
             <Ionicons name="shield-checkmark" size={48} color="#3B82F6" />
           </View>
-          <Text style={styles.title}>Masuk</Text>
-          <Text style={styles.subtitle}>Selamat datang kembali! Silakan masuk ke akun Anda.</Text>
+          <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Masuk</Text>
+          <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Selamat datang kembali! Silakan masuk ke akun Anda.</Text>
         </View>
 
-        <View style={styles.form}>
+        <View style={[styles.form, isDarkMode && { backgroundColor: '#1E293B', shadowColor: '#000' }]}>
           <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Username</Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.label, isDarkMode && { color: '#CBD5E1' }]}>Username</Text>
+            <View style={[styles.inputContainer, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
               <Ionicons name="at-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDarkMode && { color: '#F8FAFC' }]}
                 autoCapitalize="none"
                 value={username}
                 onChangeText={setUsername}
@@ -225,11 +225,11 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.label, isDarkMode && { color: '#CBD5E1' }]}>Password</Text>
+            <View style={[styles.inputContainer, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
               <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDarkMode && { color: '#F8FAFC' }]}
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
@@ -268,17 +268,17 @@ export default function LoginScreen({ navigation }) {
           {}
           <View style={styles.separatorContainer}>
             <View style={styles.separatorLine} />
-            <Text style={styles.separatorText}>atau masuk dengan</Text>
+          <Text style={[styles.separatorText, isDarkMode && { color: '#64748B' }]}>atau masuk dengan</Text>
             <View style={styles.separatorLine} />
           </View>
 
           <TouchableOpacity
-            style={styles.googleBtn}
+            style={[styles.googleBtn, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#475569' }]}
             onPress={handleGoogleLogin}
             disabled={loading}
           >
             <Ionicons name="logo-google" size={20} color="#EA4335" style={{ marginRight: 10 }} />
-            <Text style={styles.googleBtnText}>Google</Text>
+            <Text style={[styles.googleBtnText, isDarkMode && { color: '#F8FAFC' }]}>Google</Text>
           </TouchableOpacity>
         </View>
 
@@ -286,7 +286,7 @@ export default function LoginScreen({ navigation }) {
           style={styles.footer}
           onPress={() => navigation && navigation.navigate('Register')}
         >
-          <Text style={styles.footerText}>
+          <Text style={[styles.footerText, isDarkMode && { color: '#94A3B8' }]}>
             Belum punya akun? <Text style={styles.footerHighlight}>Daftar</Text>
           </Text>
         </TouchableOpacity>
