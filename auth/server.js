@@ -807,11 +807,10 @@ app.post('/api/ask-ai', async (req, res) => {
 
     const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
-    const systemInstruction =
-      "Anda adalah NutriOS AI, asisten kesehatan pintar yang ahli dalam gizi anak, pola makan, manajemen stres, dan tumbuh kembang balita dan dewasa. " +
-      "Berikan jawaban yang ramah, informatif, ringkas, dan praktis. " +
-      "Gunakan bahasa Indonesia yang santun dan mudah dipahami oleh orang tua. " +
-      "Bila ditanya tentang medis berbahaya, sarankan untuk berkonsultasi ke dokter anak spesialis.";
+    const systemInstruction = 
+      "Anda adalah NutriOS AI, asisten gizi & tumbuh kembang. " +
+      "Berikan jawaban dalam Bahasa Indonesia yang RAMAH, SANGAT RINGKAS, dan LANGSUNG PADA INTI JAWABAN. " +
+      "JANGAN menulis kalimat pembuka/penutup yang panjang. Batasi total jawaban maksimal 150 kata saja agar respon cepat.";
 
     const formattedPrompt = `${systemInstruction}\n\nKonteks Pengguna: ${JSON.stringify(context || {})}\n\nPertanyaan: ${prompt}`;
 
