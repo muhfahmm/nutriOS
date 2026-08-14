@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "concurrently --raw \"npm run auth:start\" \"expo start --lan --clear\"",
+    "dev": "npm run start",
     "android": "concurrently --raw \"npm run auth:start\" \"expo start --android --lan --clear\"",
     "ios": "concurrently --raw \"npm run auth:start\" \"expo start --ios --lan --clear\"",
     "web": "expo start --web",
