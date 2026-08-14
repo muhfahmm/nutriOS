@@ -1,0 +1,377 @@
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL, fetchWithTimeout } from '../auth/api';
+
+export default function GeminiConsultantModal({ visible, onClose, context, title, systemPrompt }) {
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (visible && messages.length === 0) {
+      triggerInitialGreeting();
+    }
+  }, [visible]);
+
+  const triggerInitialGreeting = () => {
+    let greeting = 'Halo! Saya NutriOS AI. ';
+    if (context?.type === 'child') {
+      greeting += `Ada yang bisa saya bantu terkait tumbuh kembang buah hati Anda, ${context.name || 'anak'}? Saya siap memberikan saran pola makan, tidur, dan aktivitas terbaik.`;
+    } else if (context?.type === 'adult') {
+      greeting += `Saya siap membantu menganalisis indeks massa tubuh (IMT) Anda dan memberikan panduan kebugaran, diet, dan pola tidur yang disesuaikan khusus untuk Anda.`;
+    } else {
+      greeting += 'Ada yang ingin Anda konsultasikan hari ini mengenai nutrisi, gizi, atau jadwal harian keluarga?';
+    }
+
+    setMessages([{ id: 'greet', sender: 'ai', text: greeting }]);
+  };
+
+  const handleSend = async (textToSend) => {
+    const text = textToSend || inputText;
+    if (!text.trim()) return;
+
+    setInputText('');
+    const userMsgId = Date.now().toString();
+    setMessages(prev => [...prev, { id: userMsgId, sender: 'user', text }]);
+    setLoading(true);
+
+    try {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/api/ask-ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: text,
+          context: {
+            ...context,
+            systemPrompt: systemPrompt
+          }
+        })
+      });
+
+      const data = await response.json();
+      const aiMsgId = (Date.now() + 1).toString();
+
+      if (response.ok && data.reply) {
+        setMessages(prev => [...prev, { id: aiMsgId, sender: 'ai', text: data.reply.trim() }]);
+      } else {
+        setMessages(prev => [...prev, { id: aiMsgId, sender: 'ai', text: 'Maaf, saya sedang mengalami kendala jaringan. Coba ulangi beberapa saat lagi.' }]);
+      }
+    } catch (e) {
+      const errorId = Date.now().toString();
+      setMessages(prev => [...prev, { id: errorId, sender: 'ai', text: 'Koneksi ke server terputus. Pastikan server local backend Anda aktif.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getQuickQuestions = () => {
+    if (context?.type === 'child') {
+      return [
+        'Makanan tinggi kalsium apa saja yang disarankan?',
+        'Bagaimana melatih pola tidur teratur anak?',
+        'Aktivitas stimulasi motorik apa yang cocok?',
+      ];
+    } else if (context?.type === 'adult') {
+      return [
+        'Bagaimana menu makan defisit kalori sehat?',
+        'Olahraga apa yang aman untuk persendian?',
+        'Mengapa tidur teratur membantu berat badan?',
+      ];
+    } else if (context?.type === 'food') {
+      return [
+        'Ide sarapan pagi bergizi tinggi dan murah',
+        'Makanan yang baik untuk menambah darah',
+        'Cemilan sehat rendah kalori untuk malam hari',
+      ];
+    }
+    return [
+      'Bantu susun menu makan sehat hari ini',
+      'Cara mengatasi kurang tidur',
+      'Pentingnya protein hewani bagi anak',
+    ];
+  };
+
+  const clearChat = () => {
+    setMessages([]);
+    triggerInitialGreeting();
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.overlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.container}
+        >
+          <View style={styles.header}>
+            <View style={styles.titleContainer}>
+              <View style={styles.sparkleIcon}>
+                <Ionicons name="sparkles" size={16} color="#FFF" />
+              </View>
+              <Text style={styles.title}>{title || 'Konsultan NutriOS AI'}</Text>
+            </View>
+            <View style={styles.headerRight}>
+              <TouchableOpacity onPress={clearChat} style={{ marginRight: 16 }}>
+                <Ionicons name="refresh-outline" size={22} color="#4B5563" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onClose}>
+                <Ionicons name="close" size={24} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <ScrollView
+            style={styles.messageList}
+            contentContainerStyle={styles.messageListContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {messages.map((msg) => (
+              <View
+                key={msg.id}
+                style={[
+                  styles.bubbleContainer,
+                  msg.sender === 'user' ? styles.userBubbleContainer : styles.aiBubbleContainer
+                ]}
+              >
+                {msg.sender === 'ai' && (
+                  <View style={styles.aiAvatar}>
+                    <Ionicons name="sparkles-outline" size={14} color="#2563EB" />
+                  </View>
+                )}
+                <View
+                  style={[
+                    styles.bubble,
+                    msg.sender === 'user' ? styles.userBubble : styles.aiBubble
+                  ]}
+                >
+                  <Text style={msg.sender === 'user' ? styles.userText : styles.aiText}>
+                    {msg.text}
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+            {loading && (
+              <View style={[styles.bubbleContainer, styles.aiBubbleContainer]}>
+                <View style={styles.aiAvatar}>
+                  <Ionicons name="sparkles-outline" size={14} color="#2563EB" />
+                </View>
+                <View style={[styles.bubble, styles.aiBubble, styles.loadingBubble]}>
+                  <ActivityIndicator size="small" color="#2563EB" />
+                  <Text style={[styles.aiText, { marginLeft: 8 }]}>NutriOS AI sedang merangkum jawaban...</Text>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+
+          {messages.length <= 1 && (
+            <View style={styles.quickQuestionsContainer}>
+              <Text style={styles.quickQuestionsTitle}>Rekomendasi Pertanyaan:</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickQuestionsRow}>
+                {getQuickQuestions().map((q, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={styles.quickQuestionBtn}
+                    onPress={() => handleSend(q)}
+                  >
+                    <Text style={styles.quickQuestionText}>{q}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          <View style={styles.inputArea}>
+            <TextInput
+              style={styles.textInput}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Tanyakan rekomendasi kesehatan..."
+              placeholderTextColor="#9CA3AF"
+            />
+            <TouchableOpacity
+              onPress={() => handleSend()}
+              style={[styles.sendBtn, !inputText.trim() && styles.sendBtnDisabled]}
+              disabled={!inputText.trim()}
+            >
+              <Ionicons name="send" size={18} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  container: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    height: '80%',
+    display: 'flex',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sparkleIcon: {
+    backgroundColor: '#2563EB',
+    padding: 6,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  messageList: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  messageListContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    gap: 16,
+  },
+  bubbleContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    maxWidth: '85%',
+  },
+  aiBubbleContainer: {
+    alignSelf: 'flex-start',
+    gap: 8,
+  },
+  userBubbleContainer: {
+    alignSelf: 'flex-end',
+  },
+  aiAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+  },
+  bubble: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+  },
+  aiBubble: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  userBubble: {
+    backgroundColor: '#2563EB',
+    borderBottomRightRadius: 4,
+  },
+  loadingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  aiText: {
+    fontSize: 14,
+    color: '#1F2937',
+    lineHeight: 20,
+  },
+  userText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    lineHeight: 20,
+  },
+  quickQuestionsContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  quickQuestionsTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    marginLeft: 20,
+    marginBottom: 8,
+  },
+  quickQuestionsRow: {
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  quickQuestionBtn: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  quickQuestionText: {
+    fontSize: 13,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  inputArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderColor: '#F3F4F6',
+    gap: 12,
+  },
+  textInput: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    height: 48,
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    fontSize: 14,
+    color: '#1F2937',
+  },
+  sendBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendBtnDisabled: {
+    backgroundColor: '#93C5FD',
+  },
+});
