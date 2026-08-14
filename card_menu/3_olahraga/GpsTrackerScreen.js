@@ -12,23 +12,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import MapView, { Polyline, Marker } from 'react-native-maps';
 
-// ============================================================
-// KONSTANTA AKTIVITAS
-// ============================================================
 const ACTIVITY_TYPES = [
   { id: 'jalan', label: 'Jalan Kaki', icon: 'walk', color: '#10B981', met: 3.5 },
   { id: 'lari', label: 'Lari', icon: 'fitness', color: '#EF4444', met: 9.0 },
   { id: 'sepeda', label: 'Bersepeda', icon: 'bicycle', color: '#3B82F6', met: 7.5 },
 ];
 
-// ============================================================
-// UTILITAS KALKULASI
-// ============================================================
-
-// Rumus Haversine: jarak dua koordinat GPS dalam METER (bukan km)
-// Mengembalikan nilai dalam meter agar kalkulasi bertambah presisi
 const haversineMeters = (coord1, coord2) => {
-  const R = 6371000; // Radius bumi dalam meter
+  const R = 6371000;
   const dLat = ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
   const dLon = ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
   const a =
@@ -40,21 +31,16 @@ const haversineMeters = (coord1, coord2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-// ============================================================
-// SIMPLE KALMAN FILTER — meredam noise GPS
-// GPS biasanya loncat ±5-15m walau user diam. Filter ini
-// memperkirakan posisi sesungguhnya berdasarkan riwayat posisi.
-// ============================================================
 class KalmanFilter {
   constructor() {
-    this.variance = -1; // Negatif = belum diinisialisasi
+    this.variance = -1;
     this.minAccuracy = 1;
   }
 
   process(lat, lng, accuracy, timestamp) {
     if (accuracy < this.minAccuracy) accuracy = this.minAccuracy;
     if (this.variance < 0) {
-      // Inisialisasi pertama kali
+
       this.timestamp = timestamp;
       this.lat = lat;
       this.lng = lng;
@@ -62,7 +48,7 @@ class KalmanFilter {
     } else {
       const timeInc = (timestamp - this.timestamp) / 1000;
       if (timeInc > 0) {
-        this.variance += timeInc * 3 * 3; // Noise proses: asumsi drift 3m/s
+        this.variance += timeInc * 3 * 3;
         this.timestamp = timestamp;
       }
       const k = this.variance / (this.variance + accuracy * accuracy);
@@ -74,12 +60,10 @@ class KalmanFilter {
   }
 }
 
-// Konfigurasi filter akurasi
-const MAX_ACCEPTABLE_ACCURACY = 25; // Tolak sinyal GPS jika error > 25 meter
-const MIN_DISTANCE_METERS = 1.0;    // Abaikan pergerakan di bawah 1 meter (GPS drift)
-const MAX_SPEED_MS = 12;            // Kecepatan max 43 km/h (lari sprint); tolak data di atasnya
+const MAX_ACCEPTABLE_ACCURACY = 25;
+const MIN_DISTANCE_METERS = 1.0;
+const MAX_SPEED_MS = 12;
 
-// Kalori = MET × berat badan (kg) × durasi (jam)
 const calcCalories = (met, durationSec, weightKg = 65) => {
   const hours = durationSec / 3600;
   return Math.round(met * weightKg * hours);
@@ -106,29 +90,26 @@ const formatDistance = (meters) => {
   return `${(meters / 1000).toFixed(2)} km`;
 };
 
-// ============================================================
-// KOMPONEN UTAMA
-// ============================================================
 export default function GpsTrackerScreen() {
   const [selectedActivity, setSelectedActivity] = useState(null);
-  const [trackingState, setTrackingState] = useState('idle'); // idle | active | paused | finished
+  const [trackingState, setTrackingState] = useState('idle');
   const [routeCoords, setRouteCoords] = useState([]);
-  const [distanceMeters, setDistanceMeters] = useState(0); // disimpan dalam METER untuk presisi
+  const [distanceMeters, setDistanceMeters] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [currentSpeed, setCurrentSpeed] = useState(0);
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [gpsAccuracy, setGpsAccuracy] = useState(null);    // akurasi GPS dalam meter
+  const [gpsAccuracy, setGpsAccuracy] = useState(null);
   const [savedActivities, setSavedActivities] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [pointsAccepted, setPointsAccepted] = useState(0); // debug: berapa titik diterima
-  const [pointsRejected, setPointsRejected] = useState(0); // debug: berapa titik ditolak
+  const [pointsAccepted, setPointsAccepted] = useState(0);
+  const [pointsRejected, setPointsRejected] = useState(0);
 
   const locationSubscription = useRef(null);
   const timerRef = useRef(null);
   const mapRef = useRef(null);
   const lastCoordRef = useRef(null);
-  const distanceRef = useRef(0);        // dalam METER
-  const kalmanRef = useRef(new KalmanFilter()); // Kalman Filter instance
+  const distanceRef = useRef(0);
+  const kalmanRef = useRef(new KalmanFilter());
 
   useEffect(() => {
     loadSavedActivities();
@@ -176,7 +157,7 @@ export default function GpsTrackerScreen() {
     setPointsRejected(0);
     distanceRef.current = 0;
     lastCoordRef.current = null;
-    kalmanRef.current = new KalmanFilter(); // Reset Kalman Filter
+    kalmanRef.current = new KalmanFilter();
     setTrackingState('active');
 
     timerRef.current = setInterval(() => {
@@ -186,53 +167,48 @@ export default function GpsTrackerScreen() {
     Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.BestForNavigation,
-        timeInterval: 1000,       // Update tiap 1 detik (lebih responsif)
-        distanceInterval: 0,      // Jangan pakai filter jarak — biarkan filter kita yang bekerja
+        timeInterval: 1000,
+        distanceInterval: 0,
         mayShowUserSettingsDialog: true,
       },
       (loc) => {
         const { latitude, longitude, speed, accuracy, timestamp } = loc.coords;
 
-        // --- FILTER 1: Tolak sinyal GPS yang lemah (akurasi buruk) ---
         setGpsAccuracy(Math.round(accuracy));
         if (accuracy > MAX_ACCEPTABLE_ACCURACY) {
           setPointsRejected((p) => p + 1);
-          return; // Sinyal terlalu lemah, abaikan
+          return;
         }
 
-        // --- FILTER 2: Kalman Filter — haluskan posisi GPS ---
         const smoothed = kalmanRef.current.process(
           latitude, longitude, accuracy, timestamp || Date.now()
         );
 
         const newCoord = { latitude: smoothed.latitude, longitude: smoothed.longitude };
 
-        // --- FILTER 3: Sanity check kecepatan (tolak lompatan GPS tidak masuk akal) ---
         if (lastCoordRef.current && speed !== null) {
           if (speed > MAX_SPEED_MS) {
             setPointsRejected((p) => p + 1);
-            return; // Kecepatan tidak masuk akal, abaikan
+            return;
           }
         }
 
-        // --- FILTER 4: Threshold minimum pergerakan (1 meter) ---
         let deltaMeters = 0;
         if (lastCoordRef.current) {
           deltaMeters = haversineMeters(lastCoordRef.current, newCoord);
           if (deltaMeters < MIN_DISTANCE_METERS) {
-            // Koordinat terlalu dekat — GPS drift/noise, jangan tambah jarak
+
             setPointsRejected((p) => p + 1);
-            // Tetap update posisi peta tapi tidak tambah jarak
+
             setCurrentLocation(newCoord);
             setCurrentSpeed(speed > 0 ? speed : 0);
             return;
           }
-          // Pergerakan valid — akumulasi jarak dalam meter
+
           distanceRef.current += deltaMeters;
           setDistanceMeters(distanceRef.current);
         }
 
-        // Titik diterima — tambah ke rute
         lastCoordRef.current = newCoord;
         setCurrentLocation(newCoord);
         setCurrentSpeed(speed > 0 ? speed : 0);
@@ -262,7 +238,7 @@ export default function GpsTrackerScreen() {
     timerRef.current = setInterval(() => {
       setElapsedSec((prev) => prev + 1);
     }, 1000);
-    // Reset lastCoord agar tidak ada lompatan jarak saat resume
+
     lastCoordRef.current = null;
     Location.watchPositionAsync(
       { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 },
@@ -362,7 +338,6 @@ export default function GpsTrackerScreen() {
     ]);
   };
 
-  // --- RENDER: Pilih Aktivitas ---
   const renderActivityPicker = () => (
     <View style={styles.pickerSection}>
       <Text style={styles.sectionTitle}>Pilih Aktivitas</Text>
@@ -404,18 +379,17 @@ export default function GpsTrackerScreen() {
     </View>
   );
 
-  // --- RENDER: Sesi Aktif / Paused ---
   const renderActiveSession = () => {
     const act = selectedActivity || ACTIVITY_TYPES[0];
     const distKm = distanceMeters / 1000;
     const calories = calcCalories(act.met, elapsedSec);
     const speedKmh = currentSpeed > 0 ? (currentSpeed * 3.6).toFixed(1) : '0.0';
-    // Warna indikator kualitas sinyal GPS
+
     const gpsSignalColor = !gpsAccuracy ? '#9CA3AF'
-      : gpsAccuracy <= 5 ? '#10B981'   // Excellent (≤5m)
-      : gpsAccuracy <= 10 ? '#84CC16' // Good (≤10m)
-      : gpsAccuracy <= 20 ? '#F59E0B' // Fair (≤20m)
-      : '#EF4444';                     // Poor (>20m)
+      : gpsAccuracy <= 5 ? '#10B981'
+      : gpsAccuracy <= 10 ? '#84CC16'
+      : gpsAccuracy <= 20 ? '#F59E0B'
+      : '#EF4444';
     const gpsSignalLabel = !gpsAccuracy ? 'Mencari sinyal...'
       : gpsAccuracy <= 5 ? `GPS Excellent (±${gpsAccuracy}m)`
       : gpsAccuracy <= 10 ? `GPS Baik (±${gpsAccuracy}m)`
@@ -455,7 +429,7 @@ export default function GpsTrackerScreen() {
           </View>
         </View>
 
-        {/* Indikator Kualitas Sinyal GPS */}
+        {}
         <View style={[styles.gpsSignalBar, { borderLeftColor: gpsSignalColor }]}>
           <Ionicons name="navigate-circle" size={16} color={gpsSignalColor} />
           <Text style={[styles.gpsSignalText, { color: gpsSignalColor }]}>{gpsSignalLabel}</Text>
@@ -517,7 +491,6 @@ export default function GpsTrackerScreen() {
     );
   };
 
-  // --- RENDER: Ringkasan Selesai ---
   const renderFinished = () => {
     const act = selectedActivity || ACTIVITY_TYPES[0];
     const distKm = distanceMeters / 1000;
@@ -560,7 +533,6 @@ export default function GpsTrackerScreen() {
     );
   };
 
-  // --- RENDER: Riwayat ---
   const renderHistory = () => (
     <View style={styles.historySection}>
       <View style={styles.historyHeader}>
@@ -601,7 +573,7 @@ export default function GpsTrackerScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
+      {}
       <View style={styles.pageHeader}>
         <View>
           <Text style={styles.pageTitle}>GPS Tracker</Text>
@@ -623,9 +595,6 @@ export default function GpsTrackerScreen() {
   );
 }
 
-// ============================================================
-// STYLES
-// ============================================================
 const styles = StyleSheet.create({
   container: { paddingBottom: 40 },
 
@@ -727,7 +696,6 @@ const styles = StyleSheet.create({
   trackingBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   routeMarker: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
 
-  // Indikator Kualitas Sinyal GPS
   gpsSignalBar: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -31,7 +31,7 @@ import RekomendasiMakananScreen from './card_menu/6_rekomendasi_makanan';
 import LoginScreen from './auth/login';
 import RegisterScreen from './auth/register';
 
-// --- KOMPONEN LIQUID GLASS UNTUK GRID MENU ---
+
 const LiquidGlassTouchable = ({ onPress, onLongPress, style, children }) => {
   const shineAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -103,7 +103,7 @@ const LiquidGlassTouchable = ({ onPress, onLongPress, style, children }) => {
   );
 };
 
-// --- KOMPONEN LIQUID GLASS KHUSUS UNTUK TAB BAR BAWAH ---
+
 const LiquidGlassTabButton = ({ children, onPress, onLongPress, ...props }) => {
   const shineAnim = useRef(new Animated.Value(0)).current;
 
@@ -124,8 +124,8 @@ const LiquidGlassTabButton = ({ children, onPress, onLongPress, ...props }) => {
       onPress={onPress}
       onLongPress={handleLongPress}
       activeOpacity={0.8}
-      style={[props.style, { 
-        position: 'relative', 
+      style={[props.style, {
+        position: 'relative',
         overflow: 'hidden',
       }]}
     >
@@ -156,7 +156,7 @@ const LiquidGlassTabButton = ({ children, onPress, onLongPress, ...props }) => {
   );
 };
 
-// --- KOMPONEN BANTUAN UNTUK GRID MENU ---
+
 export const GridItem = ({ color, iconName, label, badge, onPress, onLongPress }) => {
   return (
     <LiquidGlassTouchable onPress={onPress} onLongPress={onLongPress} style={styles.gridTouch}>
@@ -175,12 +175,12 @@ export const GridItem = ({ color, iconName, label, badge, onPress, onLongPress }
   );
 };
 
-// --- SCREEN BERANDA ---
+
 export function HomeScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   const greetingName = user?.nama_lengkap ? `Hai, ${user.nama_lengkap}` : 'Hai, user';
 
-  // --- Streak & Total Latihan ---
+
   const [streakCount, setStreakCount] = useState(0);
   const [totalWorkoutMinutes, setTotalWorkoutMinutes] = useState(0);
   const [totalCalories, setTotalCalories] = useState(0);
@@ -214,7 +214,7 @@ export function HomeScreen({ navigation }) {
 
     const loadWorkoutHistory = async () => {
       try {
-        // Fallback local
+
         const stored = await AsyncStorage.getItem('olahraga_history');
         let rawHistory = [];
         if (stored) {
@@ -222,7 +222,7 @@ export function HomeScreen({ navigation }) {
           setWorkoutHistory(rawHistory.slice(0, 3));
         }
 
-        // Ambil DB
+
         const userIdVal = user ? user.id : 'null';
         const response = await fetch(`${API_BASE_URL}/api/riwayat-olahraga/${userIdVal}`);
         if (response.ok) {
@@ -231,12 +231,12 @@ export function HomeScreen({ navigation }) {
           setWorkoutHistory(data.slice(0, 3));
         }
 
-        // 1. Hitung durasi dan kalori dari latihan terpimpin (Guide Exercises)
+
         const guideSec = rawHistory.reduce((sum, item) => sum + (parseInt(item.sets || 1) * parseInt(item.duration || 0)), 0);
         const guideMin = guideSec / 60;
-        const guideCalories = Math.round(guideMin * 6); // Rata-rata 6 kcal per menit
+        const guideCalories = Math.round(guideMin * 6);
 
-        // 2. Hitung durasi dan kalori dari aktivitas outdoor (GPS Running/Walking/Cycling)
+
         const gpsStored = await AsyncStorage.getItem('gps_activities');
         let gpsMinutes = 0;
         let gpsCalories = 0;
@@ -247,7 +247,7 @@ export function HomeScreen({ navigation }) {
           gpsCalories = gpsData.reduce((sum, item) => sum + (parseInt(item.calories) || 0), 0);
         }
 
-        // 3. Akumulasikan totalnya
+
         setTotalWorkoutMinutes(Math.ceil(guideMin + gpsMinutes));
         setTotalCalories(guideCalories + gpsCalories);
       } catch (err) {
@@ -280,36 +280,36 @@ export function HomeScreen({ navigation }) {
           <Ionicons name="notifications-outline" size={26} color="#111827" />
         </View>
 
-        {/* --- GRID MENU --- */}
+        {}
         <View style={styles.gridContainer}>
-          <GridItem 
-            color="#5C6BC0" iconName="moon-outline" label="Jadwal Tidur" 
-            onPress={() => navigation.navigate('JadwalTidur')} 
-            onLongPress={() => handleLongPressMenu('Jadwal Tidur')} 
+          <GridItem
+            color="#5C6BC0" iconName="moon-outline" label="Jadwal Tidur"
+            onPress={() => navigation.navigate('JadwalTidur')}
+            onLongPress={() => handleLongPressMenu('Jadwal Tidur')}
           />
-          <GridItem 
-            color="#FFA726" iconName="analytics-outline" label="Kalkulator Pertumbuhan" 
-            onPress={() => navigation.navigate('KalkulatorPertumbuhan')} 
+          <GridItem
+            color="#FFA726" iconName="analytics-outline" label="Kalkulator Pertumbuhan"
+            onPress={() => navigation.navigate('KalkulatorPertumbuhan')}
             onLongPress={() => handleLongPressMenu('Kalkulator Pertumbuhan')}
           />
-          <GridItem 
-            color="#EF5350" iconName="barbell-outline" label="Olahraga" 
-            onPress={() => navigation.navigate('OlahragaMenu')} 
+          <GridItem
+            color="#EF5350" iconName="barbell-outline" label="Olahraga"
+            onPress={() => navigation.navigate('OlahragaMenu')}
             onLongPress={() => handleLongPressMenu('Olahraga')}
           />
-          <GridItem 
-            color="#26A69A" iconName="leaf-outline" label="Pengelola Stres" 
-            onPress={() => navigation.navigate('PengelolaStres')} 
+          <GridItem
+            color="#26A69A" iconName="leaf-outline" label="Pengelola Stres"
+            onPress={() => navigation.navigate('PengelolaStres')}
             onLongPress={() => handleLongPressMenu('Pengelola Stres')}
           />
-          <GridItem 
-            color="#FDD835" iconName="nutrition-outline" label="Pola Makan" 
-            onPress={() => navigation.navigate('PolaMakan')} 
+          <GridItem
+            color="#FDD835" iconName="nutrition-outline" label="Pola Makan"
+            onPress={() => navigation.navigate('PolaMakan')}
             onLongPress={() => handleLongPressMenu('Pola Makan')}
           />
-          <GridItem 
-            color="#AB47BC" iconName="fast-food-outline" label="Rekomendasi Makanan" 
-            onPress={() => navigation.navigate('RekomendasiMakanan')} 
+          <GridItem
+            color="#AB47BC" iconName="fast-food-outline" label="Rekomendasi Makanan"
+            onPress={() => navigation.navigate('RekomendasiMakanan')}
             onLongPress={() => handleLongPressMenu('Rekomendasi Makanan')}
           />
         </View>
@@ -328,7 +328,7 @@ export function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* --- HISTORI OLAHRAGA TERAKHIR --- */}
+        {}
         <View style={styles.historySection}>
           <Text style={styles.infoTitle}>Histori Olahraga Terakhir</Text>
           {workoutHistory.length === 0 ? (
@@ -355,7 +355,7 @@ export function HomeScreen({ navigation }) {
           )}
         </View>
 
-        {/* --- BAGIAN Tips & Edukasi Kesehatan Harian TELAH DIHAPUS --- */}
+        {}
 
         <TouchableOpacity style={styles.fab}>
           <Ionicons name="help-circle" size={30} color="#fff" />
@@ -423,7 +423,7 @@ const Tab = createBottomTabNavigator();
 const HomeStackNavigator = createStackNavigator();
 const RootStackNavigator = createStackNavigator();
 
-// --- STACK NAVIGATOR UNTUK HALAMAN BERANDA ---
+
 function HomeStack() {
   return (
     <HomeStackNavigator.Navigator screenOptions={{ headerShown: false }}>
@@ -443,7 +443,7 @@ function HomeStack() {
   );
 }
 
-// --- KOMPONEN TAB BAR UTAMA ---
+
 function MainTabs() {
   const insets = useSafeAreaInsets();
 
@@ -461,10 +461,10 @@ function MainTabs() {
         },
         tabBarActiveTintColor: '#3B82F6',
         tabBarInactiveTintColor: '#9CA3AF',
-        
-        // --- BAGIAN PENTING: GANTI TOMBOL TAB DENGAN LIQUID GLASS ---
+
+
         tabBarButton: (props) => <LiquidGlassTabButton {...props} />,
-        
+
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
@@ -493,7 +493,7 @@ function MainTabs() {
   );
 }
 
-// --- ROOT UTAMA ---
+
 export default function Navigation() {
   const [user, setUser] = useState(null);
 
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   gridTouch: {
-    width: '28%', 
+    width: '28%',
     marginBottom: 18,
   },
   gridItem: {
@@ -750,8 +750,8 @@ const styles = StyleSheet.create({
     color: '#4B5563',
     lineHeight: 20,
   },
-  
-  // --- HOME WORKOUT HISTORY STYLES ---
+
+
   historySection: {
     marginTop: 4,
     marginBottom: 20,

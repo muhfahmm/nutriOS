@@ -47,7 +47,6 @@ function getXamppMysqlPort() {
   return defaultPort;
 }
 
-// Database configuration
 const dbConfig = {
   host: process.env.DB_HOST || '127.0.0.1',
   user: process.env.DB_USER || 'root',
@@ -71,11 +70,9 @@ async function initializeDatabase() {
       connectionLimit: 10,
     });
 
-    // Test the connection
     const connection = await pool.getConnection();
     console.log('✅ Koneksi ke database MySQL berhasil.');
 
-    // Try to query the jadwal_tidur table to verify it exists
     try {
       const [tables] = await connection.execute('SHOW TABLES LIKE "jadwal_tidur"');
       if (tables.length === 0) {
@@ -88,7 +85,6 @@ async function initializeDatabase() {
       console.warn('⚠️  Tidak bisa memverifikasi tabel jadwal_tidur:', tableError.message);
     }
 
-    // Reset/TRUNCATE tabel jadwal_makan pada startup server
     try {
       await connection.execute('TRUNCATE TABLE jadwal_makan;');
       console.log('🔄 Tabel jadwal_makan berhasil di-reset (di-truncate) pada startup server.');
@@ -139,7 +135,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Registrasi User baru ke database
 app.post('/api/register', async (req, res) => {
   try {
     const { nama_lengkap, username, email, password } = req.body;
@@ -172,7 +167,6 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Cek ketersediaan username
 app.get('/api/check-username', async (req, res) => {
   try {
     const { username } = req.query;
@@ -189,8 +183,6 @@ app.get('/api/check-username', async (req, res) => {
   }
 });
 
-
-// Login User
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -234,7 +226,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Login/Register via Google
 app.post('/api/login-google', async (req, res) => {
   try {
     const { uid, email, displayName, photoURL } = req.body;
@@ -246,7 +237,6 @@ app.post('/api/login-google', async (req, res) => {
       return res.status(500).json({ message: 'Database tidak terkoneksi.' });
     }
 
-    // 1. Cek apakah user dengan email tersebut sudah ada di database
     let [rows] = await pool.execute(
       'SELECT id, nama_lengkap, username, email, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, jenis_kelamin, last_username_change, last_name_change FROM users WHERE email = ?',
       [email]
@@ -254,13 +244,11 @@ app.post('/api/login-google', async (req, res) => {
 
     let user;
     if (rows.length === 0) {
-      // 2. Jika belum ada, buat user baru secara otomatis (Auto-register)
-      // Buat username acak dari email atau nama
+
       const prefix = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
-      const randomSuffix = Math.floor(100 + Math.random() * 900); // 3 digit angka acak
+      const randomSuffix = Math.floor(100 + Math.random() * 900);
       const username = `${prefix}${randomSuffix}`;
 
-      // Buat password acak karena autentikasi dilakukan oleh Google
       const randomPassword = Math.random().toString(36).substring(2, 15);
       const passwordHash = bcrypt.hashSync(randomPassword, 12);
 
@@ -276,7 +264,7 @@ app.post('/api/login-google', async (req, res) => {
       user = newRows[0];
     } else {
       user = rows[0];
-      // Jika login Google tanpa foto, pastikan di database di-set NULL agar terhapus
+
       if (user.foto_profil !== null) {
         await pool.execute('UPDATE users SET foto_profil = NULL WHERE id = ?', [user.id]);
         user.foto_profil = null;
@@ -304,20 +292,17 @@ app.post('/api/login-google', async (req, res) => {
   }
 });
 
-// Menyimpan atau memperbarui jadwal tidur harian user
 app.post('/api/jadwal-tidur', async (req, res) => {
   try {
     console.log('[API] POST /api/jadwal-tidur - Request body:', JSON.stringify(req.body));
 
     const { userId, sleepTime, wakeTime, ageGroup, notifBedtime, notifScreenFree } = req.body;
 
-    // Validasi input
     if (!sleepTime || !wakeTime) {
       console.log('[API] Validation error: sleepTime atau wakeTime missing');
       return res.status(400).json({ message: 'Data tidak lengkap (sleepTime dan wakeTime diperlukan).' });
     }
 
-    // Cek database connection
     if (!pool) {
       console.error('[API] Database pool tidak tersedia');
       return res.status(500).json({ message: 'Database tidak terkoneksi.' });
@@ -325,7 +310,6 @@ app.post('/api/jadwal-tidur', async (req, res) => {
 
     console.log('[API] Processing jadwal tidur untuk userId:', userId || 'guest');
 
-    // Jika userId ada, gunakan update/insert ter-asosiasi
     if (userId) {
       console.log('[API] User login - mencari record untuk user_id:', userId);
       const [existing] = await pool.execute('SELECT id FROM jadwal_tidur WHERE user_id = ?', [userId]);
@@ -333,8 +317,8 @@ app.post('/api/jadwal-tidur', async (req, res) => {
       if (existing.length > 0) {
         console.log('[API] Record sudah ada, UPDATE...');
         await pool.execute(
-          `UPDATE jadwal_tidur 
-           SET sleep_time = ?, wake_time = ?, age_group = ?, notif_bedtime = ?, notif_screen_free = ? 
+          `UPDATE jadwal_tidur
+           SET sleep_time = ?, wake_time = ?, age_group = ?, notif_bedtime = ?, notif_screen_free = ?
            WHERE user_id = ?`,
           [sleepTime, wakeTime, ageGroup || 'Dewasa', notifBedtime ? 1 : 0, notifScreenFree ? 1 : 0, userId]
         );
@@ -343,7 +327,7 @@ app.post('/api/jadwal-tidur', async (req, res) => {
       } else {
         console.log('[API] Record belum ada, INSERT...');
         await pool.execute(
-          `INSERT INTO jadwal_tidur (user_id, sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free) 
+          `INSERT INTO jadwal_tidur (user_id, sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free)
            VALUES (?, ?, ?, ?, ?, ?)`,
           [userId, sleepTime, wakeTime, ageGroup || 'Dewasa', notifBedtime ? 1 : 0, notifScreenFree ? 1 : 0]
         );
@@ -351,15 +335,15 @@ app.post('/api/jadwal-tidur', async (req, res) => {
         return res.status(201).json({ message: 'Jadwal tidur berhasil disimpan.' });
       }
     } else {
-      // User tidak login: simpan sebagai data guest baru atau perbarui record guest terakhir (user_id IS NULL)
+
       console.log('[API] User guest - mencari record dengan user_id IS NULL');
       const [existingGuest] = await pool.execute('SELECT id FROM jadwal_tidur WHERE user_id IS NULL ORDER BY id DESC LIMIT 1');
 
       if (existingGuest.length > 0) {
         console.log('[API] Guest record sudah ada, UPDATE...');
         await pool.execute(
-          `UPDATE jadwal_tidur 
-           SET sleep_time = ?, wake_time = ?, age_group = ?, notif_bedtime = ?, notif_screen_free = ? 
+          `UPDATE jadwal_tidur
+           SET sleep_time = ?, wake_time = ?, age_group = ?, notif_bedtime = ?, notif_screen_free = ?
            WHERE user_id IS NULL`,
           [sleepTime, wakeTime, ageGroup || 'Dewasa', notifBedtime ? 1 : 0, notifScreenFree ? 1 : 0]
         );
@@ -368,7 +352,7 @@ app.post('/api/jadwal-tidur', async (req, res) => {
       } else {
         console.log('[API] Guest record belum ada, INSERT...');
         await pool.execute(
-          ` jadwal_tidur (user_id, sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free) 
+          ` jadwal_tidur (user_id, sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free)
            VALUES (NULL, ?, ?, ?, ?, ?)`,
           [sleepTime, wakeTime, ageGroup || 'Dewasa', notifBedtime ? 1 : 0, notifScreenFree ? 1 : 0]
         );
@@ -386,7 +370,6 @@ app.post('/api/jadwal-tidur', async (req, res) => {
   }
 });
 
-// Mendapatkan jadwal tidur harian user
 app.get('/api/jadwal-tidur/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -413,8 +396,6 @@ app.get('/api/jadwal-tidur/:userId', async (req, res) => {
   }
 });
 
-
-// Ganti Password User (Menggunakan GET sesuai request user)
 app.get('/api/ganti-password', async (req, res) => {
   try {
     const { userId, oldPassword, newPassword } = req.query;
@@ -425,20 +406,17 @@ app.get('/api/ganti-password', async (req, res) => {
 
     if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
 
-    // 1. Ambil user dari database
     const [rows] = await pool.execute('SELECT password FROM users WHERE id = ?', [userId]);
     if (rows.length === 0) {
       return res.status(404).json({ message: 'User tidak ditemukan.' });
     }
 
-    // 2. Bandingkan password lama
     const userDb = rows[0];
     const passwordIsValid = bcrypt.compareSync(oldPassword, userDb.password);
     if (!passwordIsValid) {
       return res.status(401).json({ message: 'Password lama salah.' });
     }
 
-    // 3. Hash password baru & simpan ke DB
     const newPasswordHash = bcrypt.hashSync(newPassword, 12);
     await pool.execute('UPDATE users SET password = ? WHERE id = ?', [newPasswordHash, userId]);
 
@@ -449,9 +427,6 @@ app.get('/api/ganti-password', async (req, res) => {
   }
 });
 
-
-
-// Update profil detail user (tinggi badan, berat badan, tanggal lahir, nama, username, foto, gender)
 app.post('/api/users/update', async (req, res) => {
   try {
     console.log('[API] POST /api/users/update - Request userId:', req.body.userId);
@@ -461,7 +436,6 @@ app.post('/api/users/update', async (req, res) => {
     }
     if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
 
-    // 1. Ambil data lama user untuk verifikasi nama_lengkap / username change cooldown
     const [userRows] = await pool.execute(
       'SELECT username, nama_lengkap, last_username_change, last_name_change FROM users WHERE id = ?',
       [userId]
@@ -476,7 +450,6 @@ app.post('/api/users/update', async (req, res) => {
     const updates = [];
     const params = [];
 
-    // Proses Tinggi, Berat, Lahir, Foto Profil, Jenis Kelamin
     updates.push('tinggi_badan = ?', 'berat_badan = ?', 'tanggal_lahir = ?', 'jenis_kelamin = ?');
     params.push(
       (tinggi_badan && tinggi_badan !== '') ? tinggi_badan : null,
@@ -490,15 +463,14 @@ app.post('/api/users/update', async (req, res) => {
       params.push(foto_profil || null);
     }
 
-    // 2. Cek Cooldown Nama Lengkap (7 Hari)
     if (nama_lengkap && nama_lengkap !== currentUser.nama_lengkap) {
       if (currentUser.last_name_change) {
         const lastChange = new Date(currentUser.last_name_change);
         const nextAllowed = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
         if (new Date() < nextAllowed) {
           const diffDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
-          return res.status(400).json({ 
-            message: `Gagal mengubah nama lengkap. Anda baru saja menggantinya. Tunggu ${diffDays} hari lagi.` 
+          return res.status(400).json({
+            message: `Gagal mengubah nama lengkap. Anda baru saja menggantinya. Tunggu ${diffDays} hari lagi.`
           });
         }
       }
@@ -506,9 +478,8 @@ app.post('/api/users/update', async (req, res) => {
       params.push(nama_lengkap);
     }
 
-    // 3. Cek Cooldown Username (14 Hari) + Cek Ketersediaan Username Unik
     if (username && username !== currentUser.username) {
-      // Periksa apakah username sudah dipakai orang lain
+
       const [takenRows] = await pool.execute('SELECT id FROM users WHERE username = ? AND id != ?', [username, userId]);
       if (takenRows.length > 0) {
         return res.status(400).json({ message: 'Username sudah digunakan oleh akun lain.' });
@@ -519,8 +490,8 @@ app.post('/api/users/update', async (req, res) => {
         const nextAllowed = new Date(lastChange.getTime() + 14 * 24 * 60 * 60 * 1000);
         if (new Date() < nextAllowed) {
           const diffDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
-          return res.status(400).json({ 
-            message: `Gagal mengubah username. Anda baru saja menggantinya. Tunggu ${diffDays} hari lagi.` 
+          return res.status(400).json({
+            message: `Gagal mengubah username. Anda baru saja menggantinya. Tunggu ${diffDays} hari lagi.`
           });
         }
       }
@@ -534,7 +505,6 @@ app.post('/api/users/update', async (req, res) => {
       await pool.execute(query, params);
     }
 
-    // Ambil data user yang terbaru untuk dikembalikan ke client
     const [rows] = await pool.execute(
       'SELECT id, nama_lengkap, username, email, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, jenis_kelamin, last_username_change, last_name_change FROM users WHERE id = ?',
       [userId]
@@ -547,10 +517,6 @@ app.post('/api/users/update', async (req, res) => {
   }
 });
 
-
-// === ENDPOINT ANAK (CRUD) ===
-
-// Mendapatkan daftar anak berdasarkan userId
 app.get('/api/anak/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -567,7 +533,6 @@ app.get('/api/anak/:userId', async (req, res) => {
   }
 });
 
-// Menambahkan data anak baru
 app.post('/api/anak', async (req, res) => {
   try {
     const { userId, nama_anak, tanggal_lahir, jenis_kelamin, status_z_score } = req.body;
@@ -591,7 +556,6 @@ app.post('/api/anak', async (req, res) => {
   }
 });
 
-// Menghapus data anak
 app.delete('/api/anak/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -605,18 +569,13 @@ app.delete('/api/anak/:id', async (req, res) => {
   }
 });
 
-
-
-// === ENDPOINT RIWAYAT OLAHRAGA (EXERCISE) ===
-
 app.get('/api/riwayat-olahraga/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
 
-    // Cek jika userId adalah guest atau 'null' string
     const queryUserId = (userId === 'null' || !userId) ? null : userId;
-    
+
     let rows;
     if (queryUserId) {
       [rows] = await pool.execute(
@@ -656,9 +615,6 @@ app.post('/api/riwayat-olahraga', async (req, res) => {
   }
 });
 
-
-// === ENDPOINT RIWAYAT PERTUMBUHAN USER (IMT) ===
-
 app.get('/api/pertumbuhan-user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -694,9 +650,6 @@ app.post('/api/pertumbuhan-user', async (req, res) => {
   }
 });
 
-
-// === ENDPOINT RIWAYAT PERTUMBUHAN ANAK ===
-
 app.get('/api/pertumbuhan-anak/:anakId', async (req, res) => {
   try {
     const { anakId } = req.params;
@@ -726,7 +679,6 @@ app.post('/api/pertumbuhan-anak', async (req, res) => {
       [anakId, berat_badan, tinggi_badan, umur_bulan, status_gizi || 'Normal']
     );
 
-    // Update status Z-Score terakhir di profil anak
     await pool.execute('UPDATE anak SET status_z_score = ? WHERE id = ?', [status_gizi || 'Normal', anakId]);
 
     return res.status(201).json({ message: 'Riwayat timbangan anak berhasil disimpan.' });
@@ -736,16 +688,13 @@ app.post('/api/pertumbuhan-anak', async (req, res) => {
   }
 });
 
-// === ENDPOINTS POLA MAKAN ===
-
 app.get('/api/pola-makan/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const queryUserId = (userId === 'null' || userId === 'guest' || !userId) ? null : parseInt(userId, 10);
-    
+
     if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
 
-    // Ambil jadwal makan
     let schedulesQuery;
     let schedulesParams;
     if (queryUserId) {
@@ -768,7 +717,7 @@ app.post('/api/jadwal-makan', async (req, res) => {
   try {
     const { userId, mealType, mealTime, notifEnabled } = req.body;
     const queryUserId = (userId === 'null' || userId === 'guest' || !userId) ? null : parseInt(userId, 10);
-    
+
     if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
 
     let existingQuery;
@@ -838,7 +787,6 @@ app.delete('/api/log-makanan/:id', async (req, res) => {
     return res.status(500).json({ message: 'Gagal menghapus makanan.' });
   }
 });
-
 
 const port = process.env.APP_PORT || 3000;
 const server = app.listen(port, '0.0.0.0', () => {

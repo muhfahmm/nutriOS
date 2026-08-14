@@ -1,12 +1,12 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TextInput, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  KeyboardAvoidingView, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Alert
@@ -15,7 +15,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../AuthContext';
 import { API_BASE_URL, fetchWithTimeout } from '../api';
 
-// Safe dynamic imports for Firebase & Google Sign-In
 let GoogleSignin = null;
 let auth = null;
 try {
@@ -32,12 +31,11 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState(null);
-  const [messageType, setMessageType] = useState('error'); // 'error' atau 'success'
+  const [messageType, setMessageType] = useState('error');
   const [loading, setLoading] = useState(false);
 
   const { setUser } = useContext(AuthContext);
 
-  // Inisialisasi Google Sign-In
   useEffect(() => {
     if (GoogleSignin) {
       try {
@@ -95,7 +93,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleGoogleLogin = async () => {
     if (!GoogleSignin || !auth) {
-      // Tawarkan mode simulasi pengujian untuk lingkungan Expo Go
+
       Alert.alert(
         'Simulasi Google Sign-In',
         'Google Sign-in native membutuhkan build custom (.apk). Apakah Anda ingin login dengan Akun Simulasi Google untuk menguji integrasi database?',
@@ -151,20 +149,16 @@ export default function LoginScreen({ navigation }) {
     setMessage(null);
 
     try {
-      // 1. Cek Google Play Services
+
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      
-      // 2. Dapatkan token ID dari Google Sign-In
+
       const { idToken, user: googleUser } = await GoogleSignin.signIn();
-      
-      // 3. Buat kredensial Firebase Auth
+
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-      
-      // 4. Masuk ke Firebase menggunakan kredensial tersebut
+
       const firebaseResult = await auth().signInWithCredential(googleCredential);
       const firebaseUser = firebaseResult.user;
 
-      // 5. Kirim data user ke backend lokal
       const backendResponse = await fetchWithTimeout(`${API_BASE_URL}/api/login-google`, {
         method: 'POST',
         headers: {
@@ -202,8 +196,8 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        style={styles.keyboardContainer} 
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.headerSection}>
@@ -243,11 +237,11 @@ export default function LoginScreen({ navigation }) {
                 placeholderTextColor="#9CA3AF"
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons 
-                  name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                  size={20} 
-                  color="#9CA3AF" 
-                  style={{ padding: 4 }} 
+                <Ionicons
+                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#9CA3AF"
+                  style={{ padding: 4 }}
                 />
               </TouchableOpacity>
             </View>
@@ -259,9 +253,9 @@ export default function LoginScreen({ navigation }) {
             </Text>
           ) : null}
 
-          <TouchableOpacity 
-            style={[styles.buttonPrimary, loading && styles.buttonDisabled]} 
-            onPress={handleLogin} 
+          <TouchableOpacity
+            style={[styles.buttonPrimary, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
             disabled={loading}
           >
             {loading ? (
@@ -271,15 +265,15 @@ export default function LoginScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
-          {/* ATAU MASUK DENGAN GOOGLE */}
+          {}
           <View style={styles.separatorContainer}>
             <View style={styles.separatorLine} />
             <Text style={styles.separatorText}>atau masuk dengan</Text>
             <View style={styles.separatorLine} />
           </View>
 
-          <TouchableOpacity 
-            style={styles.googleBtn} 
+          <TouchableOpacity
+            style={styles.googleBtn}
             onPress={handleGoogleLogin}
             disabled={loading}
           >
@@ -288,8 +282,8 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity 
-          style={styles.footer} 
+        <TouchableOpacity
+          style={styles.footer}
           onPress={() => navigation && navigation.navigate('Register')}
         >
           <Text style={styles.footerText}>
@@ -297,10 +291,10 @@ export default function LoginScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.footer, { marginTop: 12 }]} 
+        <TouchableOpacity
+          style={[styles.footer, { marginTop: 12 }]}
           onPress={() => {
-            setUser(null); // Guest
+            setUser(null);
             if (navigation) navigation.replace('MainTabs');
           }}
         >

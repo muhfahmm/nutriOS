@@ -19,9 +19,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../../auth/AuthContext';
 import { API_BASE_URL } from '../../auth/api';
 
-// ============================================================
-// 1. DATA GERAKAN — DIPERBANYAK (MIN 5, MAKS 10 PER TAB)
-// ============================================================
+
+
+
 const EXERCISE_DATA = {
   Dada: [
     {
@@ -294,7 +294,7 @@ const EXERCISE_DATA = {
   ],
 };
 
-// --- TAB BARU (HANYA 4 MENU) ---
+
 const CATEGORY_TABS = [
   { id: 'Grup', label: 'Latihan', icon: 'grid-outline' },
   { id: 'GPS', label: 'Running', icon: 'navigate-outline' },
@@ -303,11 +303,11 @@ const CATEGORY_TABS = [
 ];
 
 export default function OlahragaScreen() {
-  // --- CONTEXT ---
+
   const { user } = useContext(AuthContext);
 
-  // --- STATE UTAMA ---
-  const [activeTab, setActiveTab] = useState('Grup'); // Default ke Grup
+
+  const [activeTab, setActiveTab] = useState('Grup');
   const [wishlist, setWishlist] = useState([]);
 
   const [activeExercise, setActiveExercise] = useState(null);
@@ -325,32 +325,32 @@ export default function OlahragaScreen() {
   const [streak, setStreak] = useState(0);
   const [history, setHistory] = useState([]);
   const [isSessionFinished, setIsSessionFinished] = useState(false);
-  
-  // --- STATE SUARA (TTS) ---
+
+
   const [selectedVoice, setSelectedVoice] = useState(null);
   const [isVoiceLoaded, setIsVoiceLoaded] = useState(false);
 
-  // --- STATE MODAL KONFIGURASI ---
+
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedExerciseForModal, setSelectedExerciseForModal] = useState(null);
   const [sets, setSets] = useState('1');
   const [durationSeconds, setDurationSeconds] = useState('30');
 
-  // --- STATE MODE SETELAH LATIHAN ---
-  const [finishMode, setFinishMode] = useState('stop'); // 'stop', 'next', 'auto'
+
+  const [finishMode, setFinishMode] = useState('stop');
   const finishModeRef = useRef('stop');
 
   const updateFinishMode = (mode) => {
     setFinishMode(mode);
     finishModeRef.current = mode;
   };
-  
-  // --- STATE COUNTDOWN SEBELUM MULAI ---
+
+
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdownNum, setCountdownNum] = useState(null);
   const countdownTimeoutRef = useRef([]);
 
-  // --- STATE AUTO PLAY ---
+
   const [autoPlay, setAutoPlay] = useState(false);
   const autoPlayRef = useRef(false);
   const autoPlayTimeoutRef = useRef(null);
@@ -364,9 +364,9 @@ export default function OlahragaScreen() {
   const timerRef = useRef(null);
   const spokenCountRef = useRef(new Set());
 
-  // ============================================================
-  // 2. MEMUAT SUARA & STREAK HARIAN & HISTORI
-  // ============================================================
+
+
+
   useEffect(() => {
     const updateStreak = async () => {
       try {
@@ -466,9 +466,9 @@ export default function OlahragaScreen() {
     } catch (e) { console.warn('Gagal menyimpan ke DB:', e); }
   };
 
-  // ============================================================
-  // 3. FUNGSI UTAMA SUARA (Gaya Google)
-  // ============================================================
+
+
+
   const speak = (text) => {
     try {
       Speech.speak(text, {
@@ -477,16 +477,16 @@ export default function OlahragaScreen() {
     } catch (error) { console.warn('Gagal memutar suara:', error); }
   };
 
-  // ============================================================
-  // 4. WISHLIST HANDLER
-  // ============================================================
+
+
+
   const toggleWishlist = (id) => {
     setWishlist((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
   };
 
-  // ============================================================
-  // 5. LOGIKA MEMBUKA MODAL & MEMULAI LATIHAN
-  // ============================================================
+
+
+
   const openExerciseConfig = (exercise) => {
     setSets('1');
     setDurationSeconds('30');
@@ -499,9 +499,9 @@ export default function OlahragaScreen() {
     const numSets = parseInt(sets) || 1;
     const numDurationSeconds = parseInt(durationSeconds) || 30;
     const calculatedTotalDuration = numSets * numDurationSeconds;
-    
+
     const exercise = selectedExerciseForModal;
-    
+
     setModalVisible(false);
     setSelectedExerciseForModal(null);
 
@@ -532,11 +532,11 @@ export default function OlahragaScreen() {
     setCountdownNum(null);
     progressAnim.setValue(0);
     setIsSessionFinished(false);
-    
+
     const beginTimer = () => {
       setIsCountingDown(false);
       setCountdownNum(null);
-      
+
       let timerStarted = false;
       const startRunningTimer = () => {
         if (timerStarted) return;
@@ -556,7 +556,7 @@ export default function OlahragaScreen() {
             if (next <= 0) {
               clearInterval(timerRef.current);
               setIsSessionFinished(true);
-              
+
               const playFinishedSpeechAndTransition = () => {
                 const multiplier = duration / 30;
                 setCaloriesBurned((c) => parseFloat((c + 1.5 * multiplier).toFixed(1)));
@@ -566,7 +566,7 @@ export default function OlahragaScreen() {
                 const onFinishedSpeechDone = () => {
                   if (speechFinishedCalled) return;
                   speechFinishedCalled = true;
-                  
+
                   if (finishModeRef.current === 'auto') {
                     if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
                     autoPlayTimeoutRef.current = setTimeout(() => {
@@ -658,7 +658,7 @@ export default function OlahragaScreen() {
 
     try {
       Speech.speak(`${exercise.name}. ${exercise.instruction}`, {
-        language: 'id-ID', rate: 0.9, 
+        language: 'id-ID', rate: 0.9,
         onStart: () => {
           clearTimeout(safetyIntro);
         },
@@ -694,7 +694,7 @@ export default function OlahragaScreen() {
         if (next <= 0) {
           clearInterval(timerRef.current);
           setIsSessionFinished(true);
-          
+
           const playFinishedSpeechAndTransition = () => {
             const baseDuration = 30;
             const multiplier = totalDuration / baseDuration;
@@ -705,7 +705,7 @@ export default function OlahragaScreen() {
             const onFinishedSpeechDone = () => {
               if (speechFinishedCalled) return;
               speechFinishedCalled = true;
-              
+
               if (finishModeRef.current === 'auto') {
                 if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
                 autoPlayTimeoutRef.current = setTimeout(() => {
@@ -771,7 +771,7 @@ export default function OlahragaScreen() {
       return;
     }
 
-    // Ambil daftar latihan berdasarkan tab yang aktif
+
     let fullList = [];
     if (activeTab === 'Grup') {
       const allGroups = ['Dada', 'Kaki', 'Bahu & Punggung', 'Otot perut', 'Lengan'];
@@ -787,7 +787,7 @@ export default function OlahragaScreen() {
 
     const currentIndex = fullList.findIndex(ex => ex.id === currentEx.id);
     let nextIndex = currentIndex + 1;
-    
+
     if (nextIndex >= fullList.length) {
       nextIndex = 0;
       if (autoPlayRef.current) updateAutoPlayState(false);
@@ -833,9 +833,9 @@ export default function OlahragaScreen() {
     return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // ============================================================
-  // 6. DATA YANG DITAMPILKAN SESUAI TAB AKTIF
-  // ============================================================
+
+
+
   const getDisplayedExercises = () => {
     if (activeTab === 'Wishlist') {
       const all = Object.values(EXERCISE_DATA).flat();
@@ -851,7 +851,7 @@ export default function OlahragaScreen() {
 
   const displayedExercises = getDisplayedExercises();
 
-  // --- RENDER UTAMA ---
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -860,7 +860,7 @@ export default function OlahragaScreen() {
           <Text style={styles.subtitle}>Aktivitas fisik ringan dengan panduan suara.</Text>
         </View>
 
-        {/* TAB KATEGORI (4 Menu Utama) */}
+        {}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabRow}>
           {CATEGORY_TABS.map((tab) => (
             <TouchableOpacity
@@ -874,7 +874,7 @@ export default function OlahragaScreen() {
           ))}
         </ScrollView>
 
-        {/* SESI LATIHAN AKTIF */}
+        {}
         {activeExercise && (
           <View style={styles.card}>
             <View style={styles.sessionHeader}>
@@ -954,12 +954,12 @@ export default function OlahragaScreen() {
           </View>
         )}
 
-        {/* GPS TRACKER TAB */}
+        {}
         {activeTab === 'GPS' && (
           <GpsTrackerScreen />
         )}
 
-        {/* DAFTAR GERAKAN / HISTORI (SELAIN TAB GPS) */}
+        {}
         {activeTab !== 'GPS' && (
           <>
             <View style={styles.listSection}>
@@ -967,7 +967,7 @@ export default function OlahragaScreen() {
                 {activeTab === 'Wishlist' ? 'Gerakan Favorit Saya' : activeTab === 'History' ? 'Histori Latihan' : 'Semua Latihan'}
               </Text>
 
-              {/* KONDISI UNTUK TAB 'Grup' (Menampilkan per kelompok otot dengan Header) */}
+              {}
               {activeTab === 'Grup' ? (
                 ['Dada', 'Kaki', 'Bahu & Punggung', 'Otot perut', 'Lengan'].map((groupKey) => {
                   const exercises = EXERCISE_DATA[groupKey] || [];
@@ -999,7 +999,7 @@ export default function OlahragaScreen() {
                   );
                 })
               ) : (
-                /* KONDISI UNTUK TAB 'Wishlist' & 'History' */
+
                 activeTab === 'History' ? (
                   history.length === 0 ? (
                     <View style={styles.emptyState}>
@@ -1023,7 +1023,7 @@ export default function OlahragaScreen() {
                     ))
                   )
                 ) : (
-                  /* Wishlist */
+
                   displayedExercises.length === 0 ? (
                     <View style={styles.emptyState}>
                       <Ionicons name="heart-outline" size={40} color="#9CA3AF" />
@@ -1055,7 +1055,7 @@ export default function OlahragaScreen() {
               )}
             </View>
 
-            {/* METRIK PROGRES */}
+            {}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Progres & Metrik</Text>
               <View style={styles.metricRow}>
@@ -1080,7 +1080,7 @@ export default function OlahragaScreen() {
         )}
       </ScrollView>
 
-      {/* MODAL KONFIGURASI SET & DETIK + MODE SETELAH SELESAI */}
+      {}
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -1113,7 +1113,7 @@ export default function OlahragaScreen() {
               </View>
             </View>
 
-            {/* PILIHAN MODE SETELAH LATIHAN */}
+            {}
             <View style={styles.modeSelectGroup}>
               <Text style={styles.inputLabel}>Setelah latihan ini selesai:</Text>
               <View style={styles.modeSelectRow}>
@@ -1150,9 +1150,9 @@ export default function OlahragaScreen() {
   );
 }
 
-// ============================================================
-// 7. STYLES
-// ============================================================
+
+
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F7FF' },
   scrollContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40 },
@@ -1166,7 +1166,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
   tabTextActive: { color: '#2563EB' },
 
-  // --- GROUP HEADER BARU ---
+
   groupHeader: {
     fontSize: 16,
     fontWeight: '800',
@@ -1238,13 +1238,13 @@ const styles = StyleSheet.create({
   modeSelectRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, flexWrap: 'wrap' },
   modeBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1.5, borderColor: 'transparent', gap: 4 },
   modeBtnText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  
+
   modeBtnActiveStop: { backgroundColor: '#FEF2F2', borderColor: '#EF4444' },
   modeBtnTextActiveStop: { color: '#EF4444' },
-  
+
   modeBtnActiveNext: { backgroundColor: '#EFF6FF', borderColor: '#2563EB' },
   modeBtnTextActiveNext: { color: '#2563EB' },
-  
+
   modeBtnActiveAuto: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
   modeBtnTextActiveAuto: { color: '#10B981' },
 });

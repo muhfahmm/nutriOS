@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
   Animated,
   Easing,
   TextInput,
@@ -16,25 +16,25 @@ import { Ionicons } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 
 export default function PengelolaStresScreen() {
-  // --- STATE INTERAKTIF ---
+
   const [mood, setMood] = useState(null);
-  const [breathingMode, setBreathingMode] = useState('Tenang'); // Tenang / Tidur / Cepat
+  const [breathingMode, setBreathingMode] = useState('Tenang');
   const [isBreathing, setIsBreathing] = useState(false);
   const [isSOSActive, setIsSOSActive] = useState(false);
   const [journalText, setJournalText] = useState('');
-  const [stressLevel, setStressLevel] = useState('Sedang'); // Mock level stress
-  const [selectedTags, setSelectedTags] = useState([]); // Tag pemicu stres
+  const [stressLevel, setStressLevel] = useState('Sedang');
+  const [selectedTags, setSelectedTags] = useState([]);
 
-  // --- ANIMASI & PANDUAN PERNAPASAN ---
+
   const [breathTextMsg, setBreathTextMsg] = useState('Siap');
-  const [timeLeft, setTimeLeft] = useState(60); // Detik pemulihan cepat (1 menit)
+  const [timeLeft, setTimeLeft] = useState(60);
 
   const isBreathingRef = useRef(false);
   const selectedModeRef = useRef('Tenang');
   const timerRef = useRef(null);
   const breathAnim = useRef(new Animated.Value(1)).current;
 
-  // Cleanup saat layar ditutup
+
   useEffect(() => {
     return () => {
       clearInterval(timerRef.current);
@@ -46,7 +46,7 @@ export default function PengelolaStresScreen() {
     const mode = selectedModeRef.current;
 
     if (mode === 'Tidur') {
-      // Mode Tidur: 4-7-8 (Tarik 4 detik, Tahan 7 detik, Hembuskan 8 detik)
+
       setBreathTextMsg('Tarik Napas...');
       Animated.timing(breathAnim, {
         toValue: 1.8,
@@ -78,7 +78,7 @@ export default function PengelolaStresScreen() {
         });
       });
     } else {
-      // Mode Tenang & Pemulihan Cepat: 4-4 (Tarik 4 detik, Hembuskan 4 detik)
+
       setBreathTextMsg('Tarik Napas...');
       Animated.timing(breathAnim, {
         toValue: 1.8,
@@ -145,7 +145,7 @@ export default function PengelolaStresScreen() {
   };
 
   const toggleTag = (tag) => {
-    setSelectedTags((prev) => 
+    setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
   };
@@ -160,7 +160,7 @@ export default function PengelolaStresScreen() {
     setSelectedTags([]);
   };
 
-  // Fitur SOS (Mode Tenang Cepat)
+
   const handleSOS = () => {
     setIsSOSActive(true);
     if (!isBreathing) startBreathing('Cepat');
@@ -171,7 +171,7 @@ export default function PengelolaStresScreen() {
     if (isBreathing) stopBreathing();
   };
 
-  // --- MOCK DATA INSIGHT & SARAN ---
+
   const insights = [
     "Dalam 7 hari terakhir, Anda stres tinggi pada hari Selasa & Kamis. Pola tidur Anda pada malam sebelumnya hanya 5 jam. Coba tidur lebih awal!",
     "Stres Anda menurun 20% pada hari-hari saat Anda makan teratur."
@@ -180,8 +180,8 @@ export default function PengelolaStresScreen() {
     return (
     <SafeAreaView style={[styles.container, isSOSActive && styles.sosContainerOverlay]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        {/* 1. HEADER & TOMBOL SOS */}
+
+        {}
         <View style={styles.headerRow}>
           <View style={styles.header}>
             <Text style={styles.title}>Pengelola Stres</Text>
@@ -193,7 +193,7 @@ export default function PengelolaStresScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* --- SAAT MODE SOS AKTIF --- */}
+        {}
         {isSOSActive ? (
           <View style={styles.sosFocusMode}>
             <TouchableOpacity style={styles.exitSosBtn} onPress={exitSOS}>
@@ -203,7 +203,7 @@ export default function PengelolaStresScreen() {
 
             <View style={styles.breathingArea}>
               <Text style={styles.breathingModeTitle}>Mode Tenang Cepat</Text>
-              
+
               <View style={styles.breathCircleWrapper}>
                 <Animated.View style={[styles.breathCircle, { transform: [{ scale: breathAnim }] }]} />
                 <Text style={styles.breathInstruction}>
@@ -214,7 +214,7 @@ export default function PengelolaStresScreen() {
               <Text style={styles.timeLeftText}>
                 Sisa Waktu: {timeLeft} detik
               </Text>
-              
+
               <View style={styles.breathControls}>
                 <TouchableOpacity style={styles.breathToggleBtn} onPress={() => toggleBreathing('Cepat')}>
                   <Text style={styles.breathToggleText}>
@@ -225,9 +225,9 @@ export default function PengelolaStresScreen() {
             </View>
           </View>
         ) : (
-          // --- TAMPILAN NORMAL ---
+
           <>
-            {/* 2. MOOD CHECK-IN */}
+            {}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Mood Check-in</Text>
               <Text style={styles.subCardTitle}>Bagaimana perasaan Anda hari ini?</Text>
@@ -239,8 +239,8 @@ export default function PengelolaStresScreen() {
                   { emoji: '😠', label: 'Marah' },
                   { emoji: '😫', label: 'Sangat Stres' },
                 ].map((item, idx) => (
-                  <TouchableOpacity 
-                    key={idx} 
+                  <TouchableOpacity
+                    key={idx}
                     style={[styles.moodBtn, mood === idx && styles.moodBtnActive]}
                     onPress={() => setMood(idx)}
                   >
@@ -254,12 +254,12 @@ export default function PengelolaStresScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* 3. LATIHAN PERNAPASAN INTERAKTIF */}
+            {}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Latihan Pernapasan</Text>
-              
+
               <View style={styles.modeSelector}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.modeBtn, breathingMode === 'Tenang' && styles.modeBtnActive]}
                   onPress={() => {
                     if (isBreathing) stopBreathing();
@@ -268,7 +268,7 @@ export default function PengelolaStresScreen() {
                 >
                   <Text style={[styles.modeBtnText, breathingMode === 'Tenang' && styles.modeBtnTextActive]}>Tenang (4-4)</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.modeBtn, breathingMode === 'Tidur' && styles.modeBtnActive]}
                   onPress={() => {
                     if (isBreathing) stopBreathing();
@@ -277,7 +277,7 @@ export default function PengelolaStresScreen() {
                 >
                   <Text style={[styles.modeBtnText, breathingMode === 'Tidur' && styles.modeBtnTextActive]}>Tidur (4-7-8)</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.modeBtn, breathingMode === 'Cepat' && styles.modeBtnActive]}
                   onPress={() => {
                     if (isBreathing) stopBreathing();
@@ -307,7 +307,7 @@ export default function PengelolaStresScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* 4. ANALISIS & KORELASI STRES */}
+            {}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Analisis & Korelasi</Text>
               <View style={styles.insightBox}>
@@ -326,12 +326,12 @@ export default function PengelolaStresScreen() {
               </View>
             </View>
 
-            {/* 5. JURNAL PICU STRES */}
+            {}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Jurnal Pemicu Stres</Text>
               <Text style={styles.subCardTitle}>Apa yang membuat Anda stres hari ini? (Pilih pemicu di bawah)</Text>
-              
-              {/* TAG PEMICU CEPAT */}
+
+              {}
               <View style={styles.tagGrid}>
                 {['💼 Pekerjaan', '👨‍👩‍👧 Keluarga', '🏥 Kesehatan', '🪙 Keuangan', '❤️ Hubungan'].map((tag) => {
                   const isActive = selectedTags.includes(tag);
@@ -363,11 +363,11 @@ export default function PengelolaStresScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* 6. SARAN & REKOMENDASI CERDAS */}
+            {}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Saran Cerdas</Text>
               <Text style={styles.subCardTitle}>Berdasarkan tingkat stres Anda (Tingkat Stres: {stressLevel})</Text>
-              
+
               <TouchableOpacity style={styles.aiSuggestion} onPress={() => alert('Mengarahkan ke halaman Olahraga')}>
                 <View style={styles.aiIconWrap}>
                   <Ionicons name="barbell-outline" size={20} color="#2563EB" />
@@ -448,8 +448,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 4,
   },
-  
-  // --- KARTU UMUM ---
+
+
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // --- 2. MOOD ---
+
   moodRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // --- 3. PERNAPASAN ---
+
   modeSelector: {
     flexDirection: 'row',
     gap: 8,
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // --- 4. ANALISIS ---
+
   insightBox: {
     backgroundColor: '#F8FAFC',
     padding: 14,
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
 
-  // --- 5. JURNAL ---
+
   journalInput: {
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // --- TAG PEMICU CEPAT ---
+
   tagGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // --- BREATH COUNTDOWN & TEXT ---
+
   breathCountdownText: {
     textAlign: 'center',
     fontSize: 14,
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // --- 6. SARAN AI ---
+
   aiSuggestion: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
 
-  // --- MODE SOS ---
+
   sosContainerOverlay: {
     backgroundColor: '#1F2937',
   },
