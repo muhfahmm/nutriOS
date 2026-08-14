@@ -179,7 +179,7 @@ export const GridItem = ({ color, iconName, label, badge, onPress, onLongPress }
 
 
 export function HomeScreen({ navigation }) {
-  const { user } = useContext(AuthContext);
+  const { user, isDarkMode } = useContext(AuthContext);
   const greetingName = user?.nama_lengkap ? `Hai, ${user.nama_lengkap}` : 'Hai, user';
 
 
