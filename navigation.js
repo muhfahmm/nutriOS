@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from './auth/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from './auth/api';
+import GeminiConsultantModal from './components/GeminiConsultantModal';
 
 if (Text && !Text.defaultProps) {
   Text.defaultProps = {};
@@ -185,6 +186,7 @@ export function HomeScreen({ navigation }) {
   const [totalWorkoutMinutes, setTotalWorkoutMinutes] = useState(0);
   const [totalCalories, setTotalCalories] = useState(0);
   const [workoutHistory, setWorkoutHistory] = useState([]);
+  const [isAiModalVisible, setIsAiModalVisible] = useState(false);
 
   useEffect(() => {
     const updateStreak = async () => {
@@ -357,12 +359,23 @@ export function HomeScreen({ navigation }) {
 
         {}
 
-        <TouchableOpacity style={styles.fab}>
-          <Ionicons name="help-circle" size={30} color="#fff" />
-        </TouchableOpacity>
-
         <StatusBar style="auto" />
       </ScrollView>
+
+      <TouchableOpacity style={styles.fab} onPress={() => setIsAiModalVisible(true)}>
+        <Ionicons name="sparkles" size={26} color="#fff" />
+      </TouchableOpacity>
+
+      <GeminiConsultantModal
+        visible={isAiModalVisible}
+        onClose={() => setIsAiModalVisible(false)}
+        context={{
+          type: 'general',
+          user: user
+        }}
+        title="NutriOS AI: Asisten Pintar"
+        systemPrompt="Bertindaklah sebagai asisten kesehatan cerdas keluarga. Bantu menjawab semua pertanyaan tentang gizi, pola tidur, olahraga, dan tumbuh kembang anak secara ringkas."
+      />
     </SafeAreaView>
   );
 }
