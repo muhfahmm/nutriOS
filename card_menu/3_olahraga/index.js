@@ -294,14 +294,10 @@ const EXERCISE_DATA = {
   ],
 };
 
-// TAB SESUAI GAMBAR
+// --- TAB BARU (HANYA 4 MENU) ---
 const CATEGORY_TABS = [
-  { id: 'Dada', label: 'Dada', icon: 'body-outline' },
-  { id: 'Kaki', label: 'Kaki', icon: 'walk-outline' },
-  { id: 'Bahu & Punggung', label: 'Bahu & Punggung', icon: 'body-outline' },
-  { id: 'Otot perut', label: 'Otot perut', icon: 'triangle-outline' },
-  { id: 'Lengan', label: 'Lengan', icon: 'flash-outline' },
-  { id: 'GPS', label: 'GPS Tracker', icon: 'navigate-outline' },
+  { id: 'Grup', label: 'Latihan', icon: 'grid-outline' },
+  { id: 'GPS', label: 'Running', icon: 'navigate-outline' },
   { id: 'Wishlist', label: 'Favorit', icon: 'bookmark-outline' },
   { id: 'History', label: 'Histori', icon: 'time-outline' },
 ];
@@ -311,7 +307,7 @@ export default function OlahragaScreen() {
   const { user } = useContext(AuthContext);
 
   // --- STATE UTAMA ---
-  const [activeTab, setActiveTab] = useState('Dada');
+  const [activeTab, setActiveTab] = useState('Grup'); // Default ke Grup
   const [wishlist, setWishlist] = useState([]);
 
   const [activeExercise, setActiveExercise] = useState(null);
@@ -495,7 +491,6 @@ export default function OlahragaScreen() {
     setSets('1');
     setDurationSeconds('30');
     setSelectedExerciseForModal(exercise);
-    // Sesuaikan pilihan default modal dengan status autoplay aktif saat ini
     updateFinishMode(autoPlayRef.current ? 'auto' : 'stop');
     setModalVisible(true);
   };
@@ -505,12 +500,11 @@ export default function OlahragaScreen() {
     const numDurationSeconds = parseInt(durationSeconds) || 30;
     const calculatedTotalDuration = numSets * numDurationSeconds;
     
-    const exercise = selectedExerciseForModal; // Simpan copy lokal sebelum di-reset
+    const exercise = selectedExerciseForModal;
     
     setModalVisible(false);
     setSelectedExerciseForModal(null);
 
-    // Sinkronkan state autoPlay dengan mode yang dipilih
     if (finishModeRef.current === 'auto') {
       updateAutoPlayState(true);
     } else {
@@ -524,7 +518,6 @@ export default function OlahragaScreen() {
   };
 
   const startExercise = (exercise, duration) => {
-    // Bersihkan semua
     clearInterval(timerRef.current);
     countdownTimeoutRef.current.forEach(t => clearTimeout(t));
     countdownTimeoutRef.current = [];
@@ -538,7 +531,7 @@ export default function OlahragaScreen() {
     setIsCountingDown(false);
     setCountdownNum(null);
     progressAnim.setValue(0);
-    setIsSessionFinished(false); // Reset session status di sini
+    setIsSessionFinished(false);
     
     const beginTimer = () => {
       setIsCountingDown(false);
@@ -578,11 +571,11 @@ export default function OlahragaScreen() {
                     if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
                     autoPlayTimeoutRef.current = setTimeout(() => {
                       handleNextExercise();
-                    }, 2500); // Jeda 2.5 detik setelah suara selesai berbicara
+                    }, 2500);
                   }
                 };
 
-                const safetySpeech = setTimeout(onFinishedSpeechDone, 3000); // Pemicu cadangan 3s jika TTS mati
+                const safetySpeech = setTimeout(onFinishedSpeechDone, 3000);
 
                 try {
                   Speech.speak('Selesai! Kerja bagus.', {
@@ -612,7 +605,6 @@ export default function OlahragaScreen() {
         }, 1000);
       };
 
-      // Fallback timer jika Speech 'Mulai!' gagal memicu
       const safetyMulai = setTimeout(startRunningTimer, 2000);
 
       try {
@@ -662,7 +654,7 @@ export default function OlahragaScreen() {
       introCalled = true;
       startCountdown();
     };
-    const safetyIntro = setTimeout(goIntro, 8000); // Intro speech is longer, give it 8s fallback
+    const safetyIntro = setTimeout(goIntro, 8000);
 
     try {
       Speech.speak(`${exercise.name}. ${exercise.instruction}`, {
@@ -718,11 +710,11 @@ export default function OlahragaScreen() {
                 if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
                 autoPlayTimeoutRef.current = setTimeout(() => {
                   handleNextExercise();
-                }, 2500); // Jeda 2.5 detik setelah suara selesai berbicara
+                }, 2500);
               }
             };
 
-            const safetySpeech = setTimeout(onFinishedSpeechDone, 3000); // Pemicu cadangan 3s jika TTS mati
+            const safetySpeech = setTimeout(onFinishedSpeechDone, 3000);
 
             try {
               Speech.speak('Selesai! Kerja bagus.', {
@@ -773,29 +765,35 @@ export default function OlahragaScreen() {
   };
 
   const handleNextExercise = () => {
-    // --- PENTING: Cegah crash jika activeExerciseRef.current null ---
     const currentEx = activeExerciseRef.current;
     if (!currentEx) {
       if (autoPlayRef.current) updateAutoPlayState(false);
       return;
     }
-    // ------------------------------------------------
 
-    const list = EXERCISE_DATA[activeTab] || [];
-    if (list.length === 0) {
-      handleStop();
-      return;
+    // Ambil daftar latihan berdasarkan tab yang aktif
+    let fullList = [];
+    if (activeTab === 'Grup') {
+      const allGroups = ['Dada', 'Kaki', 'Bahu & Punggung', 'Otot perut', 'Lengan'];
+      fullList = allGroups.flatMap(group => EXERCISE_DATA[group] || []);
+    } else if (activeTab === 'Wishlist') {
+      const all = Object.values(EXERCISE_DATA).flat();
+      fullList = all.filter((ex) => wishlist.includes(ex.id));
+    } else {
+      fullList = EXERCISE_DATA[activeTab] || [];
     }
 
-    const currentIndex = list.findIndex(ex => ex.id === currentEx.id);
+    if (fullList.length === 0) { handleStop(); return; }
+
+    const currentIndex = fullList.findIndex(ex => ex.id === currentEx.id);
     let nextIndex = currentIndex + 1;
     
-    if (nextIndex >= list.length) {
+    if (nextIndex >= fullList.length) {
       nextIndex = 0;
       if (autoPlayRef.current) updateAutoPlayState(false);
     }
 
-    const nextExercise = list[nextIndex];
+    const nextExercise = fullList[nextIndex];
     Speech.stop();
 
     let nextSpeechDone = false;
@@ -807,7 +805,7 @@ export default function OlahragaScreen() {
       saveToHistory(nextExercise, numSets, numDurationSeconds);
       startExercise(nextExercise, numSets * numDurationSeconds);
     };
-    const safetyNext = setTimeout(triggerNext, 2500); // 2.5 detik pemicu cadangan
+    const safetyNext = setTimeout(triggerNext, 2500);
 
     try {
       Speech.speak('Latihan selanjutnya...', {
@@ -844,6 +842,10 @@ export default function OlahragaScreen() {
       return all.filter((ex) => wishlist.includes(ex.id));
     }
     if (activeTab === 'History') return [];
+    if (activeTab === 'Grup') {
+      const allGroups = ['Dada', 'Kaki', 'Bahu & Punggung', 'Otot perut', 'Lengan'];
+      return allGroups.flatMap(group => EXERCISE_DATA[group] || []);
+    }
     return EXERCISE_DATA[activeTab] || [];
   };
 
@@ -858,6 +860,7 @@ export default function OlahragaScreen() {
           <Text style={styles.subtitle}>Aktivitas fisik ringan dengan panduan suara.</Text>
         </View>
 
+        {/* TAB KATEGORI (4 Menu Utama) */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabRow}>
           {CATEGORY_TABS.map((tab) => (
             <TouchableOpacity
@@ -956,63 +959,99 @@ export default function OlahragaScreen() {
           <GpsTrackerScreen />
         )}
 
-        {/* DAFTAR GERAKAN / HISTORI */}
+        {/* DAFTAR GERAKAN / HISTORI (SELAIN TAB GPS) */}
         {activeTab !== 'GPS' && (
           <>
             <View style={styles.listSection}>
               <Text style={styles.sectionLabel}>
-                {activeTab === 'Wishlist' ? 'Gerakan Favorit Saya' : activeTab === 'History' ? 'Histori Latihan' : `Latihan ${activeTab}`}
+                {activeTab === 'Wishlist' ? 'Gerakan Favorit Saya' : activeTab === 'History' ? 'Histori Latihan' : 'Semua Latihan'}
               </Text>
-              {activeTab === 'History' ? (
-                history.length === 0 ? (
-                  <View style={styles.emptyState}>
-                    <Ionicons name="time-outline" size={40} color="#9CA3AF" />
-                    <Text style={styles.emptyStateText}>Belum ada histori latihan.</Text>
-                  </View>
-                ) : (
-                  history.map((item) => (
-                    <View key={item.id} style={styles.historyCard}>
-                      <View style={styles.exerciseIconWrap}><Ionicons name={item.icon} size={24} color="#2563EB" /></View>
-                      <View style={styles.exerciseInfo}>
-                        <Text style={styles.exerciseName}>{item.name}</Text>
-                        <Text style={styles.exerciseTarget}>{item.target}</Text>
-                        <Text style={styles.historyDate}>{item.date}</Text>
-                      </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={styles.historySets}>{item.sets} Set</Text>
-                        <Text style={styles.historyDuration}>{item.duration}s / Set</Text>
-                      </View>
-                    </View>
-                  ))
-                )
-              ) : displayedExercises.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Ionicons name="heart-outline" size={40} color="#9CA3AF" />
-                  <Text style={styles.emptyStateText}>
-                    {activeTab === 'Wishlist' ? 'Belum ada gerakan favorit. Tekan ikon hati pada card untuk menambahkan.' : 'Belum ada gerakan di kategori ini.'}
-                  </Text>
-                </View>
-              ) : (
-                displayedExercises.map((ex) => {
-                  const isFavorite = wishlist.includes(ex.id);
-                  const isThisActive = activeExercise?.id === ex.id;
+
+              {/* KONDISI UNTUK TAB 'Grup' (Menampilkan per kelompok otot dengan Header) */}
+              {activeTab === 'Grup' ? (
+                ['Dada', 'Kaki', 'Bahu & Punggung', 'Otot perut', 'Lengan'].map((groupKey) => {
+                  const exercises = EXERCISE_DATA[groupKey] || [];
+                  if (exercises.length === 0) return null;
                   return (
-                    <View key={ex.id} style={styles.exerciseCard}>
-                      <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
-                        <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
-                      </TouchableOpacity>
-                      <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
-                      <View style={styles.exerciseInfo}>
-                        <Text style={styles.exerciseName}>{ex.name}</Text>
-                        <Text style={styles.exerciseTarget}>{ex.target}</Text>
-                      </View>
-                      <TouchableOpacity style={[styles.startBtnSmall, isThisActive && styles.startBtnSmallActive]} onPress={() => openExerciseConfig(ex)}>
-                        <Ionicons name={isThisActive ? 'volume-high' : 'play'} size={16} color="#FFFFFF" />
-                        <Text style={styles.startBtnSmallText}>{isThisActive ? 'Aktif' : 'Mulai'}</Text>
-                      </TouchableOpacity>
+                    <View key={groupKey}>
+                      <Text style={styles.groupHeader}>{groupKey}</Text>
+                      {exercises.map((ex) => {
+                        const isFavorite = wishlist.includes(ex.id);
+                        const isThisActive = activeExercise?.id === ex.id;
+                        return (
+                          <View key={ex.id} style={styles.exerciseCard}>
+                            <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
+                              <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
+                            </TouchableOpacity>
+                            <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
+                            <View style={styles.exerciseInfo}>
+                              <Text style={styles.exerciseName}>{ex.name}</Text>
+                              <Text style={styles.exerciseTarget}>{ex.target}</Text>
+                            </View>
+                            <TouchableOpacity style={[styles.startBtnSmall, isThisActive && styles.startBtnSmallActive]} onPress={() => openExerciseConfig(ex)}>
+                              <Ionicons name={isThisActive ? 'volume-high' : 'play'} size={16} color="#FFFFFF" />
+                              <Text style={styles.startBtnSmallText}>{isThisActive ? 'Aktif' : 'Mulai'}</Text>
+                            </TouchableOpacity>
+                          </View>
+                        );
+                      })}
                     </View>
                   );
                 })
+              ) : (
+                /* KONDISI UNTUK TAB 'Wishlist' & 'History' */
+                activeTab === 'History' ? (
+                  history.length === 0 ? (
+                    <View style={styles.emptyState}>
+                      <Ionicons name="time-outline" size={40} color="#9CA3AF" />
+                      <Text style={styles.emptyStateText}>Belum ada histori latihan.</Text>
+                    </View>
+                  ) : (
+                    history.map((item) => (
+                      <View key={item.id} style={styles.historyCard}>
+                        <View style={styles.exerciseIconWrap}><Ionicons name={item.icon} size={24} color="#2563EB" /></View>
+                        <View style={styles.exerciseInfo}>
+                          <Text style={styles.exerciseName}>{item.name}</Text>
+                          <Text style={styles.exerciseTarget}>{item.target}</Text>
+                          <Text style={styles.historyDate}>{item.date}</Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <Text style={styles.historySets}>{item.sets} Set</Text>
+                          <Text style={styles.historyDuration}>{item.duration}s / Set</Text>
+                        </View>
+                      </View>
+                    ))
+                  )
+                ) : (
+                  /* Wishlist */
+                  displayedExercises.length === 0 ? (
+                    <View style={styles.emptyState}>
+                      <Ionicons name="heart-outline" size={40} color="#9CA3AF" />
+                      <Text style={styles.emptyStateText}>Belum ada gerakan favorit. Tekan ikon hati pada card untuk menambahkan.</Text>
+                    </View>
+                  ) : (
+                    displayedExercises.map((ex) => {
+                      const isFavorite = wishlist.includes(ex.id);
+                      const isThisActive = activeExercise?.id === ex.id;
+                      return (
+                        <View key={ex.id} style={styles.exerciseCard}>
+                          <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
+                            <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
+                          </TouchableOpacity>
+                          <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
+                          <View style={styles.exerciseInfo}>
+                            <Text style={styles.exerciseName}>{ex.name}</Text>
+                            <Text style={styles.exerciseTarget}>{ex.target}</Text>
+                          </View>
+                          <TouchableOpacity style={[styles.startBtnSmall, isThisActive && styles.startBtnSmallActive]} onPress={() => openExerciseConfig(ex)}>
+                            <Ionicons name={isThisActive ? 'volume-high' : 'play'} size={16} color="#FFFFFF" />
+                            <Text style={styles.startBtnSmallText}>{isThisActive ? 'Aktif' : 'Mulai'}</Text>
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    })
+                  )
+                )
               )}
             </View>
 
@@ -1126,6 +1165,16 @@ const styles = StyleSheet.create({
   tabChipActive: { backgroundColor: '#F0F7FF', borderWidth: 1.5, borderColor: '#2563EB' },
   tabText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
   tabTextActive: { color: '#2563EB' },
+
+  // --- GROUP HEADER BARU ---
+  groupHeader: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#2563EB',
+    marginTop: 16,
+    marginBottom: 8,
+    paddingLeft: 4,
+  },
 
   historyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 14, borderRadius: 16, marginBottom: 10, borderWidth: 1, borderColor: '#E5E7EB' },
   historyDate: { fontSize: 11, color: '#9CA3AF', marginTop: 4 },

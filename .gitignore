@@ -39,3 +39,14 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# ==========================================
+# KODE TAMBAHAN DARI SARAN SEBELUMNYA
+# ==========================================
+
+# Firebase configuration files (Rahasia, jangan sampai terupload ke GitHub!)
+google-services.json
+GoogleService-Info.plist
+
+# Environment variables (Menyimpan webClientId dan kunci rahasia lainnya)
+.env

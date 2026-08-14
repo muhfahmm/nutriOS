@@ -13,7 +13,9 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nutrios.app",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +23,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.nutriOSandro"
+      "package": "com.nutrios.app",
+      "googleServicesFile": "./google-services.json"
     },
     "updates": {
       "enabled": false,
@@ -40,6 +43,19 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "NutriOS membutuhkan akses lokasi GPS untuk merekam rute aktivitasmu."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "minSdkVersion": 23,
+            "targetSdkVersion": 34
+          },
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
       ]
     ]

@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Animated, Easing } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Animated, Easing, Platform } from 'react-native';
 import { useState, useContext, useRef, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -34,6 +34,25 @@ import RegisterScreen from './auth/register';
 // --- KOMPONEN LIQUID GLASS UNTUK GRID MENU ---
 const LiquidGlassTouchable = ({ onPress, onLongPress, style, children }) => {
   const shineAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      friction: 7,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 7,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const handleLongPress = () => {
     shineAnim.setValue(0);
@@ -49,11 +68,15 @@ const LiquidGlassTouchable = ({ onPress, onLongPress, style, children }) => {
   return (
     <TouchableOpacity
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       onLongPress={handleLongPress}
-      activeOpacity={0.8}
+      activeOpacity={0.9}
       style={[style, { overflow: 'hidden', position: 'relative' }]}
     >
-      {children}
+      <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%', alignItems: 'center' }}>
+        {children}
+      </Animated.View>
       <Animated.View
         style={{
           position: 'absolute',
@@ -160,6 +183,7 @@ export function HomeScreen({ navigation }) {
   // --- Streak & Total Latihan ---
   const [streakCount, setStreakCount] = useState(0);
   const [totalWorkoutMinutes, setTotalWorkoutMinutes] = useState(0);
+  const [totalCalories, setTotalCalories] = useState(0);
   const [workoutHistory, setWorkoutHistory] = useState([]);
 
   useEffect(() => {
@@ -207,9 +231,25 @@ export function HomeScreen({ navigation }) {
           setWorkoutHistory(data.slice(0, 3));
         }
 
-        // Hitung akumulasi total menit olahraga harian/mingguan dari seluruh riwayat
-        const totalSec = rawHistory.reduce((sum, item) => sum + (parseInt(item.sets || 1) * parseInt(item.duration || 0)), 0);
-        setTotalWorkoutMinutes(Math.ceil(totalSec / 60));
+        // 1. Hitung durasi dan kalori dari latihan terpimpin (Guide Exercises)
+        const guideSec = rawHistory.reduce((sum, item) => sum + (parseInt(item.sets || 1) * parseInt(item.duration || 0)), 0);
+        const guideMin = guideSec / 60;
+        const guideCalories = Math.round(guideMin * 6); // Rata-rata 6 kcal per menit
+
+        // 2. Hitung durasi dan kalori dari aktivitas outdoor (GPS Running/Walking/Cycling)
+        const gpsStored = await AsyncStorage.getItem('gps_activities');
+        let gpsMinutes = 0;
+        let gpsCalories = 0;
+        if (gpsStored) {
+          const gpsData = JSON.parse(gpsStored);
+          const gpsSec = gpsData.reduce((sum, item) => sum + (parseInt(item.durationSec) || 0), 0);
+          gpsMinutes = gpsSec / 60;
+          gpsCalories = gpsData.reduce((sum, item) => sum + (parseInt(item.calories) || 0), 0);
+        }
+
+        // 3. Akumulasikan totalnya
+        setTotalWorkoutMinutes(Math.ceil(guideMin + gpsMinutes));
+        setTotalCalories(guideCalories + gpsCalories);
       } catch (err) {
         console.warn('Gagal memuat histori olahraga di homepage:', err);
       }
@@ -221,8 +261,8 @@ export function HomeScreen({ navigation }) {
 
   const streakStats = [
     { icon: 'flame', label: 'Hari Aktif', value: `${streakCount} Hari`, note: 'berturut-turut', color: '#F97316' },
-    { icon: 'time', label: 'Total Olahraga', value: `${totalWorkoutMinutes} Menit`, note: 'keseluruhan', color: '#3B82F6' },
-    { icon: 'restaurant', label: 'Makan Tercatat', value: '95%', note: 'minggu ini', color: '#10B981' },
+    { icon: 'time', label: 'Total Durasi', value: `${totalWorkoutMinutes} Menit`, note: 'latihan fisik', color: '#3B82F6' },
+    { icon: 'flash', label: 'Kalori Terbakar', value: `${totalCalories} Kcal`, note: 'estimasi energi', color: '#EF4444' },
   ];
 
   const handleLongPressMenu = (menuName) => {
@@ -240,52 +280,35 @@ export function HomeScreen({ navigation }) {
           <Ionicons name="notifications-outline" size={26} color="#111827" />
         </View>
 
-        <View style={styles.bannerContainer}>
-          <View style={styles.bannerTextContent}>
-            <Text style={styles.bannerTitle}>Masuk ke ruang publik?</Text>
-            <Text style={styles.bannerSubtitle}>Selalu terapkan protokol kesehatan</Text>
-            <TouchableOpacity style={styles.checkinButton}>
-              <Ionicons name="scan-outline" size={18} color="#2196F3" />
-              <Text style={styles.checkinText}>Check-in</Text>
-            </TouchableOpacity>
-          </View>
-          <Ionicons name="phone-portrait-outline" size={70} color="#ffffff" style={styles.bannerImage} />
-        </View>
-
-        <TouchableOpacity style={styles.miniCheckinRow}>
-          <Ionicons name="chevron-down" size={18} color="#4B5563" />
-          <Text style={styles.miniCheckinText}>Pengaturan Check-in</Text>
-        </TouchableOpacity>
-
         {/* --- GRID MENU --- */}
         <View style={styles.gridContainer}>
           <GridItem 
-            color="#5C6BC0" iconName="moon" label="Jadwal Tidur" 
+            color="#5C6BC0" iconName="moon-outline" label="Jadwal Tidur" 
             onPress={() => navigation.navigate('JadwalTidur')} 
             onLongPress={() => handleLongPressMenu('Jadwal Tidur')} 
           />
           <GridItem 
-            color="#FFA726" iconName="analytics" label="Kalkulator Pertumbuhan" 
+            color="#FFA726" iconName="analytics-outline" label="Kalkulator Pertumbuhan" 
             onPress={() => navigation.navigate('KalkulatorPertumbuhan')} 
             onLongPress={() => handleLongPressMenu('Kalkulator Pertumbuhan')}
           />
           <GridItem 
-            color="#EF5350" iconName="barbell" label="Olahraga" 
+            color="#EF5350" iconName="barbell-outline" label="Olahraga" 
             onPress={() => navigation.navigate('OlahragaMenu')} 
             onLongPress={() => handleLongPressMenu('Olahraga')}
           />
           <GridItem 
-            color="#26A69A" iconName="leaf" label="Pengelola Stres" 
+            color="#26A69A" iconName="leaf-outline" label="Pengelola Stres" 
             onPress={() => navigation.navigate('PengelolaStres')} 
             onLongPress={() => handleLongPressMenu('Pengelola Stres')}
           />
           <GridItem 
-            color="#FDD835" iconName="nutrition" label="Pola Makan" 
+            color="#FDD835" iconName="nutrition-outline" label="Pola Makan" 
             onPress={() => navigation.navigate('PolaMakan')} 
             onLongPress={() => handleLongPressMenu('Pola Makan')}
           />
           <GridItem 
-            color="#AB47BC" iconName="fast-food" label="Rekomendasi Makanan" 
+            color="#AB47BC" iconName="fast-food-outline" label="Rekomendasi Makanan" 
             onPress={() => navigation.navigate('RekomendasiMakanan')} 
             onLongPress={() => handleLongPressMenu('Rekomendasi Makanan')}
           />
@@ -569,11 +592,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 20,
     marginBottom: 20,
   },
   gridTouch: {
-    width: '30%', 
+    width: '28%', 
     marginBottom: 18,
   },
   gridItem: {
@@ -586,8 +609,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 5,
   },
   badgeContainer: {
     position: 'absolute',
@@ -606,8 +634,9 @@ const styles = StyleSheet.create({
   },
   gridLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir' : 'sans-serif-medium',
+    color: '#1F2937',
     textAlign: 'center',
     lineHeight: 18,
     width: '100%',

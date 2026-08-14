@@ -234,6 +234,76 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Login/Register via Google
+app.post('/api/login-google', async (req, res) => {
+  try {
+    const { uid, email, displayName, photoURL } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email dari akun Google tidak valid.' });
+    }
+
+    if (!pool) {
+      return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+    }
+
+    // 1. Cek apakah user dengan email tersebut sudah ada di database
+    let [rows] = await pool.execute(
+      'SELECT id, nama_lengkap, username, email, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, jenis_kelamin, last_username_change, last_name_change FROM users WHERE email = ?',
+      [email]
+    );
+
+    let user;
+    if (rows.length === 0) {
+      // 2. Jika belum ada, buat user baru secara otomatis (Auto-register)
+      // Buat username acak dari email atau nama
+      const prefix = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
+      const randomSuffix = Math.floor(100 + Math.random() * 900); // 3 digit angka acak
+      const username = `${prefix}${randomSuffix}`;
+
+      // Buat password acak karena autentikasi dilakukan oleh Google
+      const randomPassword = Math.random().toString(36).substring(2, 15);
+      const passwordHash = bcrypt.hashSync(randomPassword, 12);
+
+      const [result] = await pool.execute(
+        'INSERT INTO users (nama_lengkap, username, email, password, foto_profil) VALUES (?, ?, ?, ?, ?)',
+        [displayName || 'User Google', username, email, passwordHash, photoURL || null]
+      );
+
+      const [newRows] = await pool.execute(
+        'SELECT id, nama_lengkap, username, email, foto_profil, tinggi_badan, berat_badan, DATE_FORMAT(tanggal_lahir, "%Y-%m-%d") as tanggal_lahir, jenis_kelamin, last_username_change, last_name_change FROM users WHERE id = ?',
+        [result.insertId]
+      );
+      user = newRows[0];
+    } else {
+      user = rows[0];
+      // Jika login Google tanpa foto, pastikan di database di-set NULL agar terhapus
+      if (user.foto_profil !== null) {
+        await pool.execute('UPDATE users SET foto_profil = NULL WHERE id = ?', [user.id]);
+        user.foto_profil = null;
+      }
+    }
+
+    const safeUser = {
+      id: user.id,
+      nama_lengkap: user.nama_lengkap,
+      username: user.username,
+      email: user.email,
+      foto_profil: user.foto_profil,
+      tinggi_badan: user.tinggi_badan,
+      berat_badan: user.berat_badan,
+      tanggal_lahir: user.tanggal_lahir,
+      jenis_kelamin: user.jenis_kelamin,
+      last_username_change: user.last_username_change,
+      last_name_change: user.last_name_change,
+    };
+
+    return res.json({ message: 'Login Google berhasil.', user: safeUser });
+  } catch (error) {
+    console.error('Error Google Login backend:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat autentikasi Google.' });
+  }
+});
+
 // Menyimpan atau memperbarui jadwal tidur harian user
 app.post('/api/jadwal-tidur', async (req, res) => {
   try {

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -8,11 +8,24 @@ import {
   SafeAreaView, 
   KeyboardAvoidingView, 
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../AuthContext';
 import { API_BASE_URL, fetchWithTimeout } from '../api';
+
+// Safe dynamic imports for Firebase & Google Sign-In
+let GoogleSignin = null;
+let auth = null;
+try {
+  const gModule = require('@react-native-google-signin/google-signin');
+  GoogleSignin = gModule.GoogleSignin;
+  const fModule = require('@react-native-firebase/auth');
+  auth = fModule.default;
+} catch (e) {
+  console.warn("Firebase/Google Sign-In modules not available in this environment.");
+}
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -23,6 +36,20 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const { setUser } = useContext(AuthContext);
+
+  // Inisialisasi Google Sign-In
+  useEffect(() => {
+    if (GoogleSignin) {
+      try {
+        GoogleSignin.configure({
+          webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'your_web_client_id_here.apps.googleusercontent.com',
+          offlineAccess: true,
+        });
+      } catch (err) {
+        console.error('Google Sign-In configuration failed:', err);
+      }
+    }
+  }, []);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -61,6 +88,113 @@ export default function LoginScreen({ navigation }) {
       console.error('Login error:', error);
       setMessageType('error');
       setMessage('Tidak dapat terhubung ke server autentikasi.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    if (!GoogleSignin || !auth) {
+      // Tawarkan mode simulasi pengujian untuk lingkungan Expo Go
+      Alert.alert(
+        'Simulasi Google Sign-In',
+        'Google Sign-in native membutuhkan build custom (.apk). Apakah Anda ingin login dengan Akun Simulasi Google untuk menguji integrasi database?',
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Masuk (Simulasi)',
+            onPress: async () => {
+              setLoading(true);
+              setMessage(null);
+              try {
+                const backendResponse = await fetchWithTimeout(`${API_BASE_URL}/api/login-google`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    uid: 'google-mock-uid-123',
+                    email: 'tester.google@gmail.com',
+                    displayName: 'user',
+                    photoURL: null,
+                  }),
+                });
+
+                const result = await backendResponse.json();
+
+                if (backendResponse.ok && result.user) {
+                  setMessageType('success');
+                  setUser(result.user);
+                  setMessage('Login Google Simulasi Berhasil.');
+                  setTimeout(() => {
+                    if (navigation) navigation.replace('MainTabs');
+                  }, 500);
+                } else {
+                  setMessageType('error');
+                  setMessage(result.message || 'Gagal sinkronisasi akun Google.');
+                }
+              } catch (error) {
+                console.error('Google mock login error:', error);
+                setMessageType('error');
+                setMessage('Koneksi database/server gagal.');
+              } finally {
+                setLoading(false);
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      // 1. Cek Google Play Services
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      
+      // 2. Dapatkan token ID dari Google Sign-In
+      const { idToken, user: googleUser } = await GoogleSignin.signIn();
+      
+      // 3. Buat kredensial Firebase Auth
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+      
+      // 4. Masuk ke Firebase menggunakan kredensial tersebut
+      const firebaseResult = await auth().signInWithCredential(googleCredential);
+      const firebaseUser = firebaseResult.user;
+
+      // 5. Kirim data user ke backend lokal
+      const backendResponse = await fetchWithTimeout(`${API_BASE_URL}/api/login-google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || googleUser.name,
+          photoURL: null,
+        }),
+      });
+
+      const result = await backendResponse.json();
+
+      if (backendResponse.ok && result.user) {
+        setMessageType('success');
+        setUser(result.user);
+        setMessage('Login Google Berhasil.');
+        setTimeout(() => {
+          if (navigation) navigation.replace('MainTabs');
+        }, 500);
+      } else {
+        setMessageType('error');
+        setMessage(result.message || 'Gagal sinkronisasi akun Google dengan server NutriOS.');
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      setMessageType('error');
+      setMessage('Gagal masuk dengan Google.');
     } finally {
       setLoading(false);
     }
@@ -136,6 +270,22 @@ export default function LoginScreen({ navigation }) {
               <Text style={styles.buttonText}>Masuk</Text>
             )}
           </TouchableOpacity>
+
+          {/* ATAU MASUK DENGAN GOOGLE */}
+          <View style={styles.separatorContainer}>
+            <View style={styles.separatorLine} />
+            <Text style={styles.separatorText}>atau masuk dengan</Text>
+            <View style={styles.separatorLine} />
+          </View>
+
+          <TouchableOpacity 
+            style={styles.googleBtn} 
+            onPress={handleGoogleLogin}
+            disabled={loading}
+          >
+            <Ionicons name="logo-google" size={20} color="#EA4335" style={{ marginRight: 10 }} />
+            <Text style={styles.googleBtnText}>Google</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity 
@@ -150,7 +300,7 @@ export default function LoginScreen({ navigation }) {
         <TouchableOpacity 
           style={[styles.footer, { marginTop: 12 }]} 
           onPress={() => {
-            setUser(null); // Pastikan state diatur sebagai guest
+            setUser(null); // Guest
             if (navigation) navigation.replace('MainTabs');
           }}
         >
@@ -259,6 +409,43 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 16,
+  },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    height: 52,
+    borderRadius: 12,
+    marginTop: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  googleBtnText: {
+    color: '#1F2937',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  separatorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 18,
+  },
+  separatorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  separatorText: {
+    marginHorizontal: 12,
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontWeight: '600',
   },
   footer: {
     alignItems: 'center',
