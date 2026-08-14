@@ -278,9 +278,14 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {}
-        <View style={styles.header}>
-          <Text style={styles.title}>Kalkulator Gizi & IMT</Text>
-          <Text style={styles.subtitle}>Ukur Indeks Massa Tubuh (IMT) Anda dan kelola catatan tumbuh kembang buah hati.</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Kalkulator Gizi & IMT</Text>
+            <Text style={styles.subtitle}>Ukur Indeks Massa Tubuh (IMT) Anda dan kelola catatan tumbuh kembang buah hati.</Text>
+          </View>
+          <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setIsAiModalVisible(true)}>
+            <Ionicons name="sparkles" size={16} color="#FFF" />
+          </TouchableOpacity>
         </View>
 
         {}
@@ -789,9 +794,29 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 40,
   },
-  header: {
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
     marginTop: 10,
+  },
+  header: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  headerSparklesBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
   },
   title: {
     fontSize: 26,

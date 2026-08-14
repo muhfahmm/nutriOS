@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,13 +12,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { AuthContext } from '../../auth/AuthContext';
+import GeminiConsultantModal from '../../components/GeminiConsultantModal';
 
 const { width } = Dimensions.get('window');
 
 export default function PengelolaStresScreen() {
 
+  const { user } = useContext(AuthContext);
+  const [isAiModalVisible, setIsAiModalVisible] = useState(false);
   const [mood, setMood] = useState(null);
-  const [breathingMode, setBreathingMode] = useState('Tenang');
+  const [breathingMode, setBreathingMode] = useState('Tidur');
   const [isBreathing, setIsBreathing] = useState(false);
   const [isSOSActive, setIsSOSActive] = useState(false);
   const [journalText, setJournalText] = useState('');
@@ -30,7 +34,7 @@ export default function PengelolaStresScreen() {
   const [timeLeft, setTimeLeft] = useState(60);
 
   const isBreathingRef = useRef(false);
-  const selectedModeRef = useRef('Tenang');
+  const selectedModeRef = useRef('Tidur');
   const timerRef = useRef(null);
   const breathAnim = useRef(new Animated.Value(1)).current;
 
@@ -187,10 +191,15 @@ export default function PengelolaStresScreen() {
             <Text style={styles.title}>Pengelola Stres</Text>
             <Text style={styles.subtitle}>Kenali suasana hati dan temukan ketenangan.</Text>
           </View>
-          <TouchableOpacity style={styles.sosButton} onPress={handleSOS}>
-            <Ionicons name="alert-circle" size={22} color="#FFFFFF" />
-            <Text style={styles.sosText}>Tenang</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setIsAiModalVisible(true)}>
+              <Ionicons name="sparkles" size={16} color="#FFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sosButton} onPress={handleSOS}>
+              <Ionicons name="alert-circle" size={22} color="#FFFFFF" />
+              <Text style={styles.sosText}>Tenang</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {}
@@ -259,15 +268,6 @@ export default function PengelolaStresScreen() {
               <Text style={styles.cardTitle}>Latihan Pernapasan</Text>
 
               <View style={styles.modeSelector}>
-                <TouchableOpacity
-                  style={[styles.modeBtn, breathingMode === 'Tenang' && styles.modeBtnActive]}
-                  onPress={() => {
-                    if (isBreathing) stopBreathing();
-                    setBreathingMode('Tenang');
-                  }}
-                >
-                  <Text style={[styles.modeBtnText, breathingMode === 'Tenang' && styles.modeBtnTextActive]}>Tenang (4-4)</Text>
-                </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modeBtn, breathingMode === 'Tidur' && styles.modeBtnActive]}
                   onPress={() => {
@@ -393,6 +393,17 @@ export default function PengelolaStresScreen() {
           </>
         )}
       </ScrollView>
+
+      <GeminiConsultantModal
+        visible={isAiModalVisible}
+        onClose={() => setIsAiModalVisible(false)}
+        context={{
+          type: 'stress',
+          user: user
+        }}
+        title="NutriOS AI: Pengelola Stres"
+        systemPrompt="Bertindaklah sebagai asisten kesehatan mental cerdas. Berikan saran teknik relaksasi, meditasi, peregangan otot ringan, cara mengelola cemas/stres, atau kata-kata motivasi yang menenangkan."
+      />
     </SafeAreaView>
   );
 }
@@ -776,5 +787,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 16,
+  },
+  headerSparklesBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
   },
 });

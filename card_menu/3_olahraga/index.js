@@ -922,9 +922,14 @@ export default function OlahragaScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Olahraga</Text>
-          <Text style={styles.subtitle}>Aktivitas fisik ringan dengan panduan suara.</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Olahraga</Text>
+            <Text style={styles.subtitle}>Aktivitas fisik ringan dengan panduan suara.</Text>
+          </View>
+          <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setActiveTab('AI')}>
+            <Ionicons name="sparkles" size={16} color="#FFF" />
+          </TouchableOpacity>
         </View>
 
         {}
@@ -1305,7 +1310,30 @@ export default function OlahragaScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F7FF' },
   scrollContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40 },
-  header: { marginBottom: 16, marginTop: 10 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    marginTop: 10,
+  },
+  header: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  headerSparklesBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
   title: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },
   subtitle: { fontSize: 15, color: '#6B7280', lineHeight: 22 },
 
