@@ -18,65 +18,157 @@ const { width } = Dimensions.get('window');
 export default function PengelolaStresScreen() {
   // --- STATE INTERAKTIF ---
   const [mood, setMood] = useState(null);
-  const [breathingMode, setBreathingMode] = useState('Tenang'); // Tenang / Tidur
+  const [breathingMode, setBreathingMode] = useState('Tenang'); // Tenang / Tidur / Cepat
   const [isBreathing, setIsBreathing] = useState(false);
   const [isSOSActive, setIsSOSActive] = useState(false);
   const [journalText, setJournalText] = useState('');
   const [stressLevel, setStressLevel] = useState('Sedang'); // Mock level stress
+  const [selectedTags, setSelectedTags] = useState([]); // Tag pemicu stres
 
-  // --- ANIMASI PERNAPASAN ---
+  // --- ANIMASI & PANDUAN PERNAPASAN ---
+  const [breathTextMsg, setBreathTextMsg] = useState('Siap');
+  const [timeLeft, setTimeLeft] = useState(60); // Detik pemulihan cepat (1 menit)
+
+  const isBreathingRef = useRef(false);
+  const selectedModeRef = useRef('Tenang');
+  const timerRef = useRef(null);
   const breathAnim = useRef(new Animated.Value(1)).current;
-  const breathText = useRef(new Animated.Value(0)).current; // 0 = Tarik, 1 = Buang
 
-  const toggleBreathing = () => {
-    if (isBreathing) {
-      // Stop
-      setIsBreathing(false);
-      breathAnim.stopAnimation();
-      breathText.stopAnimation();
-      breathAnim.setValue(1);
-      breathText.setValue(0);
+  // Cleanup saat layar ditutup
+  useEffect(() => {
+    return () => {
+      clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const runBreathingCycle = () => {
+    if (!isBreathingRef.current) return;
+    const mode = selectedModeRef.current;
+
+    if (mode === 'Tidur') {
+      // Mode Tidur: 4-7-8 (Tarik 4 detik, Tahan 7 detik, Hembuskan 8 detik)
+      setBreathTextMsg('Tarik Napas...');
+      Animated.timing(breathAnim, {
+        toValue: 1.8,
+        duration: 4000,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished || !isBreathingRef.current) return;
+
+        setBreathTextMsg('Tahan Napas...');
+        Animated.timing(breathAnim, {
+          toValue: 1.8,
+          duration: 7000,
+          useNativeDriver: true,
+        }).start(({ finished }) => {
+          if (!finished || !isBreathingRef.current) return;
+
+          setBreathTextMsg('Hembuskan Napas...');
+          Animated.timing(breathAnim, {
+            toValue: 0.6,
+            duration: 8000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }).start(({ finished }) => {
+            if (finished && isBreathingRef.current) {
+              runBreathingCycle();
+            }
+          });
+        });
+      });
     } else {
-      // Start (Siklus 4 detik tarik, 4 detik buang)
-      setIsBreathing(true);
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(breathAnim, {
-            toValue: 1.8, // Membesar
-            duration: 4000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(breathText, {
-            toValue: 1, // Ubah teks ke 'Buang Napas'
-            duration: 1,
-            useNativeDriver: false,
-          }),
-          Animated.timing(breathAnim, {
-            toValue: 0.6, // Mengecil
-            duration: 4000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(breathText, {
-            toValue: 0, // Ubah teks ke 'Tarik Napas'
-            duration: 1,
-            useNativeDriver: false,
-          }),
-        ])
-      ).start();
+      // Mode Tenang & Pemulihan Cepat: 4-4 (Tarik 4 detik, Hembuskan 4 detik)
+      setBreathTextMsg('Tarik Napas...');
+      Animated.timing(breathAnim, {
+        toValue: 1.8,
+        duration: 4000,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished || !isBreathingRef.current) return;
+
+        setBreathTextMsg('Hembuskan Napas...');
+        Animated.timing(breathAnim, {
+          toValue: 0.6,
+          duration: 4000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }).start(({ finished }) => {
+          if (finished && isBreathingRef.current) {
+            runBreathingCycle();
+          }
+        });
+      });
     }
   };
 
-  // --- FITUR SOS ---
+  const startBreathing = (mode) => {
+    isBreathingRef.current = true;
+    setIsBreathing(true);
+    selectedModeRef.current = mode;
+    setBreathingMode(mode);
+
+    if (mode === 'Cepat') {
+      setTimeLeft(60);
+      clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            stopBreathing();
+            alert('Latihan Pemulihan Cepat selesai! Pikiran Anda kini lebih jernih.');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    runBreathingCycle();
+  };
+
+  const stopBreathing = () => {
+    isBreathingRef.current = false;
+    setIsBreathing(false);
+    clearInterval(timerRef.current);
+    breathAnim.stopAnimation();
+    breathAnim.setValue(1);
+    setBreathTextMsg('Siap');
+  };
+
+  const toggleBreathing = (mode = breathingMode) => {
+    if (isBreathing) {
+      stopBreathing();
+    } else {
+      startBreathing(mode);
+    }
+  };
+
+  const toggleTag = (tag) => {
+    setSelectedTags((prev) => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleSaveJournal = () => {
+    if (!journalText.trim() && selectedTags.length === 0) {
+      alert('Silakan tulis cerita Anda atau pilih minimal satu pemicu stres!');
+      return;
+    }
+    alert(`Jurnal tersimpan! Pemicu teridentifikasi: ${selectedTags.join(', ') || 'Tanpa tag'}`);
+    setJournalText('');
+    setSelectedTags([]);
+  };
+
+  // Fitur SOS (Mode Tenang Cepat)
   const handleSOS = () => {
     setIsSOSActive(true);
-    if (!isBreathing) toggleBreathing(); // Langsung mulai pernapasan
+    if (!isBreathing) startBreathing('Cepat');
   };
 
   const exitSOS = () => {
     setIsSOSActive(false);
-    if (isBreathing) toggleBreathing(); // Hentikan jika aktif
+    if (isBreathing) stopBreathing();
   };
 
   // --- MOCK DATA INSIGHT & SARAN ---
@@ -85,7 +177,7 @@ export default function PengelolaStresScreen() {
     "Stres Anda menurun 20% pada hari-hari saat Anda makan teratur."
   ];
 
-  return (
+    return (
     <SafeAreaView style={[styles.container, isSOSActive && styles.sosContainerOverlay]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
@@ -115,14 +207,18 @@ export default function PengelolaStresScreen() {
               <View style={styles.breathCircleWrapper}>
                 <Animated.View style={[styles.breathCircle, { transform: [{ scale: breathAnim }] }]} />
                 <Text style={styles.breathInstruction}>
-                  {breathText._value === 0 ? 'Tarik Napas...' : 'Buang Napas...'}
+                  {breathTextMsg}
                 </Text>
               </View>
+
+              <Text style={styles.timeLeftText}>
+                Sisa Waktu: {timeLeft} detik
+              </Text>
               
               <View style={styles.breathControls}>
-                <TouchableOpacity style={styles.breathToggleBtn} onPress={toggleBreathing}>
+                <TouchableOpacity style={styles.breathToggleBtn} onPress={() => toggleBreathing('Cepat')}>
                   <Text style={styles.breathToggleText}>
-                    {isBreathing ? 'Berhenti' : 'Mulai Tarik Napas'}
+                    {isBreathing ? 'Berhenti' : 'Mulai'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -165,26 +261,45 @@ export default function PengelolaStresScreen() {
               <View style={styles.modeSelector}>
                 <TouchableOpacity 
                   style={[styles.modeBtn, breathingMode === 'Tenang' && styles.modeBtnActive]}
-                  onPress={() => setBreathingMode('Tenang')}
+                  onPress={() => {
+                    if (isBreathing) stopBreathing();
+                    setBreathingMode('Tenang');
+                  }}
                 >
-                  <Text style={[styles.modeBtnText, breathingMode === 'Tenang' && styles.modeBtnTextActive]}>Mode Tenang (3m)</Text>
+                  <Text style={[styles.modeBtnText, breathingMode === 'Tenang' && styles.modeBtnTextActive]}>Tenang (4-4)</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.modeBtn, breathingMode === 'Tidur' && styles.modeBtnActive]}
-                  onPress={() => setBreathingMode('Tidur')}
+                  onPress={() => {
+                    if (isBreathing) stopBreathing();
+                    setBreathingMode('Tidur');
+                  }}
                 >
-                  <Text style={[styles.modeBtnText, breathingMode === 'Tidur' && styles.modeBtnTextActive]}>Mode Tidur (5m)</Text>
+                  <Text style={[styles.modeBtnText, breathingMode === 'Tidur' && styles.modeBtnTextActive]}>Tidur (4-7-8)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.modeBtn, breathingMode === 'Cepat' && styles.modeBtnActive]}
+                  onPress={() => {
+                    if (isBreathing) stopBreathing();
+                    setBreathingMode('Cepat');
+                  }}
+                >
+                  <Text style={[styles.modeBtnText, breathingMode === 'Cepat' && styles.modeBtnTextActive]}>Cepat (1m)</Text>
                 </TouchableOpacity>
               </View>
 
               <View style={styles.breathingDisplay}>
                 <Animated.View style={[styles.breathCircleSmall, { transform: [{ scale: breathAnim }] }]} />
                 <Text style={styles.breathInstructionSmall}>
-                  {breathText._value === 0 ? 'Tarik Napas' : 'Buang Napas'}
+                  {isBreathing ? breathTextMsg : 'Siap'}
                 </Text>
               </View>
 
-              <TouchableOpacity style={styles.startBreathingBtn} onPress={toggleBreathing}>
+              {breathingMode === 'Cepat' && isBreathing && (
+                <Text style={styles.breathCountdownText}>Sisa Waktu: {timeLeft}s</Text>
+              )}
+
+              <TouchableOpacity style={styles.startBreathingBtn} onPress={() => toggleBreathing()}>
                 <Ionicons name={isBreathing ? 'stop-circle' : 'play-circle'} size={24} color="#FFFFFF" style={{ marginRight: 8 }} />
                 <Text style={styles.startBreathingText}>
                   {isBreathing ? 'Hentikan Latihan' : 'Mulai Latihan'}
@@ -214,18 +329,37 @@ export default function PengelolaStresScreen() {
             {/* 5. JURNAL PICU STRES */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Jurnal Pemicu Stres</Text>
-              <Text style={styles.subCardTitle}>Apa yang membuat Anda stres hari ini?</Text>
+              <Text style={styles.subCardTitle}>Apa yang membuat Anda stres hari ini? (Pilih pemicu di bawah)</Text>
+              
+              {/* TAG PEMICU CEPAT */}
+              <View style={styles.tagGrid}>
+                {['💼 Pekerjaan', '👨‍👩‍👧 Keluarga', '🏥 Kesehatan', '🪙 Keuangan', '❤️ Hubungan'].map((tag) => {
+                  const isActive = selectedTags.includes(tag);
+                  return (
+                    <TouchableOpacity
+                      key={tag}
+                      style={[styles.tagItem, isActive && styles.tagItemActive]}
+                      onPress={() => toggleTag(tag)}
+                    >
+                      <Text style={[styles.tagItemText, isActive && styles.tagItemTextActive]}>
+                        {tag}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
               <TextInput
                 style={styles.journalInput}
                 multiline
                 numberOfLines={4}
-                placeholder="Ceritakan di sini..."
+                placeholder="Ceritakan detail pemicu stres Anda di sini..."
                 placeholderTextColor="#9CA3AF"
                 value={journalText}
                 onChangeText={setJournalText}
               />
-              <TouchableOpacity style={styles.saveJournalBtn} onPress={() => alert('Jurnal tersimpan!')}>
-                <Text style={styles.saveBtnText}>Simpan Jurnal</Text>
+              <TouchableOpacity style={styles.saveJournalBtn} onPress={handleSaveJournal}>
+                <Text style={styles.saveJournalBtnText}>Simpan Jurnal</Text>
               </TouchableOpacity>
             </View>
 
@@ -372,14 +506,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   saveBtn: {
-    backgroundColor: '#2563EB',
-    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: '#2563EB',
+    paddingVertical: 10,
     borderRadius: 12,
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   saveBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: '#2563EB',
+    fontWeight: '700',
     fontSize: 14,
   },
 
@@ -485,10 +621,62 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   saveJournalBtn: {
-    backgroundColor: '#10B981',
-    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: '#10B981',
+    paddingVertical: 10,
     borderRadius: 12,
     alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  saveJournalBtnText: {
+    color: '#10B981',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+
+  // --- TAG PEMICU CEPAT ---
+  tagGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  tagItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  tagItemActive: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#10B981',
+  },
+  tagItemText: {
+    fontSize: 12,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  tagItemTextActive: {
+    color: '#10B981',
+    fontWeight: '700',
+  },
+
+  // --- BREATH COUNTDOWN & TEXT ---
+  breathCountdownText: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#2563EB',
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  timeLeftText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 20,
+    textAlign: 'center',
   },
 
   // --- 6. SARAN AI ---

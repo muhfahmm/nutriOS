@@ -7,10 +7,12 @@ import {
   TouchableOpacity, 
   TextInput,
   Switch,
-  Platform
+  Platform,
+  Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleMealReminders } from '../../components/MealNotificationManager';
 import { AuthContext } from '../../auth/AuthContext';
 import { API_BASE_URL } from '../../auth/api';
@@ -32,6 +34,67 @@ export default function PolaMakanScreen({ navigation, route }) {
     lunch: false,
     dinner: false,
   });
+
+  // 2. Jurnal Makan (Food Diary) State
+  const [foodLog, setFoodLog] = useState([]);
+  const [foodModalVisible, setFoodModalVisible] = useState(false);
+  const [foodName, setFoodName] = useState('');
+  const [portion, setPortion] = useState('Sedang'); // 'Kecil', 'Sedang', 'Besar'
+  const [mealTime, setMealTime] = useState('');
+
+  const loadFoodLog = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(`food_log_${userId}`);
+      if (stored) {
+        setFoodLog(JSON.parse(stored));
+      } else {
+        setFoodLog([]);
+      }
+    } catch (e) {
+      console.warn('Gagal memuat catatan makan:', e);
+    }
+  };
+
+  const saveFoodLog = async (newLog) => {
+    try {
+      await AsyncStorage.setItem(`food_log_${userId}`, JSON.stringify(newLog));
+      setFoodLog(newLog);
+    } catch (e) {
+      console.warn('Gagal menyimpan catatan makan:', e);
+    }
+  };
+
+  const handleAddFood = () => {
+    if (!foodName.trim()) return;
+
+    let timeStr = mealTime;
+    if (!timeStr.trim()) {
+      const now = new Date();
+      const hrs = now.getHours().toString().padStart(2, '0');
+      const mins = now.getMinutes().toString().padStart(2, '0');
+      timeStr = `${hrs}:${mins}`;
+    }
+
+    const newEntry = {
+      id: Date.now().toString(),
+      time: timeStr,
+      name: foodName,
+      portion: portion
+    };
+
+    const updatedLog = [newEntry, ...foodLog];
+    saveFoodLog(updatedLog);
+
+    setFoodName('');
+    setPortion('Sedang');
+    setMealTime('');
+    setFoodModalVisible(false);
+  };
+
+  const handleDeleteFood = (id) => {
+    const updatedLog = foodLog.filter(item => item.id !== id);
+    saveFoodLog(updatedLog);
+  };
 
   const fetchPolaMakan = async () => {
     try {
@@ -72,6 +135,7 @@ export default function PolaMakanScreen({ navigation, route }) {
 
   useEffect(() => {
     fetchPolaMakan();
+    loadFoodLog();
   }, [userId]);
 
   useEffect(() => {
@@ -179,7 +243,117 @@ export default function PolaMakanScreen({ navigation, route }) {
             </Text>
           </View>
         </View>
+
+        {/* 3. JURNAL MAKAN / FOOD DIARY */}
+        <View style={styles.card}>
+          <View style={[styles.cardHeaderRow, { justifyContent: 'space-between', marginBottom: 12, alignItems: 'center' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="book" size={22} color="#10B981" style={{ marginRight: 8 }} />
+              <Text style={styles.cardTitle}>Catatan Makan Hari Ini</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.addFoodBtn} 
+              onPress={() => {
+                const now = new Date();
+                const hrs = now.getHours().toString().padStart(2, '0');
+                const mins = now.getMinutes().toString().padStart(2, '0');
+                setMealTime(`${hrs}:${mins}`);
+                setFoodModalVisible(true);
+              }}
+            >
+              <Ionicons name="add-circle" size={20} color="#10B981" />
+              <Text style={styles.addFoodBtnText}>Tambah</Text>
+            </TouchableOpacity>
+          </View>
+
+          {foodLog.length === 0 ? (
+            <View style={styles.emptyFoodState}>
+              <Ionicons name="fast-food-outline" size={40} color="#9CA3AF" />
+              <Text style={styles.emptyFoodText}>Belum ada asupan makanan yang dicatat hari ini.</Text>
+            </View>
+          ) : (
+            foodLog.map((item) => (
+              <View key={item.id} style={styles.foodRow}>
+                <View style={styles.foodInfoWrap}>
+                  <View style={styles.foodTimeBadge}>
+                    <Text style={styles.foodTimeText}>{item.time}</Text>
+                  </View>
+                  <View style={{ marginLeft: 12 }}>
+                    <Text style={styles.foodNameText}>{item.name}</Text>
+                    <Text style={styles.foodPortionText}>Porsi: {item.portion}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity onPress={() => handleDeleteFood(item.id)} style={styles.deleteFoodBtn}>
+                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
       </ScrollView>
+
+      {/* MODAL TAMBAH CATATAN MAKAN */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={foodModalVisible}
+        onRequestClose={() => setFoodModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Catat Asupan Makan</Text>
+            <Text style={styles.modalSubtitle}>Masukkan detail makanan yang Anda konsumsi</Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Nama Makanan</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Misal: Roti & Susu, Nasi Goreng"
+                value={foodName}
+                onChangeText={setFoodName}
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Waktu Makan (HH:MM)</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Misal: 07:30"
+                value={mealTime}
+                onChangeText={setMealTime}
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Ukuran Porsi</Text>
+              <View style={styles.portionRow}>
+                {['Kecil', 'Sedang', 'Besar'].map((p) => (
+                  <TouchableOpacity
+                    key={p}
+                    style={[styles.portionBtn, portion === p && styles.portionBtnActive]}
+                    onPress={() => setPortion(p)}
+                  >
+                    <Text style={[styles.portionText, portion === p && styles.portionTextActive]}>
+                      {p}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setFoodModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: '#10B981' }]} onPress={handleAddFood}>
+                <Text style={styles.confirmBtnText}>Simpan</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -547,4 +721,178 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1F2937',
   },
+
+  // --- JURNAL MAKAN STYLES ---
+  addFoodBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    gap: 4
+  },
+  addFoodBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#047857'
+  },
+  emptyFoodState: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 8
+  },
+  emptyFoodText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    textAlign: 'center'
+  },
+  foodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6'
+  },
+  foodInfoWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1
+  },
+  foodTimeBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8
+  },
+  foodTimeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4B5563'
+  },
+  foodNameText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937'
+  },
+  foodPortionText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2
+  },
+  deleteFoodBtn: {
+    padding: 6
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  modalContent: {
+    width: '85%',
+    maxWidth: 360,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 10
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 4
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 20,
+    textAlign: 'center'
+  },
+  inputGroup: {
+    width: '100%',
+    marginBottom: 16
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#374151',
+    marginBottom: 8
+  },
+  textInput: {
+    width: '100%',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#111827'
+  },
+  portionRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%'
+  },
+  portionBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'transparent'
+  },
+  portionBtnActive: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#10B981'
+  },
+  portionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280'
+  },
+  portionTextActive: {
+    color: '#10B981',
+    fontWeight: '700'
+  },
+  modalActions: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 8
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center'
+  },
+  cancelBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4B5563'
+  },
+  confirmBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center'
+  },
+  confirmBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF'
+  }
 });
