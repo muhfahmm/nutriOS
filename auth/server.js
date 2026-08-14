@@ -5,8 +5,14 @@ const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 dotenv.config();
+
+let genAI = null;
+if (process.env.GEMINI_API_KEY) {
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+}
 
 const app = express();
 app.use(cors());
@@ -788,11 +794,42 @@ app.delete('/api/log-makanan/:id', async (req, res) => {
   }
 });
 
+app.post('/api/ask-ai', async (req, res) => {
+  try {
+    const { prompt, context } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ message: 'Prompt tidak boleh kosong.' });
+    }
+
+    if (!genAI) {
+      return res.status(500).json({ message: 'Kunci API Gemini belum diatur di server.' });
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+
+    const systemInstruction =
+      "Anda adalah NutriOS AI, asisten kesehatan pintar yang ahli dalam gizi anak, pola makan, manajemen stres, dan tumbuh kembang balita dan dewasa. " +
+      "Berikan jawaban yang ramah, informatif, ringkas, dan praktis. " +
+      "Gunakan bahasa Indonesia yang santun dan mudah dipahami oleh orang tua. " +
+      "Bila ditanya tentang medis berbahaya, sarankan untuk berkonsultasi ke dokter anak spesialis.";
+
+    const formattedPrompt = `${systemInstruction}\n\nKonteks Pengguna: ${JSON.stringify(context || {})}\n\nPertanyaan: ${prompt}`;
+
+    const result = await model.generateContent(formattedPrompt);
+    const responseText = result.response.text();
+
+    return res.json({ reply: responseText });
+  } catch (error) {
+    console.error('Error calling Gemini API:', error);
+    return res.status(500).json({ message: 'Gagal mendapatkan respon dari AI.' });
+  }
+});
+
 const port = process.env.APP_PORT || 3000;
 const server = app.listen(port, '0.0.0.0', () => {
   console.log('');
   console.log('╔════════════════════════════════════════╗');
-  console.log('║   🚀 Auth Server Sudah Berjalan 🚀    ║');
+  console.log('║         Auth Server Sudah Berjalan     ║');
   console.log('╠════════════════════════════════════════╣');
   console.log(`║  URL: http://localhost:${port.toString().padEnd(28)}║`);
   console.log(`║  Health: http://localhost:${port}/api/health${' '.repeat(15)}║`);
