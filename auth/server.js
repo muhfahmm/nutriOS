@@ -805,7 +805,7 @@ app.post('/api/ask-ai', async (req, res) => {
       return res.status(500).json({ message: 'Kunci API Gemini belum diatur di server.' });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
 
     const systemInstruction = 
       "Anda adalah NutriOS AI, asisten gizi & tumbuh kembang. " +
