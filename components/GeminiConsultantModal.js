@@ -113,6 +113,25 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
     triggerInitialGreeting();
   };
 
+  const renderMessageText = (text, isUser) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return (
+      <Text style={isUser ? styles.userText : styles.aiText}>
+        {parts.map((part, index) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return (
+              <Text key={index} style={{ fontWeight: 'bold' }}>
+                {part.slice(2, -2)}
+              </Text>
+            );
+          }
+          return part;
+        })}
+      </Text>
+    );
+  };
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
@@ -161,9 +180,7 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
                     msg.sender === 'user' ? styles.userBubble : styles.aiBubble
                   ]}
                 >
-                  <Text style={msg.sender === 'user' ? styles.userText : styles.aiText}>
-                    {msg.text}
-                  </Text>
+                  {renderMessageText(msg.text, msg.sender === 'user')}
                 </View>
               </View>
             ))}
