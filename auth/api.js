@@ -18,7 +18,7 @@ function resolveHostFromManifest(manifest) {
 
   for (const candidate of hostCandidates) {
     if (typeof candidate === 'string' && candidate.length > 0) {
-      const cleaned = candidate.replace(/^https?:\/\
+      const cleaned = candidate.replace(/^https?:\/\//, '').split(':')[0];
       if (cleaned.length > 0) {
         return cleaned;
       }
@@ -75,7 +75,7 @@ function resolveExpoHost() {
   let host = null;
   for (const candidate of hostCandidates) {
     if (typeof candidate === 'string' && candidate.length > 0) {
-      const cleaned = candidate.replace(/^https?:\/\
+      const cleaned = candidate.replace(/^https?:\/\//, '').split(':')[0];
       if (cleaned.length > 0) {
         host = cleaned;
         break;
