@@ -310,6 +310,7 @@ export default function OlahragaScreen() {
 
 
   const [activeTab, setActiveTab] = useState('Grup');
+  const [activeSubTab, setActiveSubTab] = useState('Dada');
   const [wishlist, setWishlist] = useState([]);
 
   const [activeExercise, setActiveExercise] = useState(null);
@@ -1034,36 +1035,55 @@ export default function OlahragaScreen() {
               </Text>
 
               {}
+              {activeTab === 'Grup' && (
+                <View style={styles.subTabContainer}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subTabRow}>
+                    {['Dada', 'Kaki', 'Bahu & Punggung', 'Otot perut', 'Lengan'].map((groupKey) => (
+                      <TouchableOpacity
+                        key={groupKey}
+                        style={[
+                          styles.subTabChip,
+                          activeSubTab === groupKey && styles.subTabChipActive
+                        ]}
+                        onPress={() => setActiveSubTab(groupKey)}
+                      >
+                        <Text style={[
+                          styles.subTabText,
+                          activeSubTab === groupKey && styles.subTabTextActive
+                        ]}>
+                          {groupKey}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
               {activeTab === 'Grup' ? (
-                ['Dada', 'Kaki', 'Bahu & Punggung', 'Otot perut', 'Lengan'].map((groupKey) => {
-                  const exercises = EXERCISE_DATA[groupKey] || [];
+                (() => {
+                  const exercises = EXERCISE_DATA[activeSubTab] || [];
                   if (exercises.length === 0) return null;
-                  return (
-                    <View key={groupKey}>
-                      <Text style={styles.groupHeader}>{groupKey}</Text>
-                      {exercises.map((ex) => {
-                        const isFavorite = wishlist.includes(ex.id);
-                        const isThisActive = activeExercise?.id === ex.id;
-                        return (
-                          <View key={ex.id} style={styles.exerciseCard}>
-                            <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
-                              <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
-                            </TouchableOpacity>
-                            <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
-                            <View style={styles.exerciseInfo}>
-                              <Text style={styles.exerciseName}>{ex.name}</Text>
-                              <Text style={styles.exerciseTarget}>{ex.target}</Text>
-                            </View>
-                            <TouchableOpacity style={[styles.startBtnSmall, isThisActive && styles.startBtnSmallActive]} onPress={() => openExerciseConfig(ex)}>
-                              <Ionicons name={isThisActive ? 'volume-high' : 'play'} size={16} color="#FFFFFF" />
-                              <Text style={styles.startBtnSmallText}>{isThisActive ? 'Aktif' : 'Mulai'}</Text>
-                            </TouchableOpacity>
-                          </View>
-                        );
-                      })}
-                    </View>
-                  );
-                })
+                  return exercises.map((ex) => {
+                    const isFavorite = wishlist.includes(ex.id);
+                    const isThisActive = activeExercise?.id === ex.id;
+                    return (
+                      <View key={ex.id} style={styles.exerciseCard}>
+                        <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
+                          <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
+                        </TouchableOpacity>
+                        <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
+                        <View style={styles.exerciseInfo}>
+                          <Text style={styles.exerciseName}>{ex.name}</Text>
+                          <Text style={styles.exerciseTarget}>{ex.target}</Text>
+                        </View>
+                        <TouchableOpacity style={[styles.startBtnSmall, isThisActive && styles.startBtnSmallActive]} onPress={() => openExerciseConfig(ex)}>
+                          <Ionicons name={isThisActive ? 'volume-high' : 'play'} size={16} color="#FFFFFF" />
+                          <Text style={styles.startBtnSmallText}>{isThisActive ? 'Aktif' : 'Mulai'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  });
+                })()
               ) : (
 
                 activeTab === 'History' ? (
@@ -1496,5 +1516,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563EB',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  subTabContainer: {
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  subTabRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  subTabChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  subTabChipActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#2563EB',
+  },
+  subTabText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4B5563',
+  },
+  subTabTextActive: {
+    color: '#2563EB',
+    fontWeight: '700',
   },
 });
