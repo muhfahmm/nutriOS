@@ -66,11 +66,15 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
       if (response.ok && data.reply) {
         setMessages(prev => [...prev, { id: aiMsgId, sender: 'ai', text: data.reply.trim() }]);
       } else {
-        setMessages(prev => [...prev, { id: aiMsgId, sender: 'ai', text: 'Maaf, saya sedang mengalami kendala jaringan. Coba ulangi beberapa saat lagi.' }]);
+        console.warn('Gemini Server Error:', data);
+        const errMsg = `⚠️ Gagal mendapat respon AI (Status ${response.status}):\n${data.message || 'Error tidak diketahui'}\n\nDetail: ${data.error || 'Tidak ada detail tambahan.'}`;
+        setMessages(prev => [...prev, { id: aiMsgId, sender: 'ai', text: errMsg }]);
       }
     } catch (e) {
+      console.error('Gemini Network/Connection Error:', e);
       const errorId = Date.now().toString();
-      setMessages(prev => [...prev, { id: errorId, sender: 'ai', text: 'Koneksi ke server terputus. Pastikan server local backend Anda aktif.' }]);
+      const errMsg = `❌ Koneksi terputus ke: ${API_BASE_URL}\n\nDetail: ${e.message}\n\nSolusi: Pastikan server backend berjalan di terminal dan IP target sesuai dengan IP Wi-Fi/Hotspot Anda saat ini.`;
+      setMessages(prev => [...prev, { id: errorId, sender: 'ai', text: errMsg }]);
     } finally {
       setLoading(false);
     }
