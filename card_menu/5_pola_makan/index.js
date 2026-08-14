@@ -385,7 +385,7 @@ export default function PolaMakanScreen({ navigation, route }) {
         visible={isAiModalVisible}
         onClose={() => setIsAiModalVisible(false)}
         context={{
-          type: 'food',
+          type: 'pola_makan',
           foodLog: foodLog
         }}
         title="NutriOS AI: Pola Makan & Gizi"

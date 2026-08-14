@@ -283,7 +283,10 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
             <Text style={styles.title}>Kalkulator Gizi & IMT</Text>
             <Text style={styles.subtitle}>Ukur Indeks Massa Tubuh (IMT) Anda dan kelola catatan tumbuh kembang buah hati.</Text>
           </View>
-          <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setIsAiModalVisible(true)}>
+          <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => {
+            setAiContext({ type: 'calculator', user });
+            setIsAiModalVisible(true);
+          }}>
             <Ionicons name="sparkles" size={16} color="#FFF" />
           </TouchableOpacity>
         </View>

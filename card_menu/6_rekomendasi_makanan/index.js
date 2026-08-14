@@ -315,7 +315,7 @@ export default function RekomendasiMakananScreen() {
         visible={isAiModalVisible}
         onClose={() => setIsAiModalVisible(false)}
         context={{
-          type: 'food',
+          type: 'rekomendasi_makanan',
           currentMenu: currentMenu
         }}
         title="NutriOS AI: Rekomendasi Resep"

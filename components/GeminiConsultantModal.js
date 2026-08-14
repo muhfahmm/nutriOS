@@ -82,30 +82,63 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
   };
 
   const getQuickQuestions = () => {
-    if (context?.type === 'child') {
-      return [
-        'Makanan tinggi kalsium apa saja yang disarankan?',
-        'Bagaimana melatih pola tidur teratur anak?',
-        'Aktivitas stimulasi motorik apa yang cocok?',
+    let pool = [];
+    const type = context?.type;
+
+    if (type === 'calculator' || type === 'child' || type === 'adult') {
+      pool = [
+        'Bagaimana cara menaikkan berat badan anak secara sehat?',
+        'Apakah IMT saya termasuk kategori ideal?',
+        'Bagaimana mengukur tinggi badan anak yang akurat?',
+        'Tips mengatasi anak dengan status gizi kurang',
+        'Berapa berat badan ideal untuk tinggi badan 160 cm?',
+        'Makanan apa saja untuk mempercepat tumbuh kembang anak?',
+        'Mengapa tinggi badan anak saya di bawah rata-rata?',
+        'Cara menghitung kebutuhan kalori harian anak'
       ];
-    } else if (context?.type === 'adult') {
-      return [
-        'Bagaimana menu makan defisit kalori sehat?',
-        'Olahraga apa yang aman untuk persendian?',
-        'Mengapa tidur teratur membantu berat badan?',
+    } else if (type === 'pola_makan') {
+      pool = [
+        'Mengapa jadwal makan teratur sangat penting?',
+        'Tips membatasi konsumsi gula berlebih sehari-hari',
+        'Rekomendasi porsi makan gizi seimbang harian',
+        'Berapa gelas air putih ideal untuk dikonsumsi harian?',
+        'Menu sarapan sehat untuk meningkatkan fokus anak',
+        'Bagaimana menyusun porsi Isi Piringku untuk anak?',
+        'Dampak melewatkan sarapan pagi bagi kesehatan'
       ];
-    } else if (context?.type === 'food') {
-      return [
-        'Ide sarapan pagi bergizi tinggi dan murah',
-        'Makanan yang baik untuk menambah darah',
-        'Cemilan sehat rendah kalori untuk malam hari',
+    } else if (type === 'rekomendasi_makanan') {
+      pool = [
+        'Ide menu sehat penambah berat badan anak yang murah',
+        'Rekomendasi masakan tinggi protein hewani',
+        'Camilan sehat yang aman dimakan malam hari',
+        'Bantu buat variasi menu makan tinggi kalsium',
+        'Menu diet sehat untuk menurunkan berat badan',
+        'Resep sayuran praktis yang disukai anak-anak',
+        'Makanan penurun kolesterol alami yang mudah didapat'
+      ];
+    } else if (type === 'stress') {
+      pool = [
+        'Bagaimana teknik meditasi pernapasan 4-7-8?',
+        'Cara cepat menenangkan pikiran saat cemas',
+        'Peregangan otot ringan untuk meredakan stres',
+        'Tips tidur nyenyak setelah seharian bekerja',
+        'Apakah stres bisa memengaruhi pencernaan?',
+        'Cara mengatasi rasa lelah mental (burnout)',
+        'Aktivitas rileksasi mandiri di rumah'
+      ];
+    } else {
+      pool = [
+        'Bantu susun menu makan sehat hari ini',
+        'Cara mengatasi anak yang susah tidur',
+        'Pentingnya protein hewani bagi tumbuh kembang',
+        'Rekomendasi olahraga kardio ringan di rumah',
+        'Tips menjaga hidrasi tubuh agar tetap fit',
+        'Bagaimana melatih pola makan sehat pada keluarga?'
       ];
     }
-    return [
-      'Bantu susun menu makan sehat hari ini',
-      'Cara mengatasi kurang tidur',
-      'Pentingnya protein hewani bagi anak',
-    ];
+
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
   };
 
   const clearChat = () => {
