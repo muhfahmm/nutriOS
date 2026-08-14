@@ -19,7 +19,7 @@ const { width } = Dimensions.get('window');
 
 export default function PengelolaStresScreen() {
 
-  const { user } = useContext(AuthContext);
+  const { user, isDarkMode } = useContext(AuthContext);
   const [isAiModalVisible, setIsAiModalVisible] = useState(false);
   const [mood, setMood] = useState(null);
   const [breathingMode, setBreathingMode] = useState('Tidur');
@@ -173,14 +173,14 @@ export default function PengelolaStresScreen() {
   ];
 
     return (
-    <SafeAreaView style={[styles.container, isSOSActive && styles.sosContainerOverlay]}>
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {}
         <View style={styles.headerRow}>
           <View style={styles.header}>
-            <Text style={styles.title}>Pengelola Stres</Text>
-            <Text style={styles.subtitle}>Kenali suasana hati dan temukan ketenangan.</Text>
+            <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Pengelola Stres</Text>
+            <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Kenali suasana hati dan temukan ketenangan.</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setIsAiModalVisible(true)}>
@@ -192,9 +192,9 @@ export default function PengelolaStresScreen() {
         {}
 
             {}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Mood Check-in</Text>
-              <Text style={styles.subCardTitle}>Bagaimana perasaan Anda hari ini?</Text>
+            <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
+              <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Mood Check-in</Text>
+              <Text style={[styles.subCardTitle, isDarkMode && { color: '#94A3B8' }]}>Bagaimana perasaan Anda hari ini?</Text>
               <View style={styles.moodRow}>
                 {[
                   { emoji: '😄', label: 'Sangat Bahagia' },
@@ -219,8 +219,8 @@ export default function PengelolaStresScreen() {
             </View>
 
             {}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Latihan Pernapasan</Text>
+            <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
+              <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Latihan Pernapasan</Text>
 
               <View style={styles.modeSelector}>
                 <TouchableOpacity
@@ -263,18 +263,18 @@ export default function PengelolaStresScreen() {
             </View>
 
             {}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Analisis & Korelasi</Text>
-              <View style={styles.insightBox}>
+            <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
+              <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Analisis & Korelasi</Text>
+              <View style={[styles.insightBox, isDarkMode && { backgroundColor: '#334155' }]}>
                 <Ionicons name="bulb-outline" size={24} color="#F59E0B" style={{ marginBottom: 8 }} />
-                <Text style={styles.insightText}>{insights[0]}</Text>
+                <Text style={[styles.insightText, isDarkMode && { color: '#F8FAFC' }]}>{insights[0]}</Text>
                 <View style={styles.insightTag}>
                   <Text style={styles.insightTagText}>Berdasarkan data tidur</Text>
                 </View>
               </View>
-              <View style={[styles.insightBox, { marginTop: 12 }]}>
+              <View style={[styles.insightBox, isDarkMode && { backgroundColor: '#334155' }, { marginTop: 12 }]}>
                 <Ionicons name="fast-food-outline" size={24} color="#10B981" style={{ marginBottom: 8 }} />
-                <Text style={styles.insightText}>{insights[1]}</Text>
+                <Text style={[styles.insightText, isDarkMode && { color: '#F8FAFC' }]}>{insights[1]}</Text>
                 <View style={[styles.insightTag, { backgroundColor: '#D1FAE5' }]}>
                   <Text style={[styles.insightTagText, { color: '#047857' }]}>Berdasarkan pola makan</Text>
                 </View>
@@ -282,9 +282,9 @@ export default function PengelolaStresScreen() {
             </View>
 
             {}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Jurnal Pemicu Stres</Text>
-              <Text style={styles.subCardTitle}>Apa yang membuat Anda stres hari ini? (Pilih pemicu di bawah)</Text>
+            <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
+              <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Jurnal Pemicu Stres</Text>
+              <Text style={[styles.subCardTitle, isDarkMode && { color: '#94A3B8' }]}>Apa yang membuat Anda stres hari ini? (Pilih pemicu di bawah)</Text>
 
               {}
               <View style={styles.tagGrid}>
@@ -305,7 +305,7 @@ export default function PengelolaStresScreen() {
               </View>
 
               <TextInput
-                style={styles.journalInput}
+                style={[styles.journalInput, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569', color: '#F8FAFC' }]}
                 multiline
                 numberOfLines={4}
                 placeholder="Ceritakan detail pemicu stres Anda di sini..."
@@ -339,8 +339,8 @@ export default function PengelolaStresScreen() {
                   <Ionicons name="nutrition-outline" size={20} color="#D97706" />
                 </View>
                 <View style={styles.aiContent}>
-                  <Text style={styles.aiTitle}>Stres bikin lapar?</Text>
-                  <Text style={styles.aiDesc}>Coba ngemil buah pisang atau yoghurt sebagai camilan sehat.</Text>
+                  <Text style={[styles.aiTitle, isDarkMode && { color: '#F8FAFC' }]}>Stres bikin lapar?</Text>
+                  <Text style={[styles.aiDesc, isDarkMode && { color: '#94A3B8' }]}>Coba ngemil buah pisang atau yoghurt sebagai camilan sehat.</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
               </TouchableOpacity>
