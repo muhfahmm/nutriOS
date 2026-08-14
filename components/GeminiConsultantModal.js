@@ -18,12 +18,51 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
-    if (visible && messages.length === 0) {
-      triggerInitialGreeting();
+    if (visible) {
+      if (messages.length === 0) {
+        triggerInitialGreeting();
+      }
+      fetchDynamicSuggestions();
     }
-  }, [visible]);
+  }, [visible, context]);
+
+  const fetchDynamicSuggestions = async () => {
+    try {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/api/ai-suggestions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: context?.type || 'general',
+          context: context
+        }),
+        timeout: 10000
+      });
+      const data = await response.json();
+      if (response.ok && data.suggestions) {
+        setSuggestions(data.suggestions);
+      } else {
+        setSuggestions(getFallbackQuestions());
+      }
+    } catch (e) {
+      console.warn('Failed to fetch dynamic suggestions:', e);
+      setSuggestions(getFallbackQuestions());
+    }
+  };
+
+  const getFallbackQuestions = () => {
+    const fallbacks = {
+      calculator: ['Bagaimana menaikkan BB anak?', 'Apakah IMT saya normal?', 'Tips gizi seimbang'],
+      pola_makan: ['Mengapa jadwal makan penting?', 'Tips batasi gula harian', 'Menu sarapan sehat'],
+      rekomendasi_makanan: ['Ide resep tinggi protein', 'Camilan malam sehat', 'Resep sayur anak'],
+      stress: ['Teknik pernapasan 4-7-8', 'Cara tenangkan cemas', 'Tips relaksasi otot'],
+      general: ['Menu makan sehat hari ini', 'Cara atasi kurang tidur', 'Pentingnya protein hewani']
+    };
+    const key = context?.type || 'general';
+    return fallbacks[key] || fallbacks.general;
+  };
 
   const triggerInitialGreeting = () => {
     let greeting = 'Halo! Saya NutriOS AI. ';
@@ -79,66 +118,6 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
     } finally {
       setLoading(false);
     }
-  };
-
-  const getQuickQuestions = () => {
-    let pool = [];
-    const type = context?.type;
-
-    if (type === 'calculator' || type === 'child' || type === 'adult') {
-      pool = [
-        'Bagaimana cara menaikkan berat badan anak secara sehat?',
-        'Apakah IMT saya termasuk kategori ideal?',
-        'Bagaimana mengukur tinggi badan anak yang akurat?',
-        'Tips mengatasi anak dengan status gizi kurang',
-        'Berapa berat badan ideal untuk tinggi badan 160 cm?',
-        'Makanan apa saja untuk mempercepat tumbuh kembang anak?',
-        'Mengapa tinggi badan anak saya di bawah rata-rata?',
-        'Cara menghitung kebutuhan kalori harian anak'
-      ];
-    } else if (type === 'pola_makan') {
-      pool = [
-        'Mengapa jadwal makan teratur sangat penting?',
-        'Tips membatasi konsumsi gula berlebih sehari-hari',
-        'Rekomendasi porsi makan gizi seimbang harian',
-        'Berapa gelas air putih ideal untuk dikonsumsi harian?',
-        'Menu sarapan sehat untuk meningkatkan fokus anak',
-        'Bagaimana menyusun porsi Isi Piringku untuk anak?',
-        'Dampak melewatkan sarapan pagi bagi kesehatan'
-      ];
-    } else if (type === 'rekomendasi_makanan') {
-      pool = [
-        'Ide menu sehat penambah berat badan anak yang murah',
-        'Rekomendasi masakan tinggi protein hewani',
-        'Camilan sehat yang aman dimakan malam hari',
-        'Bantu buat variasi menu makan tinggi kalsium',
-        'Menu diet sehat untuk menurunkan berat badan',
-        'Resep sayuran praktis yang disukai anak-anak',
-        'Makanan penurun kolesterol alami yang mudah didapat'
-      ];
-    } else if (type === 'stress') {
-      pool = [
-        'Bagaimana teknik meditasi pernapasan 4-7-8?',
-        'Cara cepat menenangkan pikiran saat cemas',
-        'Peregangan otot ringan untuk meredakan stres',
-        'Tips tidur nyenyak setelah seharian bekerja',
-        'Apakah stres bisa memengaruhi pencernaan?',
-        'Cara mengatasi rasa lelah mental (burnout)',
-        'Aktivitas rileksasi mandiri di rumah'
-      ];
-    } else {
-      pool = [
-        'Bantu susun menu makan sehat hari ini',
-        'Cara mengatasi anak yang susah tidur',
-        'Pentingnya protein hewani bagi tumbuh kembang',
-        'Rekomendasi olahraga kardio ringan di rumah',
-        'Tips menjaga hidrasi tubuh agar tetap fit',
-        'Bagaimana melatih pola makan sehat pada keluarga?'
-      ];
-    }
-
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
   };
 
   const clearChat = () => {
@@ -231,11 +210,11 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
             )}
           </ScrollView>
 
-          {messages.length <= 1 && (
+          {messages.length <= 1 && suggestions.length > 0 && (
             <View style={styles.quickQuestionsContainer}>
               <Text style={styles.quickQuestionsTitle}>Rekomendasi Pertanyaan:</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickQuestionsRow}>
-                {getQuickQuestions().map((q, idx) => (
+                {suggestions.map((q, idx) => (
                   <TouchableOpacity
                     key={idx}
                     style={styles.quickQuestionBtn}

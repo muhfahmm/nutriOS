@@ -824,6 +824,45 @@ app.post('/api/ask-ai', async (req, res) => {
   }
 });
 
+app.post('/api/ai-suggestions', async (req, res) => {
+  try {
+    const { type, context } = req.body;
+    if (!genAI) {
+      return res.status(500).json({ error: 'Kunci API Gemini belum diatur' });
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+
+    const prompt =
+      `Anda adalah API generator pertanyaan gizi & kebugaran. ` +
+      `Buatlah EXACTLY 3 pertanyaan/konsultasi singkat, acak, dinamis, dan sangat menarik dalam Bahasa Indonesia ` +
+      `untuk pengguna di kategori menu: "${type || 'umum'}". ` +
+      `Konteks data saat ini: ${JSON.stringify(context || {})}. ` +
+      `Format output WAJIB berupa raw JSON array of strings tanpa markdown code block, seperti: ["pertanyaan1", "pertanyaan2", "pertanyaan3"]`;
+
+    const result = await model.generateContent(prompt);
+    let text = result.response.text().trim();
+
+    if (text.startsWith('```')) {
+      text = text.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+    }
+
+    const suggestions = JSON.parse(text);
+    return res.json({ suggestions });
+  } catch (error) {
+    console.error('Error generating suggestions:', error);
+    const fallbacks = {
+      calculator: ['Bagaimana menaikkan BB anak?', 'Apakah IMT saya normal?', 'Tips gizi seimbang'],
+      pola_makan: ['Mengapa jadwal makan penting?', 'Tips batasi gula harian', 'Menu sarapan sehat'],
+      rekomendasi_makanan: ['Ide resep tinggi protein', 'Camilan malam sehat', 'Resep sayur anak'],
+      stress: ['Teknik pernapasan 4-7-8', 'Cara tenangkan cemas', 'Tips relaksasi otot'],
+      general: ['Menu makan sehat hari ini', 'Cara atasi kurang tidur', 'Pentingnya protein hewani']
+    };
+    const key = req.body.type || 'general';
+    return res.json({ suggestions: fallbacks[key] || fallbacks.general });
+  }
+});
+
 const port = process.env.APP_PORT || 3000;
 const server = app.listen(port, '0.0.0.0', () => {
   console.log('');
