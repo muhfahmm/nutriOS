@@ -10,7 +10,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen({ navigation }) {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, isDarkMode, toggleTheme } = useContext(AuthContext);
   const [isLogoutConfirmVisible, setIsLogoutConfirmVisible] = useState(false);
   const [isLogoutSuccessVisible, setIsLogoutSuccessVisible] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -145,18 +145,20 @@ export default function ProfileScreen({ navigation }) {
 
   const profileMenus = user ? [
     { label: 'Informasi Akun', icon: 'information-circle-outline', onPress: () => {} },
+    { label: isDarkMode ? 'Mode Terang (Light Mode)' : 'Mode Gelap (Dark Mode)', icon: isDarkMode ? 'sunny-outline' : 'moon-outline', onPress: toggleTheme },
     { label: 'Ganti Kata Sandi', icon: 'key-outline', onPress: () => setIsChangePasswordVisible(true) },
     { label: 'Bantuan & FAQ', icon: 'help-circle-outline', onPress: () => {} },
     { label: 'Keluar Akun', icon: 'log-out-outline', style: 'destructive', onPress: handleLogout }
   ] : [
     { label: 'Masuk Akun', icon: 'log-in-outline', onPress: () => navigation.navigate('Login') },
     { label: 'Daftar Baru', icon: 'person-add-outline', onPress: () => navigation.navigate('Register') },
+    { label: isDarkMode ? 'Mode Terang (Light Mode)' : 'Mode Gelap (Dark Mode)', icon: isDarkMode ? 'sunny-outline' : 'moon-outline', onPress: toggleTheme },
     { label: 'Bantuan & FAQ', icon: 'help-circle-outline', onPress: () => {} }
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.profileHeader}>
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
+      <View style={[styles.profileHeader, isDarkMode && { borderBottomColor: '#1E293B', backgroundColor: '#0F172A' }]}>
         <TouchableOpacity onPress={user ? handlePickImage : null} activeOpacity={0.8} style={[styles.profileAvatar, user && styles.profileAvatarActive]}>
           {fotoProfilUri ? (
             <Image source={{ uri: fotoProfilUri }} style={styles.avatarImage} />
@@ -170,15 +172,15 @@ export default function ProfileScreen({ navigation }) {
           )}
         </TouchableOpacity>
         <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>
+          <Text style={[styles.profileName, isDarkMode && { color: '#F8FAFC' }]}>
             {user ? user.nama_lengkap : 'Profil Pengguna'}
           </Text>
-          <Text style={styles.profileEmail}>
+          <Text style={[styles.profileEmail, isDarkMode && { color: '#94A3B8' }]}>
             {user ? `@${user.username}` : 'Kelola preferensi dan lihat ringkasan aktivitas.'}
           </Text>
         </View>
         <TouchableOpacity style={{ padding: 6 }} onPress={() => setIsMenuVisible(true)}>
-          <Ionicons name="settings-outline" size={22} color="#64748B" />
+          <Ionicons name="settings-outline" size={22} color={isDarkMode ? '#F8FAFC' : '#64748B'} />
         </TouchableOpacity>
       </View>
 

@@ -24,7 +24,6 @@ export default function PengelolaStresScreen() {
   const [mood, setMood] = useState(null);
   const [breathingMode, setBreathingMode] = useState('Tidur');
   const [isBreathing, setIsBreathing] = useState(false);
-  const [isSOSActive, setIsSOSActive] = useState(false);
   const [journalText, setJournalText] = useState('');
   const [stressLevel, setStressLevel] = useState('Sedang');
   const [selectedTags, setSelectedTags] = useState([]);
@@ -165,15 +164,7 @@ export default function PengelolaStresScreen() {
   };
 
 
-  const handleSOS = () => {
-    setIsSOSActive(true);
-    if (!isBreathing) startBreathing('Cepat');
-  };
 
-  const exitSOS = () => {
-    setIsSOSActive(false);
-    if (isBreathing) stopBreathing();
-  };
 
 
   const insights = [
@@ -195,47 +186,11 @@ export default function PengelolaStresScreen() {
             <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setIsAiModalVisible(true)}>
               <Ionicons name="sparkles" size={16} color="#FFF" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.sosButton} onPress={handleSOS}>
-              <Ionicons name="alert-circle" size={22} color="#FFFFFF" />
-              <Text style={styles.sosText}>Tenang</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
         {}
-        {isSOSActive ? (
-          <View style={styles.sosFocusMode}>
-            <TouchableOpacity style={styles.exitSosBtn} onPress={exitSOS}>
-              <Ionicons name="close-outline" size={28} color="#FFFFFF" />
-              <Text style={styles.exitSosText}>Keluar Mode Tenang</Text>
-            </TouchableOpacity>
 
-            <View style={styles.breathingArea}>
-              <Text style={styles.breathingModeTitle}>Mode Tenang Cepat</Text>
-
-              <View style={styles.breathCircleWrapper}>
-                <Animated.View style={[styles.breathCircle, { transform: [{ scale: breathAnim }] }]} />
-                <Text style={styles.breathInstruction}>
-                  {breathTextMsg}
-                </Text>
-              </View>
-
-              <Text style={styles.timeLeftText}>
-                Sisa Waktu: {timeLeft} detik
-              </Text>
-
-              <View style={styles.breathControls}>
-                <TouchableOpacity style={styles.breathToggleBtn} onPress={() => toggleBreathing('Cepat')}>
-                  <Text style={styles.breathToggleText}>
-                    {isBreathing ? 'Berhenti' : 'Mulai'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        ) : (
-
-          <>
             {}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Mood Check-in</Text>
@@ -390,8 +345,7 @@ export default function PengelolaStresScreen() {
                 <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
-          </>
-        )}
+
       </ScrollView>
 
       <GeminiConsultantModal

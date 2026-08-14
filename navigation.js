@@ -159,9 +159,10 @@ const LiquidGlassTabButton = ({ children, onPress, onLongPress, ...props }) => {
 
 
 export const GridItem = ({ color, iconName, label, badge, onPress, onLongPress }) => {
+  const { isDarkMode } = useContext(AuthContext);
   return (
     <LiquidGlassTouchable onPress={onPress} onLongPress={onLongPress} style={styles.gridTouch}>
-      <View style={styles.gridItem}>
+      <View style={[styles.gridItem, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
         <View style={[styles.gridIconBox, { backgroundColor: color }]}>
           {badge && (
             <View style={styles.badgeContainer}>
@@ -170,7 +171,7 @@ export const GridItem = ({ color, iconName, label, badge, onPress, onLongPress }
           )}
           <Ionicons name={iconName} size={24} color="#fff" />
         </View>
-        <Text style={styles.gridLabel} numberOfLines={2}>{label}</Text>
+        <Text style={[styles.gridLabel, isDarkMode && { color: '#F8FAFC' }]} numberOfLines={2}>{label}</Text>
       </View>
     </LiquidGlassTouchable>
   );
@@ -272,14 +273,14 @@ export function HomeScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F7FF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDarkMode ? '#0F172A' : '#F4F7FF' }}>
       <ScrollView contentContainerStyle={styles.screenContent}>
         <View style={styles.headerContainer}>
           <View style={styles.profileSection}>
-            <Ionicons name="person-circle" size={40} color="#6B7280" style={{ marginRight: 10 }} />
-            <Text style={styles.greetingText}>{greetingName}</Text>
+            <Ionicons name="person-circle" size={40} color={isDarkMode ? '#94A3B8' : '#6B7280'} style={{ marginRight: 10 }} />
+            <Text style={[styles.greetingText, isDarkMode && { color: '#F8FAFC' }]}>{greetingName}</Text>
           </View>
-          <Ionicons name="notifications-outline" size={26} color="#111827" />
+          <Ionicons name="notifications-outline" size={26} color={isDarkMode ? '#F8FAFC' : '#111827'} />
         </View>
 
         {}
@@ -317,14 +318,14 @@ export function HomeScreen({ navigation }) {
         </View>
 
         <View style={styles.streakSection}>
-          <Text style={styles.infoTitle}>Statistik Aktivitas Harian</Text>
+          <Text style={[styles.infoTitle, isDarkMode && { color: '#F8FAFC' }]}>Statistik Aktivitas Harian</Text>
           <View style={styles.streakGrid}>
             {streakStats.map((item) => (
-              <View key={item.label} style={styles.streakCard}>
+              <View key={item.label} style={[styles.streakCard, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
                 <Ionicons name={item.icon} size={20} color={item.color} style={styles.streakIcon} />
-                <Text style={styles.streakValue}>{item.value}</Text>
-                <Text style={styles.streakLabel}>{item.label}</Text>
-                <Text style={styles.streakNote}>{item.note}</Text>
+                <Text style={[styles.streakValue, isDarkMode && { color: '#F8FAFC' }]}>{item.value}</Text>
+                <Text style={[styles.streakLabel, isDarkMode && { color: '#94A3B8' }]}>{item.label}</Text>
+                <Text style={[styles.streakNote, isDarkMode && { color: '#64748B' }]}>{item.note}</Text>
               </View>
             ))}
           </View>
@@ -332,25 +333,25 @@ export function HomeScreen({ navigation }) {
 
         {}
         <View style={styles.historySection}>
-          <Text style={styles.infoTitle}>Histori Olahraga Terakhir</Text>
+          <Text style={[styles.infoTitle, isDarkMode && { color: '#F8FAFC' }]}>Histori Olahraga Terakhir</Text>
           {workoutHistory.length === 0 ? (
-            <View style={styles.emptyHistoryCard}>
+            <View style={[styles.emptyHistoryCard, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
               <Ionicons name="barbell-outline" size={24} color="#9CA3AF" />
-              <Text style={styles.emptyHistoryText}>Belum ada histori latihan olahraga.</Text>
+              <Text style={[styles.emptyHistoryText, isDarkMode && { color: '#94A3B8' }]}>Belum ada histori latihan olahraga.</Text>
             </View>
           ) : (
             workoutHistory.map((item) => (
-              <View key={item.id} style={styles.homeHistoryCard}>
+              <View key={item.id} style={[styles.homeHistoryCard, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
                 <View style={styles.homeHistoryIconWrap}>
                   <Ionicons name={item.icon || 'barbell'} size={20} color="#2563EB" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.homeHistoryName}>{item.name}</Text>
-                  <Text style={styles.homeHistoryDate}>{item.date}</Text>
+                  <Text style={[styles.homeHistoryName, isDarkMode && { color: '#F8FAFC' }]}>{item.name}</Text>
+                  <Text style={[styles.homeHistoryDate, isDarkMode && { color: '#94A3B8' }]}>{item.date}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.homeHistorySets}>{item.sets} Set</Text>
-                  <Text style={styles.homeHistoryDuration}>{item.duration}s / Set</Text>
+                  <Text style={[styles.homeHistorySets, isDarkMode && { color: '#F8FAFC' }]}>{item.sets} Set</Text>
+                  <Text style={[styles.homeHistoryDuration, isDarkMode && { color: '#94A3B8' }]}>{item.duration}s / Set</Text>
                 </View>
               </View>
             ))
@@ -359,7 +360,7 @@ export function HomeScreen({ navigation }) {
 
         {}
 
-        <StatusBar style="auto" />
+        <StatusBar style={isDarkMode ? "light" : "dark"} />
       </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={() => setIsAiModalVisible(true)}>
@@ -459,6 +460,7 @@ function HomeStack() {
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
+  const { isDarkMode } = useContext(AuthContext);
 
   return (
     <Tab.Navigator
@@ -479,7 +481,7 @@ function MainTabs() {
         tabBarButton: (props) => <LiquidGlassTabButton {...props} />,
 
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: isDarkMode ? '#111827' : '#FFFFFF',
           borderTopWidth: 0,
           elevation: 8,
           shadowColor: '#000',
@@ -509,9 +511,34 @@ function MainTabs() {
 
 export default function Navigation() {
   const [user, setUser] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem('app_theme');
+        if (savedTheme === 'dark') {
+          setIsDarkMode(true);
+        }
+      } catch (e) {
+        console.warn('Failed to load theme:', e);
+      }
+    };
+    loadTheme();
+  }, []);
+
+  const toggleTheme = async () => {
+    try {
+      const nextTheme = !isDarkMode;
+      setIsDarkMode(nextTheme);
+      await AsyncStorage.setItem('app_theme', nextTheme ? 'dark' : 'light');
+    } catch (e) {
+      console.warn('Failed to save theme:', e);
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, isDarkMode, toggleTheme }}>
       <SafeAreaProvider>
         <NavigationContainer>
           <RootStackNavigator.Navigator screenOptions={{ headerShown: false }}>
