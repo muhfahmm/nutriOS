@@ -57,7 +57,8 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
             ...context,
             systemPrompt: systemPrompt
           }
-        })
+        }),
+        timeout: 30000
       });
 
       const data = await response.json();
