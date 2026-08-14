@@ -5,11 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a6fbebc8-b46b-43cb-b668-d41d9ffb6de0" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/app.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/auth/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/auth/api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/auth/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/auth/server.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/card_menu/profiles/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/card_menu/profiles/index.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database.sql" beforeDir="false" afterPath="$PROJECT_DIR$/database.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/navigation.js" beforeDir="false" afterPath="$PROJECT_DIR$/navigation.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
@@ -38,6 +36,7 @@
   &quot;keyToString&quot;: {
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
@@ -45,7 +44,8 @@
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/utama/project/lomba/nutriOSandro&quot;
+    &quot;last_opened_file_path&quot;: &quot;C:/utama/project/lomba/nutriOSandro&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;emulator&quot;
   }
 }</component>
   <component name="TaskManager">

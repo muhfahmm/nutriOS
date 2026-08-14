@@ -195,111 +195,128 @@ export default function ProfileScreen({ navigation }) {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Detail Akun Anda</Text>
               
-              {/* Nama Lengkap */}
-              {(() => {
-                let nameCooldownActive = false;
-                let nameRemainingDays = 0;
-                let nameUnlockDateStr = "";
-                
-                if (user && user.last_name_change) {
-                  const lastChange = new Date(user.last_name_change);
-                  const nextAllowed = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
-                  if (new Date() < nextAllowed) {
-                    nameCooldownActive = true;
-                    nameRemainingDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
-                    nameUnlockDateStr = nextAllowed.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-                  }
-                }
+              {/* --- Baris Flex 1: Nama Lengkap & Username --- */}
+              <View style={styles.flexRow}>
+                {/* Kolom Nama Lengkap */}
+                <View style={styles.flexCol}>
+                  {(() => {
+                    let nameCooldownActive = false;
+                    let nameRemainingDays = 0;
+                    let nameUnlockDateStr = "";
+                    
+                    if (user && user.last_name_change) {
+                      const lastChange = new Date(user.last_name_change);
+                      const nextAllowed = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
+                      if (new Date() < nextAllowed) {
+                        nameCooldownActive = true;
+                        nameRemainingDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
+                        nameUnlockDateStr = nextAllowed.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                      }
+                    }
 
-                return (
-                  <View style={styles.rowItem}>
-                    <Ionicons name="card-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
-                    <View style={styles.infoCol}>
-                      <Text style={styles.infoLabel}>Nama Lengkap</Text>
-                      <TextInput
-                        style={[styles.profileInputInline, nameCooldownActive && styles.profileInputDisabled]}
-                        placeholder="Masukkan nama lengkap"
-                        value={namaLengkapInput}
-                        onChangeText={setNamaLengkapInput}
-                        editable={!nameCooldownActive}
-                      />
-                      {nameCooldownActive && (
-                        <Text style={styles.cooldownWarningText}>
-                          Terkunci: ganti lagi dalam {nameRemainingDays} hari ({nameUnlockDateStr})
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                );
-              })()}
+                    return (
+                      <View style={styles.rowItem}>
+                        <Ionicons name="card-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                        <View style={styles.infoCol}>
+                          <Text style={styles.infoLabel}>Nama Lengkap</Text>
+                          <TextInput
+                            style={[styles.profileInputInline, nameCooldownActive && styles.profileInputDisabled]}
+                            placeholder="Masukkan nama lengkap"
+                            value={namaLengkapInput}
+                            onChangeText={setNamaLengkapInput}
+                            editable={!nameCooldownActive}
+                          />
+                          {nameCooldownActive && (
+                            <Text style={styles.cooldownWarningText}>
+                              Terkunci: ganti lagi dalam {nameRemainingDays} hari ({nameUnlockDateStr})
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })()}
+                </View>
 
-              {/* Username */}
-              {(() => {
-                let userCooldownActive = false;
-                let userRemainingDays = 0;
-                let userUnlockDateStr = "";
+                {/* Kolom Username */}
+                <View style={styles.flexCol}>
+                  {(() => {
+                    let userCooldownActive = false;
+                    let userRemainingDays = 0;
+                    let userUnlockDateStr = "";
 
-                if (user && user.last_username_change) {
-                  const lastChange = new Date(user.last_username_change);
-                  const nextAllowed = new Date(lastChange.getTime() + 14 * 24 * 60 * 60 * 1000);
-                  if (new Date() < nextAllowed) {
-                    userCooldownActive = true;
-                    userRemainingDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
-                    userUnlockDateStr = nextAllowed.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-                  }
-                }
+                    if (user && user.last_username_change) {
+                      const lastChange = new Date(user.last_username_change);
+                      const nextAllowed = new Date(lastChange.getTime() + 14 * 24 * 60 * 60 * 1000);
+                      if (new Date() < nextAllowed) {
+                        userCooldownActive = true;
+                        userRemainingDays = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000));
+                        userUnlockDateStr = nextAllowed.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                      }
+                    }
 
-                return (
-                  <View style={[styles.rowItem, styles.rowSeparator]}>
-                    <Ionicons name="at-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
-                    <View style={styles.infoCol}>
-                      <Text style={styles.infoLabel}>Username</Text>
-                      <TextInput
-                        style={[styles.profileInputInline, userCooldownActive && styles.profileInputDisabled]}
-                        placeholder="Masukkan username"
-                        autoCapitalize="none"
-                        value={usernameInput}
-                        onChangeText={setUsernameInput}
-                        editable={!userCooldownActive}
-                      />
-                      {userCooldownActive && (
-                        <Text style={styles.cooldownWarningText}>
-                          Terkunci: ganti lagi dalam {userRemainingDays} hari ({userUnlockDateStr})
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                );
-              })()}
-
-              <View style={[styles.rowItem, styles.rowSeparator]}>
-                <Ionicons name="resize-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
-                <View style={styles.infoCol}>
-                  <Text style={styles.infoLabel}>Tinggi Badan (cm)</Text>
-                  <TextInput
-                    style={styles.profileInputInline}
-                    placeholder="Contoh: 170 (Opsional)"
-                    keyboardType="numeric"
-                    value={tinggiInput}
-                    onChangeText={setTinggiInput}
-                  />
+                    return (
+                      <View style={[styles.rowItem, styles.rowSeparatorFlex]}>
+                        <Ionicons name="at-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                        <View style={styles.infoCol}>
+                          <Text style={styles.infoLabel}>Username</Text>
+                          <TextInput
+                            style={[styles.profileInputInline, userCooldownActive && styles.profileInputDisabled]}
+                            placeholder="Masukkan username"
+                            autoCapitalize="none"
+                            value={usernameInput}
+                            onChangeText={setUsernameInput}
+                            editable={!userCooldownActive}
+                          />
+                          {userCooldownActive && (
+                            <Text style={styles.cooldownWarningText}>
+                              Terkunci: ganti lagi dalam {userRemainingDays} hari ({userUnlockDateStr})
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })()}
                 </View>
               </View>
 
-              <View style={[styles.rowItem, styles.rowSeparator]}>
-                <Ionicons name="fitness-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
-                <View style={styles.infoCol}>
-                  <Text style={styles.infoLabel}>Berat Badan (kg)</Text>
-                  <TextInput
-                    style={styles.profileInputInline}
-                    placeholder="Contoh: 60 (Opsional)"
-                    keyboardType="numeric"
-                    value={beratInput}
-                    onChangeText={setBeratInput}
-                  />
+              {/* --- Baris Flex 2: Tinggi Badan & Berat Badan --- */}
+              <View style={[styles.flexRow, { marginTop: 4 }]}>
+                {/* Kolom Tinggi Badan */}
+                <View style={styles.flexCol}>
+                  <View style={[styles.rowItem, styles.rowSeparatorFlex]}>
+                    <Ionicons name="resize-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                    <View style={styles.infoCol}>
+                      <Text style={styles.infoLabel}>Tinggi Badan (cm)</Text>
+                      <TextInput
+                        style={styles.profileInputInline}
+                        placeholder="Contoh: 170 (Opsional)"
+                        keyboardType="numeric"
+                        value={tinggiInput}
+                        onChangeText={setTinggiInput}
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Kolom Berat Badan */}
+                <View style={styles.flexCol}>
+                  <View style={[styles.rowItem, styles.rowSeparatorFlex]}>
+                    <Ionicons name="fitness-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
+                    <View style={styles.infoCol}>
+                      <Text style={styles.infoLabel}>Berat Badan (kg)</Text>
+                      <TextInput
+                        style={styles.profileInputInline}
+                        placeholder="Contoh: 60 (Opsional)"
+                        keyboardType="numeric"
+                        value={beratInput}
+                        onChangeText={setBeratInput}
+                      />
+                    </View>
+                  </View>
                 </View>
               </View>
 
+              {/* Tanggal Lahir (Full width) */}
               <View style={[styles.rowItem, styles.rowSeparator]}>
                 <Ionicons name="calendar-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                 <View style={styles.infoCol}>
@@ -326,7 +343,7 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Pemilih Jenis Kelamin (Gender) */}
+              {/* Jenis Kelamin (Full width) */}
               <View style={[styles.rowItem, styles.rowSeparator]}>
                 <Ionicons name="people-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                 <View style={styles.infoCol}>
@@ -387,12 +404,12 @@ export default function ProfileScreen({ navigation }) {
           </View>
         )}
 
-        {/* --- USIA & SARAN GIZI PINTAR --- */}
+        {/* --- USIA & SARAN GIZI PINTAR (DIPASTIKAN TIDAK TENGGELAM DENGAN MARGIN BOTTOM) --- */}
         {user && (() => {
           // Hanya berikan rekomendasi jika data sudah disimpan di database (dikonfirmasi)
           if (!user.tanggal_lahir || !user.tinggi_badan || !user.berat_badan || !user.jenis_kelamin) {
             return (
-              <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: '#6B7280' }]}>
+              <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: '#6B7280', marginBottom: 40 }]}>
                 <Text style={[styles.cardTitle, { color: '#0F172A' }]}>Saran Gizi Pintar</Text>
                 <Text style={styles.suggestionDescText}>
                   Silakan lengkapi dan simpan detail akun Anda (Tinggi Badan, Berat Badan, Tanggal Lahir, dan Jenis Kelamin) terlebih dahulu untuk memunculkan Saran Gizi Pintar dari AI.
@@ -463,7 +480,7 @@ export default function ProfileScreen({ navigation }) {
           analysisTitle = `Status IMT: ${status}`;
 
           return (
-            <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: analysisColor }]}>
+            <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: analysisColor, marginBottom: 40 }]}>
               <Text style={[styles.cardTitle, { color: '#0F172A' }]}>Saran Gizi Pintar</Text>
               <Text style={styles.suggestionAgeLabel}>Usia Anda saat ini: <Text style={{ fontWeight: '800', color: '#4F46E5' }}>{ageStr}</Text></Text>
               {jenisKelamin ? <Text style={styles.suggestionAgeLabel}>Jenis Kelamin: <Text style={{ fontWeight: '800', color: '#10B981' }}>{jenisKelamin}</Text></Text> : null}
@@ -515,7 +532,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 100,
+    paddingBottom: 180, // DITINGKATKAN agar Saran AI tidak tenggelam
   },
   profileHeader: {
     flexDirection: 'row',
@@ -584,13 +601,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: 'Roboto',
   },
+  
+  // --- FLEX LAYOUT BARU ---
+  flexRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  flexCol: {
+    flex: 1,
+  },
+
   rowItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   rowIcon: {
-    marginRight: 16,
+    marginRight: 14,
   },
   infoCol: {
     flex: 1,
@@ -611,8 +638,15 @@ const styles = StyleSheet.create({
   rowSeparator: {
     borderTopWidth: 1.5,
     borderTopColor: '#F1F5F9',
-    paddingTop: 12,
+    paddingTop: 10,
     marginTop: 4,
+  },
+  // Pemisah khusus untuk kolom dalam Flex Row agar lebih tipis dan tidak terlalu dominan
+  rowSeparatorFlex: {
+    borderTopWidth: 1.5,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 8,
+    marginTop: 0,
   },
   profileInputInline: {
     fontSize: 14,

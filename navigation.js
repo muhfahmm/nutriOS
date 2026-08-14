@@ -221,12 +221,6 @@ export function HomeScreen({ navigation }) {
     { icon: 'restaurant', label: 'Makan Tercatat', value: '95%', note: 'minggu ini', color: '#10B981' },
   ];
 
-  const tipsData = [
-    'Penting! Cegah Stunting dengan Protein Hewani',
-    'Pola Tidur Bayi 0-12 Bulan yang Benar',
-    'Resep MPASI 6 Bulan: Pure Labu & Ayam',
-  ];
-
   const handleLongPressMenu = (menuName) => {
     console.log(`Anda menekan lama menu: ${menuName}`);
   };
@@ -334,17 +328,7 @@ export function HomeScreen({ navigation }) {
           )}
         </View>
 
-        <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>Tips & Edukasi Kesehatan Harian</Text>
-          <View style={styles.carouselContainer}>
-            {tipsData.map((tip, index) => (
-              <View key={index} style={styles.tipCard}>
-                <Text style={tipBadge => styles.tipBadge}>Tip #{index + 1}</Text>
-                <Text style={styles.tipText}>{tip}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+        {/* --- BAGIAN Tips & Edukasi Kesehatan Harian TELAH DIHAPUS --- */}
 
         <TouchableOpacity style={styles.fab}>
           <Ionicons name="help-circle" size={30} color="#fff" />
@@ -663,42 +647,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
   },
-  infoSection: {
-    marginTop: 4,
-    marginBottom: 20,
-  },
   infoTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#111827',
     marginBottom: 12,
-  },
-  carouselContainer: {
-    backgroundColor: '#E5E7EB',
-    borderRadius: 18,
-    padding: 14,
-    flexDirection: 'row',
-    gap: 12,
-  },
-  tipCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    minHeight: 120,
-    justifyContent: 'center',
-  },
-  tipBadge: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#2563EB',
-    marginBottom: 8,
-  },
-  tipText: {
-    fontSize: 14,
-    color: '#111827',
-    fontWeight: '700',
-    lineHeight: 20,
   },
   fab: {
     position: 'absolute',
