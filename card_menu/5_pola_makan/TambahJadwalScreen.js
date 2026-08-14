@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
-  Alert 
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,7 +33,7 @@ export default function TambahJadwalScreen({ navigation }) {
     const finalTime = `${formattedHour}.${formattedMinute}`;
 
     Alert.alert(
-      'Berhasil', 
+      'Berhasil',
       `Jadwal makan baru "${mealName}" berhasil ditambahkan pada pukul ${finalTime}`,
       [
         {
@@ -55,13 +55,13 @@ export default function TambahJadwalScreen({ navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Deskripsi */}
+        {}
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={22} color="#2563EB" style={{ marginRight: 8 }} />
           <Text style={styles.infoText}>Buat pengingat kustom untuk asupan kalori atau cemilan tambahan Anda.</Text>
         </View>
 
-        {/* Input Nama Jadwal */}
+        {}
         <View style={styles.formGroup}>
           <Text style={styles.label}>Nama Pengingat Makan</Text>
           <TextInput
@@ -73,7 +73,7 @@ export default function TambahJadwalScreen({ navigation }) {
           />
         </View>
 
-        {/* Input Waktu */}
+        {}
         <Text style={styles.label}>Pilih Waktu Pengingat</Text>
         <View style={styles.timePickerContainer}>
           <View style={styles.timeInputColumn}>
@@ -99,7 +99,7 @@ export default function TambahJadwalScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Tombol Simpan */}
+        {}
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Ionicons name="checkmark" size={22} color="#FFFFFF" style={{ marginRight: 8 }} />
           <Text style={styles.saveButtonText}>Simpan Jadwal Baru</Text>

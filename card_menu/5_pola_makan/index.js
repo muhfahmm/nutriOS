@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   Switch,
   Platform,
@@ -21,8 +21,8 @@ export default function PolaMakanScreen({ navigation, route }) {
   const { user } = useContext(AuthContext);
   const userId = user?.id || 'guest';
 
-  // --- STATE MOCK (INTERAKTIF) ---
-  // 1. Scheduler State
+
+
   const [schedule, setSchedule] = useState({
     breakfast: '-',
     lunch: '-',
@@ -35,11 +35,11 @@ export default function PolaMakanScreen({ navigation, route }) {
     dinner: false,
   });
 
-  // 2. Jurnal Makan (Food Diary) State
+
   const [foodLog, setFoodLog] = useState([]);
   const [foodModalVisible, setFoodModalVisible] = useState(false);
   const [foodName, setFoodName] = useState('');
-  const [portion, setPortion] = useState('Sedang'); // 'Kecil', 'Sedang', 'Besar'
+  const [portion, setPortion] = useState('Sedang');
   const [mealTime, setMealTime] = useState('');
 
   const loadFoodLog = async () => {
@@ -148,30 +148,30 @@ export default function PolaMakanScreen({ navigation, route }) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        {/* HEADER */}
+
+        {}
         <View style={styles.header}>
           <Text style={styles.title}>Pola Makan</Text>
           <Text style={styles.subtitle}>Atur jadwal dan pantau pengingat nutrisi harian.</Text>
         </View>
- 
-        {/* 1. SCHEDULER PENGINGAT MAKAN */}
+
+        {}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="time" size={22} color="#2563EB" style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>Scheduler Makan</Text>
           </View>
           <Text style={styles.subCardTitle}>Ketuk kategori makan untuk mengatur jam pengingat</Text>
-          
+
           <View style={styles.scheduleGrid}>
             {Object.entries(schedule).map(([key, time]) => {
               const icons = { breakfast: 'cafe-outline', lunch: 'restaurant-outline', dinner: 'moon-outline' };
               const labels = { breakfast: 'Sarapan', lunch: 'Makan Siang', dinner: 'Makan Malam' };
               const screenNames = { breakfast: 'Sarapan', lunch: 'MakanSiang', dinner: 'MakanMalam' };
               return (
-                <TouchableOpacity 
-                  key={key} 
-                  style={styles.scheduleItem} 
+                <TouchableOpacity
+                  key={key}
+                  style={styles.scheduleItem}
                   onPress={() => navigation.navigate(screenNames[key])}
                 >
                   <View style={styles.scheduleIconWrap}>
@@ -185,9 +185,9 @@ export default function PolaMakanScreen({ navigation, route }) {
               );
             })}
 
-            {/* Tombol Tambah Jadwal (+ Icon) */}
-            <TouchableOpacity 
-              style={styles.scheduleItem} 
+            {}
+            <TouchableOpacity
+              style={styles.scheduleItem}
               onPress={() => navigation.navigate('TambahJadwal')}
             >
               <View style={[styles.scheduleIconWrap, { backgroundColor: '#E0F2FE' }]}>
@@ -201,7 +201,7 @@ export default function PolaMakanScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* DETAIL PENGINGAT MAKAN TABLE */}
+        {}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="notifications-outline" size={22} color="#2563EB" style={{ marginRight: 8 }} />
@@ -212,7 +212,7 @@ export default function PolaMakanScreen({ navigation, route }) {
             <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'center' }]}>Waktu</Text>
             <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'right' }]}>Notifikasi</Text>
           </View>
-          
+
           <View style={styles.tableRow}>
             <Text style={[styles.tableCell, { flex: 2, fontWeight: '700' }]}>☕ Sarapan</Text>
             <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', color: '#2563EB', fontWeight: '700' }]}>
@@ -244,15 +244,15 @@ export default function PolaMakanScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* 3. JURNAL MAKAN / FOOD DIARY */}
+        {}
         <View style={styles.card}>
           <View style={[styles.cardHeaderRow, { justifyContent: 'space-between', marginBottom: 12, alignItems: 'center' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="book" size={22} color="#10B981" style={{ marginRight: 8 }} />
               <Text style={styles.cardTitle}>Catatan Makan Hari Ini</Text>
             </View>
-            <TouchableOpacity 
-              style={styles.addFoodBtn} 
+            <TouchableOpacity
+              style={styles.addFoodBtn}
               onPress={() => {
                 const now = new Date();
                 const hrs = now.getHours().toString().padStart(2, '0');
@@ -292,7 +292,7 @@ export default function PolaMakanScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
-      {/* MODAL TAMBAH CATATAN MAKAN */}
+      {}
       <Modal
         animationType="slide"
         transparent={true}
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // --- 1. SCHEDULER ---
+
   scheduleGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
 
-  // --- 2. NOTIFIKASI ---
+
   notifBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  // --- 3. FOOD LOGGING ---
+
   foodInput: {
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // --- 4. DASHBOARD NUTRISI ---
+
   caloriesTargetRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // --- 5. SKIPPED MEAL ---
+
   skipStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
 
-  // --- JURNAL MAKAN STYLES ---
+
   addFoodBtn: {
     flexDirection: 'row',
     alignItems: 'center',

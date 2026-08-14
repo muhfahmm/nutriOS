@@ -1,17 +1,16 @@
 import React from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  Modal, 
-  TouchableOpacity, 
-  TextInput, 
-  ActivityIndicator, 
-  Platform 
+import {
+  StyleSheet,
+  Text,
+  View,
+  Modal,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// 1. MODAL NOTIFIKASI / PERINGATAN LOGIN
 export function LoginPromptModal({ visible, onClose, onLogin }) {
   return (
     <Modal
@@ -34,7 +33,7 @@ export function LoginPromptModal({ visible, onClose, onLogin }) {
             <TouchableOpacity style={styles.loginBtn} onPress={onLogin}>
               <Text style={styles.loginBtnText}>Masuk Sekarang</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
               <Text style={styles.cancelBtnText}>Nanti Saja</Text>
             </TouchableOpacity>
@@ -45,7 +44,6 @@ export function LoginPromptModal({ visible, onClose, onLogin }) {
   );
 }
 
-// 2. MODAL FORM TAMBAH ANAK BARU
 export function AddChildModal({
   visible,
   onClose,
@@ -96,8 +94,8 @@ export function AddChildModal({
             <Text style={styles.smallLabel}>Jenis Kelamin</Text>
             <View style={styles.inlineButtonRow}>
               {['Laki-laki', 'Perempuan'].map((item) => (
-                <TouchableOpacity 
-                  key={item} 
+                <TouchableOpacity
+                  key={item}
                   style={[styles.inlineBtn, childGender === item && styles.inlineBtnActive]}
                   onPress={() => setChildGender(item)}
                 >
@@ -106,8 +104,8 @@ export function AddChildModal({
               ))}
             </View>
 
-            <TouchableOpacity 
-              style={[styles.primaryButton, { marginTop: 12 }]} 
+            <TouchableOpacity
+              style={[styles.primaryButton, { marginTop: 12 }]}
               onPress={onSave}
               disabled={isSaving}
             >
@@ -134,8 +132,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
-  
-  // Style Prompt Login
+
   promptContent: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -206,7 +203,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
   },
 
-  // Style Bottom Sheet Modal
   sheetContent: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,

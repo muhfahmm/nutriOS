@@ -50,20 +50,16 @@ async function importDatabase() {
   console.log('📖 Reading database.sql...');
   const sqlFile = fs.readFileSync(path.join(__dirname, 'database.sql'), 'utf8');
 
-  // Split SQL commands by semi-colon, but ignore semi-colons inside comments/quotes if any.
-  // Since our database.sql is simple, splitting by ";" is generally fine.
-  // We will filter out comments and empty lines.
   const lines = sqlFile.split('\n');
   let cleanedSql = '';
   for (let line of lines) {
-    // Remove comments
+
     if (line.trim().startsWith('--') || line.trim().startsWith('#')) {
       continue;
     }
     cleanedSql += line + '\n';
   }
 
-  // Split by semicolon
   const statements = cleanedSql
     .split(';')
     .map(st => st.trim())
@@ -76,7 +72,7 @@ async function importDatabase() {
   try {
     for (let i = 0; i < statements.length; i++) {
       const statement = statements[i];
-      // Print first line or short summary of statement
+
       const preview = statement.split('\n')[0].substring(0, 80);
       console.log(`⏳ Executing [${i+1}/${statements.length}]: ${preview}...`);
       await connection.query(statement);

@@ -1,12 +1,9 @@
-/**
- * Helper Logout untuk NutriOS
- * Digunakan untuk melakukan proses pembersihan sesi autentikasi pengguna
- */
+
 
 export function logoutUser(setUser) {
   try {
     if (typeof setUser === 'function') {
-      // 1. Reset user state di AuthContext menjadi null
+
       setUser(null);
       console.log('Sesi user berhasil dibersihkan.');
       return { success: true };

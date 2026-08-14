@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
-// Set notification handler untuk menetapkan behavior ketika app di foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -11,9 +10,6 @@ Notifications.setNotificationHandler({
   }),
 });
 
-/**
- * Minta izin notifikasi & buat channel khusus untuk Android
- */
 export async function registerSleepNotificationsAsync() {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('sleep-channel', {
@@ -26,12 +22,12 @@ export async function registerSleepNotificationsAsync() {
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
-  
+
   if (existingStatus !== 'granted') {
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
-  
+
   if (finalStatus !== 'granted') {
     console.log('[SleepNotifications] Izin notifikasi tidak diberikan oleh user!');
     return false;
@@ -39,24 +35,20 @@ export async function registerSleepNotificationsAsync() {
   return true;
 }
 
-/**
- * Mengubah string waktu "HH.MM" menjadi objek hour dan minute yang dikurangi X menit
- * Contoh: "22.00" dikurangi 30 menit menjadi { hour: 21, minute: 30 }
- */
 export function getTimeMinusMinutes(timeStr, minutesToSubtract = 30) {
   try {
     let [hour, minute] = timeStr.split('.').map(Number);
     if (isNaN(hour) || isNaN(minute)) {
       [hour, minute] = [22, 0];
     }
-    
+
     let totalMinutes = hour * 60 + minute;
     totalMinutes -= minutesToSubtract;
-    
+
     if (totalMinutes < 0) {
-      totalMinutes += 24 * 60; // Putar balik ke hari sebelumnya jika kurang dari 0
+      totalMinutes += 24 * 60;
     }
-    
+
     return {
       hour: Math.floor(totalMinutes / 60),
       minute: totalMinutes % 60,
@@ -66,12 +58,8 @@ export function getTimeMinusMinutes(timeStr, minutesToSubtract = 30) {
   }
 }
 
-/**
- * Menjadwalkan pengingat tidur harian (30 menit sebelum tidur)
- * @param {string} sleepTime Waktu tidur dalam format "HH.MM" (contoh: "22.00")
- */
 export async function scheduleSleepReminder(sleepTime) {
-  // Batalkan pengingat tidur sebelumnya agar tidak menumpuk
+
   await cancelSleepReminder();
 
   const hasPermission = await registerSleepNotificationsAsync();
@@ -89,7 +77,6 @@ export async function scheduleSleepReminder(sleepTime) {
   const nowMinutes = currentHour * 60 + currentMinute;
   const sleepMinutes = sleepHour * 60 + sleepMinute;
 
-  // Hitung waktu pengingat (30 menit sebelum jam tidur)
   const { hour, minute } = getTimeMinusMinutes(sleepTime, 30);
   const reminderMinutes = hour * 60 + minute;
 
@@ -97,8 +84,7 @@ export async function scheduleSleepReminder(sleepTime) {
   let diffSleep = sleepMinutes - nowMinutes;
 
   if (diffSleep > 0 && diffReminder <= 0) {
-    // Kasus khusus: Jam tidur hari ini belum lewat, tapi waktu pengingat (30m sebelum) sudah terlewat.
-    // Kirim notifikasi peringatan terlambat sekarang juga (delay 2 detik)
+
     console.log(`[SleepNotifications] Pengingat sudah terlewat, memicu notifikasi peringatan terlambat sekarang.`);
     return await Notifications.scheduleNotificationAsync({
       content: {
@@ -133,17 +119,11 @@ export async function scheduleSleepReminder(sleepTime) {
   });
 }
 
-/**
- * Membatalkan pengingat tidur harian
- */
 export async function cancelSleepReminder() {
   await Notifications.cancelAllScheduledNotificationsAsync();
   console.log('[SleepNotifications] Pengingat tidur berhasil dinonaktifkan.');
 }
 
-/**
- * Custom React Hook untuk listener di komponen Jadwal Tidur
- */
 export function useSleepNotifications(sleepTime, notifEnabled) {
   const notificationListener = useRef();
 
@@ -175,24 +155,23 @@ export function getTimeUntilReminder(sleepTime) {
   if (isNaN(sleepHour) || isNaN(sleepMinute)) {
     [sleepHour, sleepMinute] = [22, 0];
   }
-  
+
   const { hour: reminderHour, minute: reminderMinute } = getTimeMinusMinutes(sleepTime, 30);
-  
+
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
-  
+
   const nowMinutes = currentHour * 60 + currentMinute;
   const sleepMinutes = sleepHour * 60 + sleepMinute;
   const reminderMinutes = reminderHour * 60 + reminderMinute;
-  
+
   let diffReminder = reminderMinutes - nowMinutes;
   let diffSleep = sleepMinutes - nowMinutes;
-  
-  // Kasus 1: Waktu tidur hari ini masih di masa depan
+
   if (diffSleep > 0) {
     if (diffReminder > 0) {
-      // Pengingat 30 menit belum lewat
+
       const diffHours = Math.floor(diffReminder / 60);
       const remainingMins = diffReminder % 60;
       if (diffHours > 0) {
@@ -200,11 +179,11 @@ export function getTimeUntilReminder(sleepTime) {
       }
       return `${remainingMins} menit lagi`;
     } else {
-      // Pengingat 30 menit sudah lewat, tapi jam tidur belum lewat (misal sisa 18 menit lagi tidur)
+
       return `${diffSleep} menit lagi (Waktunya tidur!)`;
     }
   } else {
-    // Kasus 2: Jam tidur hari ini sudah lewat, jadi dijadwalkan besok
+
     let diffReminderTomorrow = diffReminder + (24 * 60);
     const diffHours = Math.floor(diffReminderTomorrow / 60);
     const remainingMins = diffReminderTomorrow % 60;
@@ -215,15 +194,12 @@ export function getTimeUntilReminder(sleepTime) {
   }
 }
 
-/**
- * Memicu notifikasi lokal percobaan dalam 3 detik untuk pengetesan langsung di HP user
- */
 export async function triggerTestNotification(sleepTime) {
   const hasPermission = await registerSleepNotificationsAsync();
   if (!hasPermission) {
     return false;
   }
-  
+
   const { hour, minute } = getTimeMinusMinutes(sleepTime, 30);
   const formattedHour = hour.toString().padStart(2, '0');
   const formattedMinute = minute.toString().padStart(2, '0');
@@ -239,7 +215,7 @@ export async function triggerTestNotification(sleepTime) {
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 3, // Muncul dalam 3 detik
+      seconds: 3,
     },
   });
   return true;

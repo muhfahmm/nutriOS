@@ -1,45 +1,45 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
   Modal,
   Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-// --- 1. DATABASE BAHAN MAKANAN LOKAL (MOCK JSON) ---
+
 const foodDB = {
-  // Kategori Karbohidrat
+
   "Nasi Putih": { id: 1, calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4, iron: 0.8, calcium: 10, category: "Karbohidrat", price: "Murah", alergi: [] },
   "Nasi Merah": { id: 2, calories: 110, protein: 2.6, carbs: 23, fat: 0.9, fiber: 1.8, iron: 1.2, calcium: 12, category: "Karbohidrat", price: "Murah", alergi: [] },
-  
-  // Protein Hewani
+
+
   "Ayam Goreng": { id: 3, calories: 240, protein: 20, carbs: 5, fat: 14, fiber: 0, iron: 1.5, calcium: 10, category: "Protein Hewani", price: "Sedang", alergi: [] },
   "Ikan Kembung": { id: 4, calories: 200, protein: 22, carbs: 0, fat: 12, fiber: 0, iron: 2.5, calcium: 30, category: "Protein Hewani", price: "Sedang", alergi: ["seafood"] },
   "Telur Dadar": { id: 5, calories: 140, protein: 10, carbs: 1, fat: 10, fiber: 0, iron: 1.2, calcium: 40, category: "Protein Hewani", price: "Murah", alergi: [] },
   "Tahu Bacem": { id: 6, calories: 120, protein: 12, carbs: 8, fat: 6, fiber: 1.2, iron: 2.0, calcium: 120, category: "Protein Nabati", price: "Murah", alergi: ["kedelai"] },
   "Tempe Goreng": { id: 7, calories: 150, protein: 14, carbs: 10, fat: 8, fiber: 2.5, iron: 3.0, calcium: 80, category: "Protein Nabati", price: "Murah", alergi: ["kedelai"] },
-  
-  // Sayur
+
+
   "Bayam": { id: 8, calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, fiber: 2.2, iron: 3.5, calcium: 100, category: "Sayur", price: "Murah", alergi: [] },
   "Kangkung": { id: 9, calories: 20, protein: 2.5, carbs: 3.0, fat: 0.3, fiber: 2.0, iron: 2.8, calcium: 80, category: "Sayur", price: "Murah", alergi: [] },
   "Brokoli": { id: 10, calories: 34, protein: 2.8, carbs: 7, fat: 0.4, fiber: 2.6, iron: 0.8, calcium: 47, category: "Sayur", price: "Sedang", alergi: [] },
-  
-  // Buah & Snack
+
+
   "Pisang": { id: 11, calories: 90, protein: 1.1, carbs: 23, fat: 0.3, fiber: 2.6, iron: 0.3, calcium: 6, category: "Buah", price: "Murah", alergi: [] },
   "Alpukat": { id: 12, calories: 160, protein: 2, carbs: 9, fat: 15, fiber: 6.7, iron: 0.6, calcium: 12, category: "Buah", price: "Sedang", alergi: [] },
   "Kacang Rebus": { id: 13, calories: 120, protein: 7, carbs: 10, fat: 6, fiber: 4, iron: 1.5, calcium: 30, category: "Lemak", price: "Murah", alergi: ["kacang"] },
-  
-  // Minuman
+
+
   "Susu Sapi": { id: 14, calories: 70, protein: 3.4, carbs: 4.8, fat: 4, fiber: 0, iron: 0.1, calcium: 120, category: "Minuman", price: "Sedang", alergi: ["susu"] },
   "Jus Jeruk": { id: 15, calories: 45, protein: 0.8, carbs: 10, fat: 0.2, fiber: 0.5, iron: 0.1, calcium: 20, category: "Minuman", price: "Sedang", alergi: [] },
 };
 
-// --- 2. RESEP MOCK ---
+
 const recipes = {
   "Ayam Goreng": {
     ingredients: ["1/2 ekor ayam potong", "1 sdt garam", "1/2 sdt kunyit", "2 siung bawang putih", "Minyak goreng"],
@@ -58,7 +58,7 @@ const recipes = {
   }
 };
 
-// --- 3. KOMPONEN MODAL RESEP ---
+
 const RecipeModal = ({ visible, foodName, onClose }) => {
   const recipe = recipes[foodName];
   if (!recipe) return null;
@@ -91,15 +91,15 @@ const RecipeModal = ({ visible, foodName, onClose }) => {
   );
 };
 
-// --- 4. MAIN SCREEN ---
+
 export default function RekomendasiMakananScreen() {
-  // Filter State
+
   const [alergies, setAlergies] = useState({ seafood: false, kacang: false, susu: false, kedelai: false });
-  const [budget, setBudget] = useState('Sedang'); // Murah, Sedang, Mahal
+  const [budget, setBudget] = useState('Sedang');
   const [isVegetarian, setIsVegetarian] = useState(false);
 
-  // Menu State
-  const [selectedRecipe, setSelectedRecipe] = useState(null); // Nama makanan yang resepnya dilihat
+
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [currentMenu, setCurrentMenu] = useState({
     breakfast: { main: "Nasi Putih", side: "Telur Dadar", drink: "Susu Sapi" },
     morningSnack: "Pisang",
@@ -108,30 +108,30 @@ export default function RekomendasiMakananScreen() {
     dinner: { main: "Tahu Bacem", veggie: "Kangkung" }
   });
 
-  // --- LOGIKA SMART SWAP ---
+
   const handleSwap = (mealType, currentFood) => {
-    // Cari alternatif berdasarkan kategori, budget, alergi, dan vegetarian
+
     const foodData = foodDB[currentFood];
     if (!foodData) return;
 
     let candidates = Object.keys(foodDB).filter(name => {
       const data = foodDB[name];
-      // Kategori sama
+
       if (data.category !== foodData.category) return false;
-      // Budget minimal sama atau lebih murah (kecuali jika budget sedang, boleh mahal sedikit)
+
       if (budget === 'Murah' && data.price === 'Mahal') return false;
-      if (budget === 'Sedang' && data.price === 'Mahal') return false; // opsional
-      // Alergi
+      if (budget === 'Sedang' && data.price === 'Mahal') return false;
+
       if (alergies.seafood && data.alergi.includes('seafood')) return false;
       if (alergies.kacang && data.alergi.includes('kacang')) return false;
       if (alergies.susu && data.alergi.includes('susu')) return false;
       if (alergies.kedelai && data.alergi.includes('kedelai')) return false;
-      // Vegetarian: jika vegetarian, jangan rekomendasikan protein hewani (kecuali telur?)
+
       if (isVegetarian && (data.category === 'Protein Hewani' && name !== 'Telur Dadar')) return false;
       return true;
     });
 
-    // Filter agar tidak memilih makanan yang sama
+
     candidates = candidates.filter(name => name !== currentFood);
 
     if (candidates.length === 0) {
@@ -139,19 +139,19 @@ export default function RekomendasiMakananScreen() {
       return;
     }
 
-    // Pilih alternatif acak
+
     const newFood = candidates[Math.floor(Math.random() * candidates.length)];
-    
-    // Update menu
+
+
     setCurrentMenu(prev => {
       const newMenu = { ...prev };
-      // Cari posisi makanan di dalam menu (struktur bisa nested)
-      // Cara sederhana: kita akan ganti berdasarkan string value, tapi kita harus tahu posisinya.
-      // Karena menu berbentuk nested, kita akan lakukan pencarian manual dan update
-      // Untuk demo, kita akan ganti di tempat yang sama berdasarkan jenis makanan.
-      // Kita bisa menggunakan pendekatan: kita tahu bahwa food item ada di menu.
-      // Mari kita cari dan ganti.
-      // Kita akan lakukan iterative search dan ganti
+
+
+
+
+
+
+
       const replaceInObject = (obj) => {
         for (let key in obj) {
           if (typeof obj[key] === 'object') {
@@ -166,7 +166,7 @@ export default function RekomendasiMakananScreen() {
     });
   };
 
-  // Render item makanan dengan tombol ganti dan resep
+
   const renderFoodItem = (label, foodName, mealType) => {
     if (!foodName) return null;
     return (
@@ -192,22 +192,22 @@ export default function RekomendasiMakananScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        {/* HEADER */}
+
+        {}
         <View style={styles.header}>
           <Text style={styles.title}>Rekomendasi Makanan</Text>
           <Text style={styles.subtitle}>Menu harian cerdas, sesuai gizi dan preferensi keluarga.</Text>
         </View>
 
-        {/* 2. SISTEM FILTER & PREFERENSI */}
+        {}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Filter & Preferensi</Text>
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>Alergi & Pantangan:</Text>
             <View style={styles.alergyRow}>
               {Object.keys(alergies).map(key => (
-                <TouchableOpacity 
-                  key={key} 
+                <TouchableOpacity
+                  key={key}
                   style={[styles.alergyBtn, alergies[key] && styles.alergyBtnActive]}
                   onPress={() => setAlergies(prev => ({ ...prev, [key]: !prev[key] }))}
                 >
@@ -216,14 +216,14 @@ export default function RekomendasiMakananScreen() {
               ))}
             </View>
           </View>
-          
+
           <View style={[styles.filterSection, { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 14, marginTop: 14 }]}>
             <View style={styles.budgetRow}>
               <Text style={styles.filterLabel}>Budget Harian:</Text>
               <View style={styles.budgetChips}>
                 {['Murah', 'Sedang', 'Mahal'].map(b => (
-                  <TouchableOpacity 
-                    key={b} 
+                  <TouchableOpacity
+                    key={b}
                     style={[styles.budgetChip, budget === b && styles.budgetChipActive]}
                     onPress={() => setBudget(b)}
                   >
@@ -242,10 +242,10 @@ export default function RekomendasiMakananScreen() {
           </View>
         </View>
 
-        {/* 4. HASIL OUTPUT: PAKET MENU HARIAN */}
+        {}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>🍽️ Paket Menu Harian</Text>
-          
+
           <View style={styles.mealSection}>
             <Text style={styles.mealTitle}>🍳 Sarapan</Text>
             {renderFoodItem('Menu Utama', currentMenu.breakfast.main, 'breakfast')}
@@ -277,11 +277,11 @@ export default function RekomendasiMakananScreen() {
           </View>
         </View>
 
-        {/* 6. TAMPILAN RESEP SEDERHANA (MODAL) */}
-        <RecipeModal 
-          visible={selectedRecipe !== null} 
-          foodName={selectedRecipe} 
-          onClose={() => setSelectedRecipe(null)} 
+        {}
+        <RecipeModal
+          visible={selectedRecipe !== null}
+          foodName={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
         />
 
       </ScrollView>
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
-  // --- 2. FILTER ---
+
   filterSection: {
     marginBottom: 10,
   },
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
 
-  // --- 4. PAKET MENU ---
+
   mealSection: {
     marginBottom: 8,
   },
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
 
-  // --- 6. MODAL RESEP ---
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TextInput, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  KeyboardAvoidingView, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   ScrollView
@@ -23,7 +23,7 @@ export default function RegisterScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState(null);
-  const [messageType, setMessageType] = useState('error'); // 'error' atau 'success'
+  const [messageType, setMessageType] = useState('error');
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const [isUsernameChecked, setIsUsernameChecked] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,14 +51,13 @@ export default function RegisterScreen({ navigation }) {
     return () => clearTimeout(delayDebounce);
   }, [username]);
 
-  // Fungsi evaluasi kekuatan sandi
   const getPasswordStrength = (pass) => {
     if (!pass) return { score: 0, text: '', color: '#94A3B8', width: '0%', icon: null };
     let score = 0;
     if (pass.length >= 4) score += 1;
     if (/[0-9]/.test(pass) || /[^A-Za-z0-9]/.test(pass)) score += 1;
     if (/[A-Z]/.test(pass)) score += 1;
-    
+
     if (score <= 1) {
       return { score, text: 'Lemah', color: '#EF4444', width: '33%', icon: 'alert-circle-outline' };
     } else if (score === 2) {
@@ -71,14 +70,13 @@ export default function RegisterScreen({ navigation }) {
   const strength = getPasswordStrength(password);
 
   const handleRegister = async () => {
-    // 1. Validasi kelima input sudah diisi
+
     if (!name || !email || !username || !password || !confirmPassword) {
       setMessageType('error');
       setMessage('Harap isi semua kolom wajib.');
       return;
     }
 
-    // 2. Validasi format email (tambahan untuk keamanan data)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setMessageType('error');
@@ -86,14 +84,12 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    // 3. Validasi username
     if (isUsernameTaken) {
       setMessageType('error');
       setMessage('Username sudah digunakan oleh user lain.');
       return;
     }
 
-    // 4. Validasi kecocokan password
     if (password !== confirmPassword) {
       setMessageType('error');
       setMessage('Password dan konfirmasi tidak cocok.');
@@ -121,7 +117,7 @@ export default function RegisterScreen({ navigation }) {
       if (response.ok) {
         setMessageType('success');
         setMessage('Registrasi berhasil! Silakan masuk.');
-        // Navigasi ke halaman Login setelah 1.5 detik
+
         setTimeout(() => {
           if (navigation) {
             navigation.navigate('Login');
@@ -141,8 +137,8 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        style={styles.keyboardContainer} 
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -155,7 +151,7 @@ export default function RegisterScreen({ navigation }) {
           </View>
 
           <View style={styles.form}>
-            {/* Input Nama Lengkap */}
+            {}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Nama Lengkap *</Text>
               <View style={styles.inputContainer}>
@@ -170,7 +166,7 @@ export default function RegisterScreen({ navigation }) {
               </View>
             </View>
 
-            {/* Tambahan: Input Email */}
+            {}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Email *</Text>
               <View style={styles.inputContainer}>
@@ -187,18 +183,18 @@ export default function RegisterScreen({ navigation }) {
               </View>
             </View>
 
-            {/* Input Username */}
+            {}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Username *</Text>
               <View style={[
-                styles.inputContainer, 
+                styles.inputContainer,
                 isUsernameChecked && (isUsernameTaken ? styles.inputContainerError : styles.inputContainerSuccess)
               ]}>
-                <Ionicons 
-                  name="at-outline" 
-                  size={20} 
-                  color={isUsernameChecked ? (isUsernameTaken ? '#EF4444' : '#10B981') : '#9CA3AF'} 
-                  style={styles.inputIcon} 
+                <Ionicons
+                  name="at-outline"
+                  size={20}
+                  color={isUsernameChecked ? (isUsernameTaken ? '#EF4444' : '#10B981') : '#9CA3AF'}
+                  style={styles.inputIcon}
                 />
                 <TextInput
                   style={styles.input}
@@ -224,7 +220,7 @@ export default function RegisterScreen({ navigation }) {
               )}
             </View>
 
-            {/* Input Password */}
+            {}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Password *</Text>
               <View style={styles.inputContainer}>
@@ -238,11 +234,11 @@ export default function RegisterScreen({ navigation }) {
                   placeholderTextColor="#9CA3AF"
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Ionicons 
-                    name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                    size={20} 
-                    color="#9CA3AF" 
-                    style={{ padding: 4 }} 
+                  <Ionicons
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color="#9CA3AF"
+                    style={{ padding: 4 }}
                   />
                 </TouchableOpacity>
               </View>
@@ -260,7 +256,7 @@ export default function RegisterScreen({ navigation }) {
               )}
             </View>
 
-            {/* Input Konfirmasi Password */}
+            {}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Konfirmasi Password *</Text>
               <View style={styles.inputContainer}>
@@ -274,27 +270,27 @@ export default function RegisterScreen({ navigation }) {
                   placeholderTextColor="#9CA3AF"
                 />
                 <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                  <Ionicons 
-                    name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} 
-                    size={20} 
-                    color="#9CA3AF" 
-                    style={{ padding: 4 }} 
+                  <Ionicons
+                    name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color="#9CA3AF"
+                    style={{ padding: 4 }}
                   />
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Pesan Error / Sukses */}
+            {}
             {message ? (
               <Text style={[styles.message, messageType === 'success' && styles.messageSuccess]}>
                 {message}
               </Text>
             ) : null}
 
-            {/* Tombol Daftar */}
-            <TouchableOpacity 
-              style={[styles.buttonPrimary, loading && styles.buttonDisabled]} 
-              onPress={handleRegister} 
+            {}
+            <TouchableOpacity
+              style={[styles.buttonPrimary, loading && styles.buttonDisabled]}
+              onPress={handleRegister}
               disabled={loading}
             >
               {loading ? (
@@ -305,9 +301,9 @@ export default function RegisterScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Footer Masuk */}
-          <TouchableOpacity 
-            style={styles.footer} 
+          {}
+          <TouchableOpacity
+            style={styles.footer}
             onPress={() => navigation && navigation.navigate('Login')}
           >
             <Text style={styles.footerText}>

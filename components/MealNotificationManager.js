@@ -13,12 +13,12 @@ export async function registerMealNotificationsAsync() {
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
-  
+
   if (existingStatus !== 'granted') {
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
-  
+
   if (finalStatus !== 'granted') {
     console.log('[MealNotifications] Izin notifikasi tidak diberikan!');
     return false;
@@ -27,7 +27,7 @@ export async function registerMealNotificationsAsync() {
 }
 
 export async function scheduleMealReminders(schedule, notifEnabled) {
-  // Batalkan pengingat makanan sebelumnya agar tidak menumpuk
+
   await cancelMealReminders();
 
   if (!notifEnabled) return;
@@ -35,7 +35,6 @@ export async function scheduleMealReminders(schedule, notifEnabled) {
   const hasPermission = await registerMealNotificationsAsync();
   if (!hasPermission) return;
 
-  // 1. Sarapan (Breakfast)
   try {
     const [bHour, bMin] = schedule.breakfast.split('.').map(Number);
     if (!isNaN(bHour) && !isNaN(bMin)) {
@@ -58,7 +57,6 @@ export async function scheduleMealReminders(schedule, notifEnabled) {
     console.log('Error scheduling breakfast:', e);
   }
 
-  // 2. Makan Siang (Lunch)
   try {
     const [lHour, lMin] = schedule.lunch.split('.').map(Number);
     if (!isNaN(lHour) && !isNaN(lMin)) {
@@ -81,7 +79,6 @@ export async function scheduleMealReminders(schedule, notifEnabled) {
     console.log('Error scheduling lunch:', e);
   }
 
-  // 3. Makan Malam (Dinner)
   try {
     const [dHour, dMin] = schedule.dinner.split('.').map(Number);
     if (!isNaN(dHour) && !isNaN(dMin)) {

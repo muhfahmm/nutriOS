@@ -18,7 +18,7 @@ function resolveHostFromManifest(manifest) {
 
   for (const candidate of hostCandidates) {
     if (typeof candidate === 'string' && candidate.length > 0) {
-      const cleaned = candidate.replace(/^https?:\/\//, '').split(':')[0];
+      const cleaned = candidate.replace(/^https?:\/\
       if (cleaned.length > 0) {
         return cleaned;
       }
@@ -36,7 +36,7 @@ function resolvePortFromManifest(manifest) {
   const portCandidates = [
     manifest.extra?.API_PORT,
     manifest.extra?.apiPort,
-    manifest.extra?.expoClient?.extra?.API_PORT, // Key path manifest2
+    manifest.extra?.expoClient?.extra?.API_PORT,
   ];
 
   for (const candidate of portCandidates) {
@@ -55,13 +55,13 @@ function resolvePortFromManifest(manifest) {
 }
 
 function resolveExpoHost() {
-  // Check candidates in prioritized order
+
   const hostCandidates = [
     Constants.expoConfig?.extra?.API_HOST,
     Constants.expoConfig?.extra?.apiHost,
     Constants.expoConfig?.extra?.API_BASE_URL,
     Constants.expoConfig?.extra?.apiBaseUrl,
-    Constants.manifest2?.extra?.expoClient?.extra?.API_HOST, // Key path untuk manifest2 / Expo modern
+    Constants.manifest2?.extra?.expoClient?.extra?.API_HOST,
     Constants.manifest2?.extra?.expoGo?.debuggerHost,
     Constants.expoGoConfig?.debuggerHost,
     Constants.expoGoConfig?.hostUri,
@@ -75,7 +75,7 @@ function resolveExpoHost() {
   let host = null;
   for (const candidate of hostCandidates) {
     if (typeof candidate === 'string' && candidate.length > 0) {
-      const cleaned = candidate.replace(/^https?:\/\//, '').split(':')[0];
+      const cleaned = candidate.replace(/^https?:\/\
       if (cleaned.length > 0) {
         host = cleaned;
         break;
@@ -91,7 +91,7 @@ function resolveExpoHost() {
 
 const isDevice = Constants.isDevice ?? false;
 const { host: resolvedHost, port: resolvedPort } = resolveExpoHost();
-// Mendeteksi IP Host PC secara otomatis agar dinamis mengikuti jaringan yang digunakan
+
 const host = resolvedHost || '127.0.0.1';
 const port = resolvedPort || 3000;
 export const API_BASE_URL = `http://${host}:${port}`;

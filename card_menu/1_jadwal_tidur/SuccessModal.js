@@ -14,7 +14,7 @@ export default function SuccessModal({ visible, onClose, message, sleepTime, wak
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          {/* Success Icon Badge */}
+          {}
           <View style={styles.iconContainer}>
             <Ionicons name="checkmark-circle" size={80} color="#10B981" />
           </View>
@@ -22,7 +22,7 @@ export default function SuccessModal({ visible, onClose, message, sleepTime, wak
           <Text style={styles.modalTitle}>Berhasil Disimpan!</Text>
           <Text style={styles.modalMessage}>{message || 'Target tidur harian Anda telah sukses disimpan ke database.'}</Text>
 
-          {/* Details Table */}
+          {}
           <View style={styles.tableContainer}>
             <View style={styles.tableRow}>
               <View style={styles.tableCell}>
@@ -57,7 +57,7 @@ export default function SuccessModal({ visible, onClose, message, sleepTime, wak
             </View>
           </View>
 
-          {/* Action Button */}
+          {}
           <TouchableOpacity style={styles.button} onPress={onClose} activeOpacity={0.8}>
             <Text style={styles.buttonText}>Oke, Mengerti</Text>
           </TouchableOpacity>
@@ -70,7 +70,7 @@ export default function SuccessModal({ visible, onClose, message, sleepTime, wak
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)', // Glassmorphism-like dim dark backdrop
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,

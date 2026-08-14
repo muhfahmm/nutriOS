@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   Alert,
   Switch,
@@ -40,7 +40,7 @@ export default function SarapanScreen({ navigation }) {
       const response = await fetch(`${API_BASE_URL}/api/pola-makan/${userId}`);
       if (response.ok) {
         const { schedules } = await response.json();
-        
+
         const breakfastSched = schedules.find(s => s.meal_type === 'breakfast');
         if (breakfastSched && breakfastSched.meal_time !== '-') {
           const [h, m] = breakfastSched.meal_time.split('.');
@@ -66,9 +66,9 @@ export default function SarapanScreen({ navigation }) {
     const formattedHour = h < 10 ? `0${h}` : `${h}`;
     const formattedMinute = m < 10 ? `0${m}` : `${m}`;
     const finalTime = `${formattedHour}.${formattedMinute}`;
-    
+
     try {
-      // Simpan ke database
+
       const saveResponse = await fetch(`${API_BASE_URL}/api/jadwal-makan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,7 +111,6 @@ export default function SarapanScreen({ navigation }) {
           },
         });
 
-        // Jika diset ke waktu menit saat ini, pemicu instan agar langsung muncul saat test
         const nowTime = new Date();
         if (h === nowTime.getHours() && m === nowTime.getMinutes()) {
           await Notifications.scheduleNotificationAsync({
@@ -130,18 +129,18 @@ export default function SarapanScreen({ navigation }) {
           });
         }
 
-        navigation.navigate('PolaMakan', { 
-          updatedMeal: 'breakfast', 
-          updatedTime: finalTime 
+        navigation.navigate('PolaMakan', {
+          updatedMeal: 'breakfast',
+          updatedTime: finalTime
         });
 
         Alert.alert('Berhasil', `Waktu pengingat sarapan diubah ke ${formattedHour}.${formattedMinute} dan Notifikasi Diaktifkan!`);
       } else {
         await Notifications.cancelScheduledNotificationAsync('meal-breakfast');
-        
-        navigation.navigate('PolaMakan', { 
-          updatedMeal: 'breakfast', 
-          updatedTime: finalTime 
+
+        navigation.navigate('PolaMakan', {
+          updatedMeal: 'breakfast',
+          updatedTime: finalTime
         });
 
         Alert.alert('Berhasil', `Waktu pengingat sarapan diubah ke ${formattedHour}.${formattedMinute} (Notifikasi Nonaktif)`);
@@ -168,14 +167,14 @@ export default function SarapanScreen({ navigation }) {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {/* Atur Waktu Pengingat */}
+          {}
           <View style={styles.card}>
             <View style={styles.cardHeaderRow}>
               <Ionicons name="alarm-outline" size={22} color="#2563EB" style={{ marginRight: 8 }} />
               <Text style={styles.sectionTitle}>Atur Waktu Pengingat Sarapan</Text>
             </View>
 
-            {/* Toggle Switch Notifikasi */}
+            {}
             <View style={styles.notifToggleRow}>
               <View style={styles.notifToggleTextCol}>
                 <Text style={styles.notifToggleLabel}>Aktifkan Notifikasi Sarapan</Text>
@@ -216,7 +215,7 @@ export default function SarapanScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Info Pengingat Aktif */}
+          {}
           <View style={styles.statusCard}>
             <View style={styles.cardHeaderRow}>
               <Ionicons name="information-circle-outline" size={20} color="#2563EB" style={{ marginRight: 6 }} />

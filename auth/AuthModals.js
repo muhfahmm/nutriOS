@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  Modal, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  Modal,
+  TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Platform 
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// 1. MODAL KONFIRMASI LOGOUT
 export function LogoutConfirmModal({ visible, onClose, onConfirm }) {
   return (
     <Modal
@@ -44,7 +43,6 @@ export function LogoutConfirmModal({ visible, onClose, onConfirm }) {
   );
 }
 
-// 2. MODAL BERHASIL LOGOUT
 export function LogoutSuccessModal({ visible, onClose }) {
   return (
     <Modal
@@ -74,7 +72,6 @@ export function LogoutSuccessModal({ visible, onClose }) {
 
 import { TouchableWithoutFeedback } from 'react-native';
 
-// 3. MODAL MENU OPSI (MENU MODAL)
 export function MenuModal({ visible, onClose, title, menus }) {
   return (
     <Modal
@@ -87,7 +84,7 @@ export function MenuModal({ visible, onClose, title, menus }) {
         <View style={styles.bottomOverlay}>
           <TouchableWithoutFeedback onPress={() => {}}>
             <View style={styles.sheetContent}>
-              {/* Garis drag area untuk gestur menggeser sheet kebawah */}
+              {}
               <View style={styles.dragIndicatorWrapper}>
                 <View style={styles.dragIndicator} />
               </View>
@@ -101,10 +98,10 @@ export function MenuModal({ visible, onClose, title, menus }) {
 
               <View style={styles.sheetBody}>
                 {menus && menus.map((menu, index) => (
-                  <TouchableOpacity 
-                    key={index} 
+                  <TouchableOpacity
+                    key={index}
                     style={[
-                      styles.menuItem, 
+                      styles.menuItem,
                       index > 0 && styles.menuItemSeparator,
                       menu.style === 'destructive' && styles.menuItemDestructive
                     ]}
@@ -113,14 +110,14 @@ export function MenuModal({ visible, onClose, title, menus }) {
                       if (menu.onPress) menu.onPress();
                     }}
                   >
-                    <Ionicons 
-                      name={menu.icon || 'ellipse'} 
-                      size={20} 
-                      color={menu.style === 'destructive' ? '#EF4444' : '#4F46E5'} 
-                      style={{ marginRight: 12 }} 
+                    <Ionicons
+                      name={menu.icon || 'ellipse'}
+                      size={20}
+                      color={menu.style === 'destructive' ? '#EF4444' : '#4F46E5'}
+                      style={{ marginRight: 12 }}
                     />
                     <Text style={[
-                      styles.menuText, 
+                      styles.menuText,
                       menu.style === 'destructive' && styles.menuTextDestructive
                     ]}>
                       {menu.label}
@@ -137,7 +134,6 @@ export function MenuModal({ visible, onClose, title, menus }) {
   );
 }
 
-// 4. MODAL GANTI PASSWORD (GET METHOD)
 export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -151,7 +147,7 @@ export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
     if (pass.length >= 4) score += 1;
     if (/[0-9]/.test(pass) || /[^A-Za-z0-9]/.test(pass)) score += 1;
     if (/[A-Z]/.test(pass)) score += 1;
-    
+
     if (score <= 1) {
       return { text: 'Lemah ⚠️', color: '#EF4444', width: '33%' };
     } else if (score === 2) {
@@ -174,13 +170,13 @@ export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
     }
     setErrorMsg('');
     onSave(oldPassword, newPassword, () => {
-      // Success Callback
+
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
       onClose();
     }, (err) => {
-      // Error Callback
+
       setErrorMsg(err || 'Gagal mengganti password.');
     });
   };
@@ -229,7 +225,7 @@ export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
               onChangeText={setNewPassword}
             />
 
-            {/* Kekuatan Password Baru */}
+            {}
             {newPassword.length > 0 && (
               <View style={styles.strengthWrap}>
                 <Text style={styles.strengthLabel}>
@@ -251,8 +247,8 @@ export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
               onChangeText={setConfirmPassword}
             />
 
-            <TouchableOpacity 
-              style={[styles.primaryBtn, { marginTop: 12 }]} 
+            <TouchableOpacity
+              style={[styles.primaryBtn, { marginTop: 12 }]}
               onPress={handleSubmit}
               disabled={isSaving}
             >
@@ -360,7 +356,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // Style bottom sheet untuk Menu Modal
   sheetContent: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,

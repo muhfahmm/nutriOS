@@ -17,7 +17,6 @@ export default function ProfileScreen({ navigation }) {
   const [isChangePasswordVisible, setIsChangePasswordVisible] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
 
-  // State untuk form detail tubuh & data akun
   const [namaLengkapInput, setNamaLengkapInput] = useState('');
   const [usernameInput, setUsernameInput] = useState('');
   const [fotoProfilUri, setFotoProfilUri] = useState('');
@@ -29,7 +28,6 @@ export default function ProfileScreen({ navigation }) {
   const [dateValue, setDateValue] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Sinkronkan state input saat data user dimuat
   useEffect(() => {
     if (user) {
       setNamaLengkapInput(user.nama_lengkap || '');
@@ -45,7 +43,6 @@ export default function ProfileScreen({ navigation }) {
     }
   }, [user]);
 
-  // Fungsi mengambil/mengunggah foto profil dari galeri HP
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -58,7 +55,7 @@ export default function ProfileScreen({ navigation }) {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
-      base64: true, // Ubah ke base64 agar dapat ditransfer lewat query string
+      base64: true,
     });
 
     if (!result.canceled && result.assets && result.assets[0]) {
@@ -90,13 +87,13 @@ export default function ProfileScreen({ navigation }) {
         setUser(result.user);
         Alert.alert('Sukses', 'Detail akun Anda berhasil diperbarui!');
       } else {
-        // Rollback state ke data user saat ini jika gagal disimpan akibat cooldown
+
         setNamaLengkapInput(user.nama_lengkap || '');
         setUsernameInput(user.username || '');
         Alert.alert('Gagal', result.message || 'Gagal memperbarui profil.');
       }
     } catch (e) {
-      // Rollback jika terjadi error koneksi
+
       setNamaLengkapInput(user.nama_lengkap || '');
       setUsernameInput(user.username || '');
       console.warn('Error updating profile:', e);
@@ -146,7 +143,6 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  // Menu list options
   const profileMenus = user ? [
     { label: 'Informasi Akun', icon: 'information-circle-outline', onPress: () => {} },
     { label: 'Ganti Kata Sandi', icon: 'key-outline', onPress: () => setIsChangePasswordVisible(true) },
@@ -187,23 +183,23 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* JIKA USER SUDAH LOGIN */}
+
+        {}
         {user ? (
           <View>
-            {/* Info Detail Akun */}
+            {}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Detail Akun Anda</Text>
-              
-              {/* --- Baris Flex 1: Nama Lengkap & Username --- */}
+
+              {}
               <View style={styles.flexRow}>
-                {/* Kolom Nama Lengkap */}
+                {}
                 <View style={styles.flexCol}>
                   {(() => {
                     let nameCooldownActive = false;
                     let nameRemainingDays = 0;
                     let nameUnlockDateStr = "";
-                    
+
                     if (user && user.last_name_change) {
                       const lastChange = new Date(user.last_name_change);
                       const nextAllowed = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -237,7 +233,7 @@ export default function ProfileScreen({ navigation }) {
                   })()}
                 </View>
 
-                {/* Kolom Username */}
+                {}
                 <View style={styles.flexCol}>
                   {(() => {
                     let userCooldownActive = false;
@@ -279,9 +275,9 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* --- Baris Flex 2: Tinggi Badan & Berat Badan --- */}
+              {}
               <View style={[styles.flexRow, { marginTop: 4 }]}>
-                {/* Kolom Tinggi Badan */}
+                {}
                 <View style={styles.flexCol}>
                   <View style={[styles.rowItem, styles.rowSeparatorFlex]}>
                     <Ionicons name="resize-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
@@ -298,7 +294,7 @@ export default function ProfileScreen({ navigation }) {
                   </View>
                 </View>
 
-                {/* Kolom Berat Badan */}
+                {}
                 <View style={styles.flexCol}>
                   <View style={[styles.rowItem, styles.rowSeparatorFlex]}>
                     <Ionicons name="fitness-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
@@ -316,12 +312,12 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Tanggal Lahir (Full width) */}
+              {}
               <View style={[styles.rowItem, styles.rowSeparator]}>
                 <Ionicons name="calendar-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                 <View style={styles.infoCol}>
                   <Text style={styles.infoLabel}>Tanggal Lahir</Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.datePickerToggleBtn}
                     onPress={() => setShowDatePicker(true)}
                   >
@@ -330,7 +326,7 @@ export default function ProfileScreen({ navigation }) {
                     </Text>
                     <Ionicons name="calendar" size={16} color="#4F46E5" />
                   </TouchableOpacity>
-                  
+
                   {showDatePicker && (
                     <DateTimePicker
                       value={dateValue}
@@ -343,21 +339,21 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Jenis Kelamin (Full width) */}
+              {}
               <View style={[styles.rowItem, styles.rowSeparator]}>
                 <Ionicons name="people-outline" size={20} color="#4F46E5" style={styles.rowIcon} />
                 <View style={styles.infoCol}>
                   <Text style={styles.infoLabel}>Jenis Kelamin</Text>
                   <View style={styles.genderRow}>
-                    <TouchableOpacity 
-                      style={[styles.genderOptionBtn, jenisKelamin === 'Pria' && styles.genderOptionBtnActive]} 
+                    <TouchableOpacity
+                      style={[styles.genderOptionBtn, jenisKelamin === 'Pria' && styles.genderOptionBtnActive]}
                       onPress={() => setJenisKelamin('Pria')}
                     >
                       <Ionicons name="male" size={14} color={jenisKelamin === 'Pria' ? '#FFFFFF' : '#475569'} style={{ marginRight: 4 }} />
                       <Text style={[styles.genderOptionText, jenisKelamin === 'Pria' && styles.genderOptionTextActive]}>Pria</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.genderOptionBtn, jenisKelamin === 'Wanita' && styles.genderOptionBtnActive]} 
+                    <TouchableOpacity
+                      style={[styles.genderOptionBtn, jenisKelamin === 'Wanita' && styles.genderOptionBtnActive]}
                       onPress={() => setJenisKelamin('Wanita')}
                     >
                       <Ionicons name="female" size={14} color={jenisKelamin === 'Wanita' ? '#FFFFFF' : '#475569'} style={{ marginRight: 4 }} />
@@ -367,26 +363,26 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Tombol Simpan Perubahan Profil */}
+              {}
               <TouchableOpacity style={styles.saveProfileBtn} onPress={handleUpdateProfile}>
                 <Ionicons name="save-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
                 <Text style={styles.saveProfileBtnText}>Simpan Detail Akun</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Tombol Logout */}
+            {}
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
               <Text style={styles.logoutButtonText}>Keluar dari Akun</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          /* JIKA USER ADALAH GUEST */
+
           <View>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Silakan masuk</Text>
               <Text style={styles.cardText}>Masuk untuk menyimpan progres pertumbuhan, mengelola jadwal tidur, dan menyinkronkan data KMS anak Anda ke server.</Text>
-              
+
               <View style={styles.authButtonRow}>
                 <TouchableOpacity style={styles.buttonPrimary} onPress={() => navigation.navigate('Login')}>
                   <Text style={styles.buttonText}>Login</Text>
@@ -404,9 +400,9 @@ export default function ProfileScreen({ navigation }) {
           </View>
         )}
 
-        {/* --- USIA & SARAN GIZI PINTAR (DIPASTIKAN TIDAK TENGGELAM DENGAN MARGIN BOTTOM) --- */}
+        {}
         {user && (() => {
-          // Hanya berikan rekomendasi jika data sudah disimpan di database (dikonfirmasi)
+
           if (!user.tanggal_lahir || !user.tinggi_badan || !user.berat_badan || !user.jenis_kelamin) {
             return (
               <View style={[styles.card, { borderLeftWidth: 5, borderLeftColor: '#6B7280', marginBottom: 40 }]}>
@@ -418,7 +414,6 @@ export default function ProfileScreen({ navigation }) {
             );
           }
 
-          // Hitung Usia Dinamis berdasarkan tanggal lahir terkonfirmasi di database
           const birthDate = new Date(user.tanggal_lahir);
           const today = new Date();
           let ageYears = today.getFullYear() - birthDate.getFullYear();
@@ -427,9 +422,9 @@ export default function ProfileScreen({ navigation }) {
             ageYears--;
             ageMonths = 12 + ageMonths;
           }
-          
+
           const ageStr = `${ageYears} Tahun ${ageMonths} Bulan`;
-          const h = parseFloat(user.tinggi_badan) / 100; // in meter
+          const h = parseFloat(user.tinggi_badan) / 100;
           const w = parseFloat(user.berat_badan);
 
           let analysisTitle = "Analisis Berat & Tinggi Badan";
@@ -438,8 +433,7 @@ export default function ProfileScreen({ navigation }) {
 
           const imt = w / (h * h);
           let status = "";
-          
-          // Evaluasi dengan memperhitungkan gender secara biologis
+
           if (user.jenis_kelamin === 'Pria') {
             if (imt < 18.5) {
               status = "Kurus (Kurang Berat Badan Pria)";
@@ -458,7 +452,7 @@ export default function ProfileScreen({ navigation }) {
               analysisColor = "#EF4444";
               suggestionText = `Peringatan! Sebagai Pria di usia ${ageStr}, IMT Anda (${imt.toFixed(1)}) tergolong Obesitas. Disarankan untuk membatasi porsi karbohidrat olahan dan lakukan konsultasi berkala dengan ahli gizi.`;
             }
-          } else { // Wanita
+          } else {
             if (imt < 18) {
               status = "Kurus (Kurang Berat Badan Wanita)";
               analysisColor = "#EF4444";
@@ -492,20 +486,20 @@ export default function ProfileScreen({ navigation }) {
 
       </ScrollView>
 
-      {/* MODAL KONFIRMASI LOGOUT */}
+      {}
       <LogoutConfirmModal
         visible={isLogoutConfirmVisible}
         onClose={() => setIsLogoutConfirmVisible(false)}
         onConfirm={handleConfirmLogout}
       />
 
-      {/* MODAL SUCCESS LOGOUT */}
+      {}
       <LogoutSuccessModal
         visible={isLogoutSuccessVisible}
         onClose={() => setIsLogoutSuccessVisible(false)}
       />
 
-      {/* BOTTOM SHEET MENU MODAL */}
+      {}
       <MenuModal
         visible={isMenuVisible}
         onClose={() => setIsMenuVisible(false)}
@@ -513,7 +507,7 @@ export default function ProfileScreen({ navigation }) {
         menus={profileMenus}
       />
 
-      {/* MODAL GANTI PASSWORD */}
+      {}
       <ChangePasswordModal
         visible={isChangePasswordVisible}
         onClose={() => setIsChangePasswordVisible(false)}
@@ -532,7 +526,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 180, // DITINGKATKAN agar Saran AI tidak tenggelam
+    paddingBottom: 180,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -601,8 +595,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: 'Roboto',
   },
-  
-  // --- FLEX LAYOUT BARU ---
+
   flexRow: {
     flexDirection: 'row',
     gap: 12,
@@ -641,7 +634,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     marginTop: 4,
   },
-  // Pemisah khusus untuk kolom dalam Flex Row agar lebih tipis dan tidak terlalu dominan
+
   rowSeparatorFlex: {
     borderTopWidth: 1.5,
     borderTopColor: '#F1F5F9',

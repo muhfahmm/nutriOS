@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   Alert,
   Switch,
@@ -40,7 +40,7 @@ export default function MakanSiangScreen({ navigation }) {
       const response = await fetch(`${API_BASE_URL}/api/pola-makan/${userId}`);
       if (response.ok) {
         const { schedules } = await response.json();
-        
+
         const lunchSched = schedules.find(s => s.meal_type === 'lunch');
         if (lunchSched && lunchSched.meal_time !== '-') {
           const [h, m] = lunchSched.meal_time.split('.');
@@ -66,7 +66,7 @@ export default function MakanSiangScreen({ navigation }) {
     const formattedHour = h < 10 ? `0${h}` : `${h}`;
     const formattedMinute = m < 10 ? `0${m}` : `${m}`;
     const finalTime = `${formattedHour}.${formattedMinute}`;
-    
+
     try {
       const saveResponse = await fetch(`${API_BASE_URL}/api/jadwal-makan`, {
         method: 'POST',
@@ -110,7 +110,6 @@ export default function MakanSiangScreen({ navigation }) {
           },
         });
 
-        // Jika diset ke waktu menit saat ini, pemicu instan agar langsung muncul saat test
         const nowTime = new Date();
         if (h === nowTime.getHours() && m === nowTime.getMinutes()) {
           await Notifications.scheduleNotificationAsync({
@@ -129,18 +128,18 @@ export default function MakanSiangScreen({ navigation }) {
           });
         }
 
-        navigation.navigate('PolaMakan', { 
-          updatedMeal: 'lunch', 
-          updatedTime: finalTime 
+        navigation.navigate('PolaMakan', {
+          updatedMeal: 'lunch',
+          updatedTime: finalTime
         });
 
         Alert.alert('Berhasil', `Waktu pengingat makan siang diubah ke ${formattedHour}.${formattedMinute} dan Notifikasi Diaktifkan!`);
       } else {
         await Notifications.cancelScheduledNotificationAsync('meal-lunch');
-        
-        navigation.navigate('PolaMakan', { 
-          updatedMeal: 'lunch', 
-          updatedTime: finalTime 
+
+        navigation.navigate('PolaMakan', {
+          updatedMeal: 'lunch',
+          updatedTime: finalTime
         });
 
         Alert.alert('Berhasil', `Waktu pengingat makan siang diubah ke ${formattedHour}.${formattedMinute} (Notifikasi Nonaktif)`);
@@ -167,14 +166,14 @@ export default function MakanSiangScreen({ navigation }) {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {/* Atur Waktu Pengingat */}
+          {}
           <View style={styles.card}>
             <View style={styles.cardHeaderRow}>
               <Ionicons name="alarm-outline" size={22} color="#2563EB" style={{ marginRight: 8 }} />
               <Text style={styles.sectionTitle}>Atur Waktu Pengingat Makan Siang</Text>
             </View>
 
-            {/* Toggle Switch Notifikasi */}
+            {}
             <View style={styles.notifToggleRow}>
               <View style={styles.notifToggleTextCol}>
                 <Text style={styles.notifToggleLabel}>Aktifkan Notifikasi Makan Siang</Text>
@@ -215,7 +214,7 @@ export default function MakanSiangScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Info Pengingat Aktif */}
+          {}
           <View style={styles.statusCard}>
             <View style={styles.cardHeaderRow}>
               <Ionicons name="information-circle-outline" size={20} color="#2563EB" style={{ marginRight: 6 }} />

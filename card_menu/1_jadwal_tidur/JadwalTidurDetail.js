@@ -12,7 +12,6 @@ const { width } = Dimensions.get('window');
 export default function JadwalTidurDetail({ route, navigation }) {
   const { user } = useContext(AuthContext);
 
-  // Dapatkan jam sekarang untuk default
   const getCurrentFormattedTime = (offsetHours = 0) => {
     const now = new Date();
     if (offsetHours > 0) {
@@ -23,24 +22,21 @@ export default function JadwalTidurDetail({ route, navigation }) {
     return `${hh}.${mm}`;
   };
 
-  const defaultSleep = getCurrentFormattedTime(1); // Default tidur 1 jam kedepan
-  const defaultWake = getCurrentFormattedTime(9);  // Default bangun 9 jam kedepan (8 jam durasi tidur)
+  const defaultSleep = getCurrentFormattedTime(1);
+  const defaultWake = getCurrentFormattedTime(9);
 
   const initialSleepTime = route?.params?.sleepTime || defaultSleep;
   const initialWakeTime = route?.params?.wakeTime || defaultWake;
   const initialAgeGroup = route?.params?.ageGroup || 'Dewasa';
 
-  // State utama untuk edit
   const [sleepTime, setSleepTime] = useState(initialSleepTime);
   const [wakeTime, setWakeTime] = useState(initialWakeTime);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // State untuk modal sukses
   const [isSuccessVisible, setIsSuccessVisible] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // State untuk menghitung sisa waktu notifikasi
   const [timeUntilReminder, setTimeUntilReminder] = useState('');
 
   useEffect(() => {
@@ -48,7 +44,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
       setTimeUntilReminder(getTimeUntilReminder(sleepTime));
     };
     updateTime();
-    const interval = setInterval(updateTime, 10000); // update setiap 10 detik
+    const interval = setInterval(updateTime, 10000);
     return () => clearInterval(interval);
   }, [sleepTime]);
 
@@ -61,22 +57,21 @@ export default function JadwalTidurDetail({ route, navigation }) {
     }
   };
 
-  // Hitung Durasi Tidur Nyata
   const calculateSleepDuration = (sTime, wTime) => {
     try {
       const [sHour, sMin] = sTime.split('.').map(Number);
       const [wHour, wMin] = wTime.split('.').map(Number);
-      
+
       let start = new Date();
       start.setHours(sHour, sMin, 0, 0);
-      
+
       let end = new Date();
       end.setHours(wHour, wMin, 0, 0);
-      
+
       if (end <= start) {
         end.setDate(end.getDate() + 1);
       }
-      
+
       const diffMs = end - start;
       const diffHours = diffMs / (1000 * 60 * 60);
       return diffHours.toFixed(1);
@@ -87,12 +82,11 @@ export default function JadwalTidurDetail({ route, navigation }) {
 
   const duration = calculateSleepDuration(sleepTime, wakeTime);
 
-  // Hitung jumlah siklus tidur (1 siklus = 90 menit = 1.5 jam)
   const calculateSleepCycles = (hoursStr) => {
     const hours = parseFloat(hoursStr);
     if (isNaN(hours)) return { count: 0, text: 'N/A' };
     const cycles = (hours / 1.5).toFixed(1);
-    
+
     let note = '';
     if (hours < 6) note = 'Kurang optimal (Disarankan minimal 4-5 siklus)';
     else if (hours >= 6 && hours <= 9) note = 'Sangat Baik (Ideal untuk pemulihan fisik & otak)';
@@ -103,7 +97,6 @@ export default function JadwalTidurDetail({ route, navigation }) {
 
   const cycleData = calculateSleepCycles(duration);
 
-  // Fungsi Helper untuk mengubah jam
   const adjustTime = (type, action) => {
     const timeStr = type === 'sleep' ? sleepTime : wakeTime;
     const setTimeStr = type === 'sleep' ? setSleepTime : setWakeTime;
@@ -123,7 +116,6 @@ export default function JadwalTidurDetail({ route, navigation }) {
     setTimeStr(newStr);
   };
 
-  // Simpan perubahan target tidur ke database
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
@@ -131,7 +123,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
         userId: user?.id || null,
         sleepTime,
         wakeTime,
-        ageGroup: initialAgeGroup, // Tetap gunakan age group awal
+        ageGroup: initialAgeGroup,
         notifBedtime: true,
         notifScreenFree: false,
       };
@@ -149,9 +141,9 @@ export default function JadwalTidurDetail({ route, navigation }) {
       const result = await response.json();
 
       if (response.ok) {
-        // Jadwalkan ulang notifikasi tidur baru (30 menit sebelum jam tidur baru)
+
         await scheduleSleepReminder(sleepTime);
-        
+
         setSuccessMessage('Target tidur harian berhasil diperbarui!');
         setIsSuccessVisible(true);
         setIsEditing(false);
@@ -166,7 +158,6 @@ export default function JadwalTidurDetail({ route, navigation }) {
     }
   };
 
-  // Tips Sebelum Tidur
   const bedtimeTips = [
     { icon: 'phone-portrait-outline', title: 'Bebas Layar (Screen-Free)', desc: 'Matikan HP, tablet, dan TV 30-60 menit sebelum tidur untuk memicu hormon melatonin.' },
     { icon: 'bulb-outline', title: 'Pencahayaan Redup', desc: 'Gunakan lampu tidur yang redup atau matikan lampu sepenuhnya agar tidur lebih nyenyak.' },
@@ -176,7 +167,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header Bar */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#0F172A" />
@@ -186,7 +177,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Card 1: Ringkasan Rencana / Edit Area */}
+        {}
         <View style={styles.summaryCard}>
           <View style={styles.summaryHeader}>
             <View style={styles.summaryTitleContainer}>
@@ -208,9 +199,9 @@ export default function JadwalTidurDetail({ route, navigation }) {
               </TouchableOpacity>
             )}
           </View>
-          
+
           <View style={styles.timeRow}>
-            {/* Kolom Tidur */}
+            {}
             <View style={styles.timeBlock}>
               <Text style={styles.timeLabel}>Tidur</Text>
               {isEditing && (
@@ -231,7 +222,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
               <Ionicons name="arrow-forward" size={24} color="#94A3B8" />
             </View>
 
-            {/* Kolom Bangun */}
+            {}
             <View style={styles.timeBlock}>
               <Text style={styles.timeLabel}>Bangun</Text>
               {isEditing && (
@@ -258,7 +249,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
             </View>
           </View>
 
-          {/* Info sisa waktu notifikasi */}
+          {}
           <View style={styles.notificationTimeBox}>
             <Ionicons name="notifications-outline" size={16} color="#2563EB" style={{ marginRight: 6 }} />
             <Text style={styles.notificationTimeText}>
@@ -266,8 +257,8 @@ export default function JadwalTidurDetail({ route, navigation }) {
             </Text>
           </View>
 
-          {/* Tombol Test Notifikasi Langsung */}
-          <TouchableOpacity 
+          {}
+          <TouchableOpacity
             style={styles.testNotifButton}
             onPress={handleTestNotif}
             activeOpacity={0.8}
@@ -276,10 +267,10 @@ export default function JadwalTidurDetail({ route, navigation }) {
             <Text style={styles.testNotifText}>Coba Test Notifikasi (3 Detik)</Text>
           </TouchableOpacity>
 
-          {/* Tombol Simpan Perubahan saat Mode Edit Aktif */}
+          {}
           {isEditing && (
-            <TouchableOpacity 
-              style={styles.saveChangesButton} 
+            <TouchableOpacity
+              style={styles.saveChangesButton}
               onPress={handleSaveChanges}
               disabled={isSaving}
             >
@@ -295,7 +286,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
           )}
         </View>
 
-        {/* Card 2: Analisis Siklus Tidur */}
+        {}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="repeat" size={22} color="#10B981" />
@@ -316,13 +307,13 @@ export default function JadwalTidurDetail({ route, navigation }) {
           </View>
         </View>
 
-        {/* Card 3: Tips Persiapan Tidur */}
+        {}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="moon-outline" size={22} color="#8B5CF6" />
             <Text style={styles.cardTitle}>Rutinitas Sebelum Tidur</Text>
           </View>
-          
+
           {bedtimeTips.map((tip, idx) => (
             <View key={idx} style={styles.tipItem}>
               <View style={styles.tipIconContainer}>
@@ -337,7 +328,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
         </View>
       </ScrollView>
 
-      {/* Success Modal Component */}
+      {}
       <SuccessModal
         visible={isSuccessVisible}
         onClose={() => setIsSuccessVisible(false)}
@@ -626,8 +617,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontFamily: 'Roboto',
   },
-  
-  // --- NOTIFICATION UTILITY STYLE ---
+
   notificationTimeBox: {
     flexDirection: 'row',
     alignItems: 'center',

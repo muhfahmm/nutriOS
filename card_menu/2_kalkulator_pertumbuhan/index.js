@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   ActivityIndicator,
   Alert,
@@ -25,7 +25,6 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   const userId = user?.id || null;
 
-  // --- STATE USER IMT ---
   const [userWeight, setUserWeight] = useState('');
   const [userHeight, setUserHeight] = useState('');
   const [userAge, setUserAge] = useState('');
@@ -35,38 +34,30 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
   const [userHistory, setUserHistory] = useState([]);
   const [isLoadingUserHistory, setIsLoadingUserHistory] = useState(false);
 
-  // --- STATE MANAJEMEN ANAK ---
   const [children, setChildren] = useState([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(false);
   const [isAddChildVisible, setIsAddChildVisible] = useState(false);
   const [isLoginPromptVisible, setIsLoginPromptVisible] = useState(false);
-  
-  // Form Anak Baru
+
   const [childName, setChildName] = useState('');
-  const [childBirthDate, setChildBirthDate] = useState(''); // Format: YYYY-MM-DD
+  const [childBirthDate, setChildBirthDate] = useState('');
   const [childGender, setChildGender] = useState('Laki-laki');
   const [isSavingChild, setIsSavingChild] = useState(false);
 
-  // --- STATE PENGUKURAN ANAK DETAIL ---
   const [selectedAnak, setSelectedAnak] = useState(null);
   const [isAnakDetailVisible, setIsAnakDetailVisible] = useState(false);
   const [anakHistory, setAnakHistory] = useState([]);
   const [isLoadingAnakHistory, setIsLoadingAnakHistory] = useState(false);
 
-  // Form Pengukuran Anak Baru
   const [newAnakWeight, setNewAnakWeight] = useState('');
   const [newAnakHeight, setNewAnakHeight] = useState('');
   const [isSavingAnakRecord, setIsSavingAnakRecord] = useState(false);
 
-  // Fetch Data Awal
   useEffect(() => {
     fetchUserHistory();
     fetchChildren();
   }, [userId]);
 
-  // --- LOGIKA UTAMANYA ---
-
-  // 1. Ambil Riwayat IMT User
   const fetchUserHistory = async () => {
     if (!userId) return;
     setIsLoadingUserHistory(true);
@@ -83,7 +74,6 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
     }
   };
 
-  // 2. Hitung IMT User
   const handleCalculateUserImt = async () => {
     const weightNum = parseFloat(userWeight);
     const heightNum = parseFloat(userHeight);
@@ -94,13 +84,11 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
       return;
     }
 
-    // Hitung klasifikasi IMT dinamis berdasarkan usia, tinggi badan, berat badan & jenis kelamin
     const newResult = classifyUserIMT(weightNum, heightNum, ageNum, userGender);
 
     setUserImtResult(newResult);
     setIsUserCalculated(true);
 
-    // Simpan ke database jika user sudah login
     if (userId) {
       try {
         await fetch(`${API_BASE_URL}/api/pertumbuhan-user`, {
@@ -115,14 +103,13 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
             status_imt: newResult.status
           })
         });
-        fetchUserHistory(); // Refresh riwayat
+        fetchUserHistory();
       } catch (err) {
         console.log('Error save user growth:', err);
       }
     }
   };
 
-  // 3. Ambil Daftar Anak
   const fetchChildren = async () => {
     if (!userId) return;
     setIsLoadingChildren(true);
@@ -139,7 +126,6 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
     }
   };
 
-  // 4. Tambah Anak
   const handleAddChild = async () => {
     if (!childName) {
       Alert.alert('Gagal', 'Nama anak wajib diisi!');
@@ -181,15 +167,14 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
     }
   };
 
-  // 5. Hapus Anak
   const handleDeleteChild = (id, name) => {
     Alert.alert(
       'Hapus Profil',
       `Apakah Anda yakin ingin menghapus profil anak "${name}" beserta seluruh riwayat pertumbuhannya?`,
       [
         { text: 'Batal', style: 'cancel' },
-        { 
-          text: 'Hapus', 
+        {
+          text: 'Hapus',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -209,7 +194,6 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
     );
   };
 
-  // 6. Buka Detail & Riwayat Anak
   const handleOpenAnakDetail = async (anak) => {
     setSelectedAnak(anak);
     setIsAnakDetailVisible(true);
@@ -227,7 +211,6 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
     }
   };
 
-  // 7. Hitung Selisih Bulan Lahir (Usia Anak)
   const calculateAgeInMonths = (birthDateStr) => {
     if (!birthDateStr) return 0;
     const birth = new Date(birthDateStr);
@@ -235,7 +218,6 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
     return (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
   };
 
-  // 8. Tambah Catatan Timbangan Anak
   const handleAddAnakRecord = async () => {
     const weightNum = parseFloat(newAnakWeight);
     const heightNum = parseFloat(newAnakHeight);
@@ -248,10 +230,9 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
     setIsSavingAnakRecord(true);
     try {
       const ageMonths = calculateAgeInMonths(selectedAnak.tanggal_lahir);
-      
-      // Hitung Z-Score sederhana untuk mock status gizi
+
       let statusGizi = 'Normal';
-      // Aturan estimasi sederhana (BB normal rata-rata balita)
+
       if (weightNum < (ageMonths * 0.3 + 3.0)) {
         statusGizi = 'Gizi Kurang ⚠️';
       } else if (weightNum > (ageMonths * 0.6 + 6.0)) {
@@ -274,8 +255,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
         Alert.alert('Sukses', 'Riwayat pertumbuhan anak berhasil disimpan.');
         setNewAnakWeight('');
         setNewAnakHeight('');
-        
-        // Refresh data anak & riwayatnya
+
         const refreshedAnak = { ...selectedAnak, status_z_score: statusGizi };
         setSelectedAnak(refreshedAnak);
         handleOpenAnakDetail(refreshedAnak);
@@ -293,23 +273,23 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        {/* HEADER */}
+
+        {}
         <View style={styles.header}>
           <Text style={styles.title}>Kalkulator Gizi & IMT</Text>
           <Text style={styles.subtitle}>Ukur Indeks Massa Tubuh (IMT) Anda dan kelola catatan tumbuh kembang buah hati.</Text>
         </View>
 
-        {/* 1. KALKULATOR IMT DI-SENDIRI (USER) */}
+        {}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Kalkulator IMT Orang Tua</Text>
 
-          {/* Jenis Kelamin User */}
+          {}
           <Text style={styles.smallLabel}>Jenis Kelamin</Text>
           <View style={styles.inlineButtonRow}>
             {['Laki-laki', 'Perempuan'].map((item) => (
-              <TouchableOpacity 
-                key={item} 
+              <TouchableOpacity
+                key={item}
                 style={[styles.inlineBtn, userGender === item && styles.inlineBtnActive]}
                 onPress={() => setUserGender(item)}
               >
@@ -318,7 +298,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
             ))}
           </View>
 
-          {/* Input Tinggi, Berat & Usia */}
+          {}
           <View style={styles.rowInputGroup}>
             <View style={styles.inputWrapper}>
               <Text style={styles.smallLabel}>BB (kg)</Text>
@@ -355,22 +335,22 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Tombol Kalkulasi */}
+          {}
           <TouchableOpacity style={styles.primaryButton} onPress={handleCalculateUserImt}>
             <Ionicons name="calculator-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
             <Text style={styles.primaryButtonText}>Hitung IMT Saya</Text>
           </TouchableOpacity>
         </View>
 
-        {/* 2. CARD HASIL IMT USER */}
+        {}
         {isUserCalculated && userImtResult && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Hasil Indeks Massa Tubuh</Text>
-            
+
             <View style={styles.scoreBox}>
               <Text style={styles.scoreLabel}>Nilai IMT Anda</Text>
               <Text style={[styles.scoreValue, { color: userImtResult.color }]}>{userImtResult.imt}</Text>
-              
+
               <View style={[styles.statusBadge, { backgroundColor: userImtResult.color + '20', alignSelf: 'center', marginTop: 10 }]}>
                 <View style={[styles.statusDot, { backgroundColor: userImtResult.color }]} />
                 <Text style={[styles.statusText, { color: userImtResult.color }]}>
@@ -381,7 +361,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
               <Text style={styles.scoreNote}>{userImtResult.desc}</Text>
             </View>
 
-            {/* Visual IMT Bar */}
+            {}
             <View style={styles.imtBarContainer}>
               <View style={styles.imtScale}>
                 <View style={[styles.scaleSegment, { flex: 18.5, backgroundColor: '#F59E0B' }]} />
@@ -399,7 +379,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
           </View>
         )}
 
-        {/* CARD 2.5: SARAN KESEHATAN AI (USER) */}
+        {}
         {isUserCalculated && userImtResult && (
           <View style={styles.card}>
             <View style={styles.aiHeaderRow}>
@@ -408,7 +388,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
             </View>
             <Text style={styles.aiSubtitle}>Rekomendasi gaya hidup disesuaikan dengan profil gizi Anda</Text>
 
-            {/* Render 4 Suggestion Cards */}
+            {}
             {(() => {
               const suggestions = getAISuggestions({
                 type: 'adult',
@@ -421,7 +401,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
 
               return (
                 <View style={styles.aiContainer}>
-                  {/* Pola Makan */}
+                  {}
                   <View style={styles.aiItem}>
                     <View style={[styles.aiIconBox, { backgroundColor: '#EFF6FF' }]}>
                       <Ionicons name="restaurant" size={20} color="#2563EB" />
@@ -432,7 +412,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                     </View>
                   </View>
 
-                  {/* Pola Tidur */}
+                  {}
                   <View style={styles.aiItem}>
                     <View style={[styles.aiIconBox, { backgroundColor: '#F5F3FF' }]}>
                       <Ionicons name="moon" size={20} color="#8B5CF6" />
@@ -443,7 +423,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                     </View>
                   </View>
 
-                  {/* Olahraga */}
+                  {}
                   <View style={styles.aiItem}>
                     <View style={[styles.aiIconBox, { backgroundColor: '#ECFDF5' }]}>
                       <Ionicons name="barbell" size={20} color="#10B981" />
@@ -454,7 +434,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                     </View>
                   </View>
 
-                  {/* Tambahan */}
+                  {}
                   <View style={styles.aiItem}>
                     <View style={[styles.aiIconBox, { backgroundColor: '#FFF7ED' }]}>
                       <Ionicons name="medical" size={20} color="#F97316" />
@@ -470,7 +450,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
           </View>
         )}
 
-        {/* 3. RIWAYAT IMT USER */}
+        {}
         {userId && userHistory.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Riwayat IMT Anda</Text>
@@ -491,13 +471,13 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
           </View>
         )}
 
-        {/* 4. SEKTOR MANAJEMEN ANAK */}
+        {}
         {userId && (
           <View style={styles.card}>
             <View style={styles.rowBetween}>
               <Text style={styles.cardTitle}>Data Tumbuh Kembang Anak</Text>
-              <TouchableOpacity 
-                style={styles.addChildButton} 
+              <TouchableOpacity
+                style={styles.addChildButton}
                 onPress={() => {
                   setIsAddChildVisible(true);
                 }}
@@ -516,18 +496,18 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
               </View>
             ) : (
               children.map((anak) => (
-                <TouchableOpacity 
-                  key={anak.id} 
+                <TouchableOpacity
+                  key={anak.id}
                   style={styles.childItemRow}
                   onPress={() => handleOpenAnakDetail(anak)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.childInfoLeft}>
                     <View style={styles.childAvatarContainer}>
-                      <Ionicons 
-                        name={anak.jenis_kelamin === 'Laki-laki' ? 'boy' : 'girl'} 
-                        size={24} 
-                        color={anak.jenis_kelamin === 'Laki-laki' ? '#2563EB' : '#EC4899'} 
+                      <Ionicons
+                        name={anak.jenis_kelamin === 'Laki-laki' ? 'boy' : 'girl'}
+                        size={24}
+                        color={anak.jenis_kelamin === 'Laki-laki' ? '#2563EB' : '#EC4899'}
                       />
                     </View>
                     <View>
@@ -537,7 +517,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                       </Text>
                     </View>
                   </View>
-                  
+
                   <View style={styles.childInfoRight}>
                     <View style={styles.miniStatusBadge}>
                       <Text style={styles.miniStatusBadgeText}>{anak.status_z_score}</Text>
@@ -552,7 +532,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
 
       </ScrollView>
 
-      {/* MODAL 1: PROMPT MASUK AKUN / LOGIN */}
+      {}
       <LoginPromptModal
         visible={isLoginPromptVisible}
         onClose={() => setIsLoginPromptVisible(false)}
@@ -562,7 +542,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
         }}
       />
 
-      {/* MODAL 2: TAMBAH ANAK BARU */}
+      {}
       <AddChildModal
         visible={isAddChildVisible}
         onClose={() => setIsAddChildVisible(false)}
@@ -576,7 +556,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
         isSaving={isSavingChild}
       />
 
-      {/* MODAL 2: CATATAN PERTUMBUHAN ANAK & GRAFIK LOGS */}
+      {}
       <Modal visible={isAnakDetailVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { maxHeight: '90%' }]}>
@@ -591,11 +571,11 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              
-              {/* Form Input Timbangan Anak Baru */}
+
+              {}
               <View style={styles.modalSectionCard}>
                 <Text style={styles.sectionTitle}>Input Timbangan Baru</Text>
-                
+
                 <View style={styles.rowInputGroup}>
                   <View style={styles.inputWrapper}>
                     <Text style={styles.smallLabel}>Berat Badan (kg)</Text>
@@ -621,8 +601,8 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                   </View>
                 </View>
 
-                <TouchableOpacity 
-                  style={styles.secondaryButton} 
+                <TouchableOpacity
+                  style={styles.secondaryButton}
                   onPress={handleAddAnakRecord}
                   disabled={isSavingAnakRecord}
                 >
@@ -637,10 +617,10 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
 
-              {/* Tabel Riwayat Bulanan Anak */}
+              {}
               <View style={styles.modalSectionCard}>
                 <Text style={styles.sectionTitle}>Daftar Riwayat Timbangan</Text>
-                
+
                 {isLoadingAnakHistory ? (
                   <ActivityIndicator size="small" color="#2563EB" style={{ marginVertical: 20 }} />
                 ) : anakHistory.length === 0 ? (
@@ -667,14 +647,14 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                 )}
               </View>
 
-              {/* Saran Tumbuh Kembang AI Anak */}
+              {}
               {selectedAnak && (
                 <View style={styles.modalSectionCard}>
                   <View style={styles.aiHeaderRow}>
                     <Ionicons name="sparkles" size={18} color="#2563EB" />
                     <Text style={[styles.sectionTitle, { marginBottom: 0, marginLeft: 6 }]}>Saran Tumbuh Kembang AI</Text>
                   </View>
-                  
+
                   {(() => {
                     const suggestions = getAISuggestions({
                       type: 'child',
@@ -687,7 +667,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
 
                     return (
                       <View style={[styles.aiContainer, { marginTop: 12 }]}>
-                        {/* Pola Makan */}
+                        {}
                         <View style={styles.aiItem}>
                           <View style={[styles.aiIconBox, { backgroundColor: '#EFF6FF' }]}>
                             <Ionicons name="restaurant" size={18} color="#2563EB" />
@@ -698,7 +678,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                           </View>
                         </View>
 
-                        {/* Pola Tidur */}
+                        {}
                         <View style={styles.aiItem}>
                           <View style={[styles.aiIconBox, { backgroundColor: '#F5F3FF' }]}>
                             <Ionicons name="moon" size={18} color="#8B5CF6" />
@@ -709,7 +689,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                           </View>
                         </View>
 
-                        {/* Stimulasi Fisik */}
+                        {}
                         <View style={styles.aiItem}>
                           <View style={[styles.aiIconBox, { backgroundColor: '#ECFDF5' }]}>
                             <Ionicons name="barbell" size={18} color="#10B981" />
@@ -720,7 +700,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                           </View>
                         </View>
 
-                        {/* Tambahan */}
+                        {}
                         <View style={styles.aiItem}>
                           <View style={[styles.aiIconBox, { backgroundColor: '#FFF7ED' }]}>
                             <Ionicons name="medical" size={18} color="#F97316" />
@@ -736,8 +716,8 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                 </View>
               )}
 
-              {/* Tombol Hapus Anak */}
-              <TouchableOpacity 
+              {}
+              <TouchableOpacity
                 style={styles.deleteAnakButton}
                 onPress={() => handleDeleteChild(selectedAnak?.id, selectedAnak?.nama_anak)}
               >
@@ -904,8 +884,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Roboto',
   },
-  
-  // --- SCORE BOX (IMT RESULTS) ---
+
   scoreBox: {
     alignItems: 'center',
     backgroundColor: '#F8FAFC',
@@ -951,7 +930,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
   },
 
-  // --- IMT SCALE BAR ---
   imtBarContainer: {
     marginTop: 10,
   },
@@ -977,7 +955,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
   },
 
-  // --- TABLE HISTORI ---
   tableHeader: {
     flexDirection: 'row',
     borderBottomWidth: 1.5,
@@ -1004,7 +981,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
   },
 
-  // --- CHILDREN SECTOR ---
   addChildButton: {
     flexDirection: 'row',
     backgroundColor: '#2563EB',
@@ -1097,7 +1073,6 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
 
-  // --- MODAL LAYOUTS ---
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.4)',
@@ -1168,8 +1143,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-  
-  // --- AI SUGGESTIONS ENGINE STYLES ---
+
   aiHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',

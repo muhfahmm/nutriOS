@@ -1,18 +1,13 @@
-/**
- * AI Suggestion Engine (Rule-based Expert System) untuk Kalkulator Pertumbuhan
- * Memberikan saran Pola Makan, Pola Tidur, Olahraga, dan Saran Tambahan
- * berdasarkan IMT (Dewasa) maupun Z-Score/Status Gizi (Anak)
- */
+
 
 export function getAISuggestions({ type, gender, weight, height, status, age }) {
   if (type === 'adult') {
     return getAdultSuggestions(status, age, gender);
   } else {
-    return getChildSuggestions(status, age); // age di sini dalam bulan
+    return getChildSuggestions(status, age);
   }
 }
 
-// 1. Logika Saran untuk User Dewasa/Orang Tua
 function getAdultSuggestions(status, age, gender) {
   const normalizedStatus = status ? status.toLowerCase() : 'normal';
 
@@ -95,7 +90,7 @@ function getAdultSuggestions(status, age, gender) {
       }
     };
   } else {
-    // Obesitas
+
     return {
       polaMakan: {
         title: 'Diet Rendah Kalori & Karbohidrat Sederhana',
@@ -117,7 +112,6 @@ function getAdultSuggestions(status, age, gender) {
   }
 }
 
-// 2. Logika Saran untuk Tumbuh Kembang Anak (Balita/Anak-anak)
 function getChildSuggestions(status, ageMonths) {
   const normalizedStatus = status ? status.toLowerCase() : 'normal';
 
@@ -181,7 +175,7 @@ function getChildSuggestions(status, ageMonths) {
       }
     };
   } else {
-    // Gizi Lebih / Obesitas Anak
+
     return {
       polaMakan: {
         title: 'Batasi Cemilan Manis & Fast Food',
@@ -203,7 +197,6 @@ function getChildSuggestions(status, ageMonths) {
   }
 }
 
-// 3. Klasifikasi IMT Dinamis Berdasarkan Usia (Remaja vs Dewasa) & Jenis Kelamin (Pria vs Wanita)
 export function classifyUserIMT(weight, height, age, gender) {
   const heightMeters = height / 100;
   const imt = weight / (heightMeters * heightMeters);
@@ -212,17 +205,16 @@ export function classifyUserIMT(weight, height, age, gender) {
   let status = 'Normal';
   let color = '#10B981';
   let desc = 'Status gizi Anda dalam batas normal. Pertahankan pola hidup sehat!';
-  
-  // Deteksi Pendek / Stunting (TB tidak cocok untuk seusianya)
+
   let isPendek = false;
   if (age < 20) {
-    // Estimasi TB minimal persentil 3 WHO/CDC anak/remaja
+
     const minHeightAllowed = 78 + (age * 4.6) + (gender === 'Laki-laki' ? 1.0 : 0);
     if (height < minHeightAllowed) {
       isPendek = true;
     }
   } else {
-    // Dewasa
+
     const minAdultHeight = gender === 'Laki-laki' ? 152 : 142;
     if (height < minAdultHeight) {
       isPendek = true;
@@ -230,10 +222,9 @@ export function classifyUserIMT(weight, height, age, gender) {
   }
 
   if (age < 20) {
-    // Kategori Anak & Remaja (2 - 19 Tahun) - Menggunakan estimasi Persentil BMI WHO/CDC
+
     const isMale = gender === 'Laki-laki';
-    
-    // Formula regresi linier sederhana untuk memetakan kurva BMI anak/remaja (2-19 tahun)
+
     const base5th = 12.5 + (age * 0.28) + (isMale ? 0.1 : 0);
     const base85th = 15.0 + (age * 0.55) + (isMale ? 0.3 : 0);
     const base95th = 16.5 + (age * 0.68) + (isMale ? 0.4 : 0);
@@ -256,10 +247,9 @@ export function classifyUserIMT(weight, height, age, gender) {
       desc = `IMT anak/remaja (${imtRounded}) melampaui persentil 95 standar usia ${age} tahun. Disarankan konsultasi medis.`;
     }
   } else {
-    // Kategori Dewasa (>= 20 Tahun) - Menggunakan Standar Kemenkes RI yang disesuaikan gender
+
     const isMale = gender === 'Laki-laki';
-    
-    // Batas normal wanita indonesia sedikit lebih ketat dibanding pria untuk menghindari overweight terselubung
+
     const underweightLimit = 18.5;
     const normalLimit = isMale ? 25.0 : 24.2;
     const overweightLimit = 27.0;

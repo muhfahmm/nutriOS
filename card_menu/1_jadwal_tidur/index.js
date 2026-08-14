@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
   Switch,
   ActivityIndicator,
   Alert
@@ -19,7 +19,6 @@ import { useSleepNotifications } from '../../components/SleepNotificationManager
 export default function JadwalTidurScreen({ navigation }) {
   const { user } = useContext(AuthContext);
 
-  // Dapatkan jam sekarang untuk default
   const getCurrentFormattedTime = (offsetHours = 0) => {
     const now = new Date();
     if (offsetHours > 0) {
@@ -30,33 +29,26 @@ export default function JadwalTidurScreen({ navigation }) {
     return `${hh}.${mm}`;
   };
 
-  const defaultSleep = getCurrentFormattedTime(1); // Default tidur 1 jam kedepan
-  const defaultWake = getCurrentFormattedTime(9);  // Default bangun 9 jam kedepan (8 jam durasi tidur)
+  const defaultSleep = getCurrentFormattedTime(1);
+  const defaultWake = getCurrentFormattedTime(9);
 
-  // --- STATE UTAMA ---
   const [sleepTime, setSleepTime] = useState(defaultSleep);
   const [wakeTime, setWakeTime] = useState(defaultWake);
-  const [ageGroup, setAgeGroup] = useState('Dewasa'); // Bayi, Anak, Dewasa
-  
-  // Notifikasi Toggle
+  const [ageGroup, setAgeGroup] = useState('Dewasa');
+
   const [notifBedtime, setNotifBedtime] = useState(true);
 
-  // Aktifkan listener dan penjadwalan notifikasi tidur kustom
   useSleepNotifications(sleepTime, notifBedtime);
 
-  // State Pilihan Tab untuk Mengatur Jam
-  const [activePickerTab, setActivePickerTab] = useState('sleep'); // 'sleep' atau 'wake'
+  const [activePickerTab, setActivePickerTab] = useState('sleep');
 
-  // State untuk interaksi database
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // State untuk modal sukses dan data yang terakhir disimpan
   const [isSuccessVisible, setIsSuccessVisible] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [lastSavedData, setLastSavedData] = useState(null);
 
-  // Helper untuk menghitung durasi tidur kapan saja
   const getDuration = (sTime, wTime) => {
     try {
       const [sHour, sMin] = sTime.split('.').map(Number);
@@ -72,7 +64,6 @@ export default function JadwalTidurScreen({ navigation }) {
     }
   };
 
-  // --- STATE JAM REAL-TIME LOKAL ---
   const [realTime, setRealTime] = useState(new Date());
 
   useEffect(() => {
@@ -82,27 +73,25 @@ export default function JadwalTidurScreen({ navigation }) {
     return () => clearInterval(timer);
   }, []);
 
-  // Ambil data jadwal tidur dari database (jika user tidak login, ambil data guest default)
   useEffect(() => {
     const fetchJadwalTidur = async () => {
       const queryId = user?.id || '';
-      
-      // Jangan show loading jika hanya guest user
+
       if (!user?.id) {
         console.log('User adalah guest, menggunakan data lokal default');
         return;
       }
-      
+
       setIsLoadingData(true);
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-        
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         const response = await fetch(`${API_BASE_URL}/api/jadwal-tidur/${queryId}`, {
           signal: controller.signal
         });
         clearTimeout(timeoutId);
-        
+
         if (response.ok) {
           const data = await response.json();
           const s = data.sleepTime || sleepTime;
@@ -112,7 +101,7 @@ export default function JadwalTidurScreen({ navigation }) {
           if (data.wakeTime) setWakeTime(data.wakeTime);
           if (data.ageGroup) setAgeGroup(data.ageGroup);
           if (data.notifBedtime !== undefined) setNotifBedtime(data.notifBedtime);
-          
+
           setLastSavedData({
             sleepTime: s,
             wakeTime: w,
@@ -130,10 +119,8 @@ export default function JadwalTidurScreen({ navigation }) {
       }
     };
 
-    // Panggil saat load pertama kali atau user berubah
     fetchJadwalTidur();
 
-    // Dengarkan saat screen mendapatkan fokus kembali (misal setelah kembali dari detail screen)
     const unsubscribe = navigation.addListener('focus', () => {
       fetchJadwalTidur();
     });
@@ -141,29 +128,27 @@ export default function JadwalTidurScreen({ navigation }) {
     return unsubscribe;
   }, [user, navigation]);
 
-  // Simulasi usia untuk Kalkulator Tidur
   const getSleepRecommendation = (age) => {
     if (age === 'Bayi') return '12 - 16 Jam';
     if (age === 'Anak') return '10 - 13 Jam';
     return '7 - 9 Jam';
   };
 
-  // Hitung Durasi Tidur Nyata
   const calculateSleepDuration = () => {
     try {
       const [sHour, sMin] = sleepTime.split('.').map(Number);
       const [wHour, wMin] = wakeTime.split('.').map(Number);
-      
+
       let start = new Date();
       start.setHours(sHour, sMin, 0, 0);
-      
+
       let end = new Date();
       end.setHours(wHour, wMin, 0, 0);
-      
+
       if (end <= start) {
         end.setDate(end.getDate() + 1);
       }
-      
+
       const diffMs = end - start;
       const diffHours = diffMs / (1000 * 60 * 60);
       return diffHours.toFixed(1);
@@ -172,7 +157,6 @@ export default function JadwalTidurScreen({ navigation }) {
     }
   };
 
-  // Menyimpan Target Tidur Harian ke Database (Mendukung Login maupun Tamu/Guest)
   const handleSaveToDatabase = async () => {
     setIsSaving(true);
     try {
@@ -202,7 +186,7 @@ export default function JadwalTidurScreen({ navigation }) {
           'Accept': 'application/json',
         },
         body: JSON.stringify(payload),
-        timeout: 10000, // 10 second timeout
+        timeout: 10000,
       });
 
       console.log('[Jadwal Tidur] Response status:', response.status);
@@ -228,22 +212,20 @@ export default function JadwalTidurScreen({ navigation }) {
     } catch (error) {
       console.error('[Jadwal Tidur] Error saving schedule:', error.message);
       console.error('[Jadwal Tidur] Full error:', error);
-      
-      // Provide more specific error messages
+
       let errorMessage = 'Tidak dapat terhubung ke server database.';
       if (error.message.includes('Network')) {
         errorMessage = 'Network error: Periksa koneksi internet dan pastikan server backend sudah berjalan di port 3000';
       } else if (error.message.includes('timeout')) {
         errorMessage = 'Request timeout: Server backend tidak merespons dalam waktu yang ditentukan';
       }
-      
+
       Alert.alert('Error', errorMessage);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Fungsi Helper untuk mengubah jam lewat slider/button increment decrement
   const adjustTime = (type, action) => {
     const timeStr = type === 'sleep' ? sleepTime : wakeTime;
     const setTimeStr = type === 'sleep' ? setSleepTime : setWakeTime;
@@ -267,14 +249,13 @@ export default function JadwalTidurScreen({ navigation }) {
   const rekomendasi = getSleepRecommendation(ageGroup);
   const percentProgress = Math.min(100, Math.round((parseFloat(durasiTerpenuhi) / 8.0) * 100));
 
-  // Simulasi Siklus 90 Menit
   const cycles = ['06.00', '07.30', '09.00'];
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        {/* HEADER + JAM REAL-TIME LOKAL */}
+
+        {}
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <Text style={styles.title}>Jadwal Tidur</Text>
@@ -288,9 +269,9 @@ export default function JadwalTidurScreen({ navigation }) {
           <Text style={styles.subtitle}>Pantau dan tingkatkan kualitas istirahat Anda & si kecil</Text>
         </View>
 
-        {/* 0. DATA TERSIMPAN DI DATABASE (BOX/TABLE) */}
+        {}
         {lastSavedData && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.savedDataCard}
             onPress={() => navigation.navigate('JadwalTidurDetail', lastSavedData)}
             activeOpacity={0.8}
@@ -332,13 +313,13 @@ export default function JadwalTidurScreen({ navigation }) {
           </View>
         )}
 
-        {/* 1. WIDGET TARGET & PROGRESS BAR */}
+        {}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Target Tidur Harian</Text>
-          
-          {/* TAB PEMILIH WAKTU TERPADU DALAM PAGE */}
+
+          {}
           <View style={styles.tabContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.tabButton, activePickerTab === 'sleep' && styles.tabButtonActive]}
               onPress={() => setActivePickerTab('sleep')}
             >
@@ -348,7 +329,7 @@ export default function JadwalTidurScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.tabButton, activePickerTab === 'wake' && styles.tabButtonActive]}
               onPress={() => setActivePickerTab('wake')}
             >
@@ -359,17 +340,17 @@ export default function JadwalTidurScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* AREA INPUT WAKTU TERPADU */}
+          {}
           <View style={styles.pickerSection}>
             <Text style={styles.pickerTitle}>
               Atur Jam {activePickerTab === 'sleep' ? 'Tidur' : 'Bangun'}
             </Text>
-            
+
             <View style={styles.timeControlsRow}>
-              {/* Jam Column */}
+              {}
               <View style={styles.controlColumn}>
-                <TouchableOpacity 
-                  style={styles.adjustArrow} 
+                <TouchableOpacity
+                  style={styles.adjustArrow}
                   onPress={() => adjustTime(activePickerTab, 'hour_up')}
                 >
                   <Ionicons name="chevron-up" size={24} color="#2563EB" />
@@ -377,8 +358,8 @@ export default function JadwalTidurScreen({ navigation }) {
                 <Text style={styles.controlTimeValue}>
                   {(activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.')[0]}
                 </Text>
-                <TouchableOpacity 
-                  style={styles.adjustArrow} 
+                <TouchableOpacity
+                  style={styles.adjustArrow}
                   onPress={() => adjustTime(activePickerTab, 'hour_down')}
                 >
                   <Ionicons name="chevron-down" size={24} color="#2563EB" />
@@ -388,10 +369,10 @@ export default function JadwalTidurScreen({ navigation }) {
 
               <Text style={styles.timeColon}>:</Text>
 
-              {/* Menit Column */}
+              {}
               <View style={styles.controlColumn}>
-                <TouchableOpacity 
-                  style={styles.adjustArrow} 
+                <TouchableOpacity
+                  style={styles.adjustArrow}
                   onPress={() => adjustTime(activePickerTab, 'minute_up')}
                 >
                   <Ionicons name="chevron-up" size={24} color="#2563EB" />
@@ -399,8 +380,8 @@ export default function JadwalTidurScreen({ navigation }) {
                 <Text style={styles.controlTimeValue}>
                   {(activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.')[1]}
                 </Text>
-                <TouchableOpacity 
-                  style={styles.adjustArrow} 
+                <TouchableOpacity
+                  style={styles.adjustArrow}
                   onPress={() => adjustTime(activePickerTab, 'minute_down')}
                 >
                   <Ionicons name="chevron-down" size={24} color="#2563EB" />
@@ -410,7 +391,7 @@ export default function JadwalTidurScreen({ navigation }) {
             </View>
           </View>
 
-          {/* PROGRESS DURATION */}
+          {}
           <View style={styles.progressContainer}>
             <View style={styles.progressBarBg}>
               <View style={[styles.progressBarFill, { width: `${percentProgress}%` }]} />
@@ -421,9 +402,9 @@ export default function JadwalTidurScreen({ navigation }) {
             </View>
           </View>
 
-          {/* BUTTON SAVE TO SQL DATABASE */}
-          <TouchableOpacity 
-            style={[styles.saveDatabaseButton, isSaving && styles.saveDatabaseButtonDisabled]} 
+          {}
+          <TouchableOpacity
+            style={[styles.saveDatabaseButton, isSaving && styles.saveDatabaseButtonDisabled]}
             onPress={handleSaveToDatabase}
             disabled={isSaving}
           >
@@ -438,13 +419,13 @@ export default function JadwalTidurScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* 2. KALKULATOR SIKLUS & KEBUTUHAN TIDUR */}
+        {}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Kalkulator Kebutuhan Tidur</Text>
           <View style={styles.ageSelector}>
             {['Bayi', 'Anak', 'Dewasa'].map((age) => (
-              <TouchableOpacity 
-                key={age} 
+              <TouchableOpacity
+                key={age}
                 style={[styles.ageBtn, ageGroup === age && styles.ageBtnActive]}
                 onPress={() => setAgeGroup(age)}
               >
@@ -455,7 +436,7 @@ export default function JadwalTidurScreen({ navigation }) {
           <Text style={styles.recommendationText}>
             Rekomendasi Durasi: <Text style={{ fontWeight: '800', color: '#111827' }}>{rekomendasi}</Text>
           </Text>
-          
+
           <View style={styles.cycleContainer}>
             <Text style={styles.cycleLabel}>Siklus Tidur 90 Menit (Bangun Paling Segar):</Text>
             <View style={styles.cycleRow}>
@@ -468,7 +449,7 @@ export default function JadwalTidurScreen({ navigation }) {
           </View>
         </View>
 
-        {/* 3. PENGINGAT CERDAS (EXPO NOTIFICATIONS) */}
+        {}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Pengingat Cerdas</Text>
           <View style={styles.toggleRow}>
@@ -480,7 +461,7 @@ export default function JadwalTidurScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Success Modal Component */}
+        {}
         <SuccessModal
           visible={isSuccessVisible}
           onClose={() => setIsSuccessVisible(false)}
@@ -577,7 +558,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // --- TAB MENU ---
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#F3F4F6',
@@ -612,7 +592,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // --- PICKER SECTION ---
   pickerSection: {
     alignItems: 'center',
     backgroundColor: '#F8FAFC',
@@ -660,7 +639,6 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
   },
 
-  // --- TARGET & PROGRESS ---
   progressContainer: {
     marginTop: 4,
     marginBottom: 16,
@@ -692,7 +670,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
 
-  // --- SAVE BUTTON ---
   saveDatabaseButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -716,7 +693,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // --- 2. KALKULATOR ---
   ageSelector: {
     flexDirection: 'row',
     gap: 8,
@@ -769,7 +745,6 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
 
-  // --- 3. NOTIFIKASI ---
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -786,7 +761,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // --- SAVED DATA CARD STYLE ---
   savedDataCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
