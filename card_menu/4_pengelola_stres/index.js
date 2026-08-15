@@ -183,40 +183,6 @@ export default function PengelolaStresScreen() {
           </View>
         </View>
 
-
-        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
-          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Mood Check-in</Text>
-          <Text style={[styles.subCardTitle, isDarkMode && { color: '#94A3B8' }]}>Bagaimana perasaan Anda hari ini?</Text>
-          <View style={styles.moodRow}>
-            {[
-              { emoji: '😄', label: 'Sangat Bahagia' },
-              { emoji: '😐', label: 'Biasa Saja' },
-              { emoji: '😟', label: 'Cemas' },
-              { emoji: '😠', label: 'Marah' },
-              { emoji: '😫', label: 'Sangat Stres' },
-            ].map((item, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[styles.moodBtn, mood === idx && styles.moodBtnActive]}
-                onPress={() => setMood(idx)}
-              >
-                <Text style={styles.moodEmoji}>{item.emoji}</Text>
-                <Text style={[styles.moodLabel, mood === idx && styles.moodLabelActive]}>{item.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <TouchableOpacity
-            style={[styles.saveBtn, isDarkMode && { borderColor: '#60A5FA' }]}
-            onPress={() => alert('Data mood tersimpan untuk grafik mingguan!')}
-          >
-            <Text style={[styles.saveBtnText, isDarkMode && { color: '#60A5FA' }]}>
-              Simpan Mood Hari Ini
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Latihan Pernapasan</Text>
 
@@ -263,73 +229,6 @@ export default function PengelolaStresScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-
-
-        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
-          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Analisis & Korelasi</Text>
-          <View style={[styles.insightBox, isDarkMode && { backgroundColor: '#334155' }]}>
-            <Ionicons name="bulb-outline" size={24} color="#F59E0B" style={{ marginBottom: 8 }} />
-            <Text style={[styles.insightText, isDarkMode && { color: '#F8FAFC' }]}>{insights[0]}</Text>
-            <View style={styles.insightTag}>
-              <Text style={styles.insightTagText}>Berdasarkan data tidur</Text>
-            </View>
-          </View>
-          <View style={[styles.insightBox, isDarkMode && { backgroundColor: '#334155' }, { marginTop: 12 }]}>
-            <Ionicons name="fast-food-outline" size={24} color="#10B981" style={{ marginBottom: 8 }} />
-            <Text style={[styles.insightText, isDarkMode && { color: '#F8FAFC' }]}>{insights[1]}</Text>
-            <View style={[styles.insightTag, { backgroundColor: '#D1FAE5' }]}>
-              <Text style={[styles.insightTagText, { color: '#047857' }]}>Berdasarkan pola makan</Text>
-            </View>
-          </View>
-        </View>
-
-
-        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
-          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Jurnal Pemicu Stres</Text>
-          <Text style={[styles.subCardTitle, isDarkMode && { color: '#94A3B8' }]}>
-            Apa yang membuat Anda stres hari ini? (Pilih pemicu di bawah)
-          </Text>
-
-          <View style={styles.tagGrid}>
-            {['💼 Pekerjaan', '👨‍👩‍👧 Keluarga', '🏥 Kesehatan', '🪙 Keuangan', '❤️ Hubungan'].map((tag) => {
-              const isActive = selectedTags.includes(tag);
-              return (
-                <TouchableOpacity
-                  key={tag}
-                  style={[
-                    styles.tagItem,
-                    isActive && styles.tagItemActive,
-                    isActive && isDarkMode && { backgroundColor: '#064E3B', borderColor: '#10B981' }
-                  ]}
-                  onPress={() => toggleTag(tag)}
-                >
-                  <Text style={[styles.tagItemText, isActive && styles.tagItemTextActive, isActive && isDarkMode && { color: '#6EE7B7' }]}>
-                    {tag}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <TextInput
-            style={[styles.journalInput, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569', color: '#F8FAFC' }]}
-            multiline
-            numberOfLines={4}
-            placeholder="Ceritakan detail pemicu stres Anda di sini..."
-            placeholderTextColor="#9CA3AF"
-            value={journalText}
-            onChangeText={setJournalText}
-          />
-          <TouchableOpacity
-            style={[styles.saveJournalBtn, isDarkMode && { borderColor: '#34D399' }]}
-            onPress={handleSaveJournal}
-          >
-            <Text style={[styles.saveJournalBtnText, isDarkMode && { color: '#34D399' }]}>
-              Simpan Jurnal
-            </Text>
-          </TouchableOpacity>
-        </View>
-
 
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B' }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Saran Cerdas</Text>
