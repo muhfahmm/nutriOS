@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,83 +6,104 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  Switch
+  Switch,
+  TextInput,
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import GeminiConsultantModal from '../../components/GeminiConsultantModal';
-
-
-const foodDB = {
-
-  "Nasi Putih": { id: 1, calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4, iron: 0.8, calcium: 10, category: "Karbohidrat", price: "Murah", alergi: [] },
-  "Nasi Merah": { id: 2, calories: 110, protein: 2.6, carbs: 23, fat: 0.9, fiber: 1.8, iron: 1.2, calcium: 12, category: "Karbohidrat", price: "Murah", alergi: [] },
-
-
-  "Ayam Goreng": { id: 3, calories: 240, protein: 20, carbs: 5, fat: 14, fiber: 0, iron: 1.5, calcium: 10, category: "Protein Hewani", price: "Sedang", alergi: [] },
-  "Ikan Kembung": { id: 4, calories: 200, protein: 22, carbs: 0, fat: 12, fiber: 0, iron: 2.5, calcium: 30, category: "Protein Hewani", price: "Sedang", alergi: ["seafood"] },
-  "Telur Dadar": { id: 5, calories: 140, protein: 10, carbs: 1, fat: 10, fiber: 0, iron: 1.2, calcium: 40, category: "Protein Hewani", price: "Murah", alergi: [] },
-  "Tahu Bacem": { id: 6, calories: 120, protein: 12, carbs: 8, fat: 6, fiber: 1.2, iron: 2.0, calcium: 120, category: "Protein Nabati", price: "Murah", alergi: ["kedelai"] },
-  "Tempe Goreng": { id: 7, calories: 150, protein: 14, carbs: 10, fat: 8, fiber: 2.5, iron: 3.0, calcium: 80, category: "Protein Nabati", price: "Murah", alergi: ["kedelai"] },
-
-
-  "Bayam": { id: 8, calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, fiber: 2.2, iron: 3.5, calcium: 100, category: "Sayur", price: "Murah", alergi: [] },
-  "Kangkung": { id: 9, calories: 20, protein: 2.5, carbs: 3.0, fat: 0.3, fiber: 2.0, iron: 2.8, calcium: 80, category: "Sayur", price: "Murah", alergi: [] },
-  "Brokoli": { id: 10, calories: 34, protein: 2.8, carbs: 7, fat: 0.4, fiber: 2.6, iron: 0.8, calcium: 47, category: "Sayur", price: "Sedang", alergi: [] },
-
-
-  "Pisang": { id: 11, calories: 90, protein: 1.1, carbs: 23, fat: 0.3, fiber: 2.6, iron: 0.3, calcium: 6, category: "Buah", price: "Murah", alergi: [] },
-  "Alpukat": { id: 12, calories: 160, protein: 2, carbs: 9, fat: 15, fiber: 6.7, iron: 0.6, calcium: 12, category: "Buah", price: "Sedang", alergi: [] },
-  "Kacang Rebus": { id: 13, calories: 120, protein: 7, carbs: 10, fat: 6, fiber: 4, iron: 1.5, calcium: 30, category: "Lemak", price: "Murah", alergi: ["kacang"] },
-
-
-  "Susu Sapi": { id: 14, calories: 70, protein: 3.4, carbs: 4.8, fat: 4, fiber: 0, iron: 0.1, calcium: 120, category: "Minuman", price: "Sedang", alergi: ["susu"] },
-  "Jus Jeruk": { id: 15, calories: 45, protein: 0.8, carbs: 10, fat: 0.2, fiber: 0.5, iron: 0.1, calcium: 20, category: "Minuman", price: "Sedang", alergi: [] },
-};
-
-
-const recipes = {
-  "Ayam Goreng": {
-    ingredients: ["1/2 ekor ayam potong", "1 sdt garam", "1/2 sdt kunyit", "2 siung bawang putih", "Minyak goreng"],
-    steps: ["Haluskan bumbu (bawang, kunyit, garam).", "Lumuri ayam dengan bumbu, diamkan 15 menit.", "Goreng ayam dalam minyak panas hingga matang kecokelatan.", "Angkat dan tiriskan."],
-    time: "25 menit"
-  },
-  "Tahu Bacem": {
-    ingredients: ["4 buah tahu putih", "3 sdm kecap manis", "2 lembar daun salam", "1 ruas lengkuas", "200 ml air"],
-    steps: ["Rebus air, kecap, daun salam, lengkuas hingga mendidih.", "Masukkan tahu, kecilkan api, ungkep hingga air menyusut.", "Angkat dan goreng sebentar (opsional)."],
-    time: "30 menit"
-  },
-  "Bayam": {
-    ingredients: ["1 ikat bayam", "2 siung bawang putih", "1 buah tomat", "Garam secukupnya"],
-    steps: ["Tumis bawang putih hingga harum.", "Masukkan bayam dan tomat, aduk rata.", "Tambahkan garam, masak hingga layu (3 menit)."],
-    time: "10 menit"
-  }
-};
-
+import { AuthContext } from '../../auth/AuthContext';
+import { API_BASE_URL } from '../../auth/api';
 
 const RecipeModal = ({ visible, foodName, onClose }) => {
-  const recipe = recipes[foodName];
-  if (!recipe) return null;
+  const { isDarkMode } = useContext(AuthContext);
+  const [recipe, setRecipe] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  React.useEffect(() => {
+    if (visible && foodName) {
+      const fetchRecipe = async () => {
+        setLoading(true);
+        setErrorMsg('');
+        setRecipe(null);
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/generate-recipe`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ foodName })
+          });
+          const contentType = response.headers.get('content-type');
+          if (response.ok && contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            if (data.recipe) {
+              setRecipe(data.recipe);
+            } else {
+              setErrorMsg(data.message || 'Gagal memuat resep.');
+            }
+          } else {
+            setErrorMsg(`Server Error (${response.status}). Harap restart server backend Anda.`);
+          }
+        } catch (e) {
+          setErrorMsg('Koneksi terputus ke server backend.');
+          console.warn(e);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchRecipe();
+    }
+  }, [visible, foodName]);
 
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+        <View style={[styles.modalContent, isDarkMode && { backgroundColor: '#1E293B' }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Resep {foodName}</Text>
+            <Text style={[styles.modalTitle, isDarkMode && { color: '#F8FAFC' }]}>Resep {foodName}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#6B7280" />
+              <Ionicons name="close" size={24} color={isDarkMode ? '#94A3B8' : '#6B7280'} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.modalSubtitle}>⏱️ Estimasi: {recipe.time}</Text>
-          <Text style={styles.modalSectionTitle}>Bahan-bahan:</Text>
-          {recipe.ingredients.map((item, idx) => (
-            <Text key={idx} style={styles.modalItem}>• {item}</Text>
-          ))}
-          <Text style={styles.modalSectionTitle}>Langkah:</Text>
-          {recipe.steps.map((step, idx) => (
-            <Text key={idx} style={styles.modalItem}>{idx+1}. {step}</Text>
-          ))}
+          
+          {loading && (
+            <View style={{ marginVertical: 30, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text style={{ fontSize: 13, color: isDarkMode ? '#CBD5E1' : '#4B5563', marginTop: 10 }}>
+                Menyusun resep pintar dengan AI...
+              </Text>
+            </View>
+          )}
+
+          {!loading && errorMsg !== '' && (
+            <View style={{ marginVertical: 20, alignItems: 'center' }}>
+              <Ionicons name="alert-circle-outline" size={40} color="#EF4444" style={{ marginBottom: 12 }} />
+              <Text style={{ fontSize: 13, color: '#EF4444', textAlign: 'center' }}>{errorMsg}</Text>
+            </View>
+          )}
+
+          {!loading && !errorMsg && recipe && (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={[styles.modalSubtitle, isDarkMode && { color: '#94A3B8' }]}>⏱️ Estimasi: {recipe.time}</Text>
+              <Text style={[styles.modalSectionTitle, isDarkMode && { color: '#F8FAFC' }]}>Bahan-bahan:</Text>
+              {recipe.ingredients.map((item, idx) => (
+                <Text key={idx} style={[styles.modalItem, isDarkMode && { color: '#CBD5E1' }]}>• {item}</Text>
+              ))}
+              <Text style={[styles.modalSectionTitle, isDarkMode && { color: '#F8FAFC' }]}>Langkah:</Text>
+              {recipe.steps.map((step, idx) => (
+                <Text key={idx} style={[styles.modalItem, isDarkMode && { color: '#CBD5E1' }]}>{idx+1}. {step}</Text>
+              ))}
+            </ScrollView>
+          )}
+
+          {!loading && !errorMsg && !recipe && (
+            <Text style={{ textAlign: 'center', marginVertical: 20, color: isDarkMode ? '#CBD5E1' : '#4B5563' }}>
+              Pilih makanan untuk melihat resep.
+            </Text>
+          )}
+
           <TouchableOpacity style={styles.modalCloseBtn} onPress={onClose}>
             <Text style={styles.modalCloseText}>Tutup</Text>
           </TouchableOpacity>
@@ -92,235 +113,379 @@ const RecipeModal = ({ visible, foodName, onClose }) => {
   );
 };
 
-
 export default function RekomendasiMakananScreen() {
+  const { isDarkMode } = useContext(AuthContext);
   const [isAiModalVisible, setIsAiModalVisible] = useState(false);
   const [alergies, setAlergies] = useState({ seafood: false, kacang: false, susu: false, kedelai: false });
   const [budget, setBudget] = useState('Sedang');
   const [isVegetarian, setIsVegetarian] = useState(false);
 
-
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  
   const [currentMenu, setCurrentMenu] = useState({
-    breakfast: { main: "Nasi Putih", side: "Telur Dadar", drink: "Susu Sapi" },
-    morningSnack: "Pisang",
-    lunch: { main: "Nasi Merah", side: "Ayam Goreng", veggie: "Bayam" },
-    afternoonSnack: "Kacang Rebus",
-    dinner: { main: "Tahu Bacem", veggie: "Kangkung" }
+    breakfast: [],
+    morningSnack: [],
+    lunch: [],
+    afternoonSnack: [],
+    dinner: []
   });
 
+  // CRUD States
+  const [crudModalVisible, setCrudModalVisible] = useState(false);
+  const [crudMode, setCrudMode] = useState('add'); // 'add' or 'edit'
+  const [activeMealKey, setActiveMealKey] = useState('breakfast');
+  const [activeItemIndex, setActiveItemIndex] = useState(-1);
+  const [inputValue, setInputValue] = useState('');
 
-  const handleSwap = (mealType, currentFood) => {
+  const openAddModal = (mealKey) => {
+    setCrudMode('add');
+    setActiveMealKey(mealKey);
+    setInputValue('');
+    setCrudModalVisible(true);
+  };
 
-    const foodData = foodDB[currentFood];
-    if (!foodData) return;
+  const openEditModal = (mealKey, index, currentValue) => {
+    setCrudMode('edit');
+    setActiveMealKey(mealKey);
+    setActiveItemIndex(index);
+    setInputValue(currentValue);
+    setCrudModalVisible(true);
+  };
 
-    let candidates = Object.keys(foodDB).filter(name => {
-      const data = foodDB[name];
-
-      if (data.category !== foodData.category) return false;
-
-      if (budget === 'Murah' && data.price === 'Mahal') return false;
-      if (budget === 'Sedang' && data.price === 'Mahal') return false;
-
-      if (alergies.seafood && data.alergi.includes('seafood')) return false;
-      if (alergies.kacang && data.alergi.includes('kacang')) return false;
-      if (alergies.susu && data.alergi.includes('susu')) return false;
-      if (alergies.kedelai && data.alergi.includes('kedelai')) return false;
-
-      if (isVegetarian && (data.category === 'Protein Hewani' && name !== 'Telur Dadar')) return false;
-      return true;
-    });
-
-
-    candidates = candidates.filter(name => name !== currentFood);
-
-    if (candidates.length === 0) {
-      alert('Tidak ada alternatif pengganti dengan preferensi saat ini.');
-      return;
-    }
-
-
-    const newFood = candidates[Math.floor(Math.random() * candidates.length)];
-
-
+  const handleSaveCrud = () => {
+    if (!inputValue.trim()) return;
+    
     setCurrentMenu(prev => {
-      const newMenu = { ...prev };
-
-
-
-
-
-
-
-      const replaceInObject = (obj) => {
-        for (let key in obj) {
-          if (typeof obj[key] === 'object') {
-            replaceInObject(obj[key]);
-          } else if (obj[key] === currentFood) {
-            obj[key] = newFood;
-          }
-        }
+      const updatedMeal = [...prev[activeMealKey]];
+      if (crudMode === 'add') {
+        updatedMeal.push(inputValue.trim());
+      } else {
+        updatedMeal[activeItemIndex] = inputValue.trim();
+      }
+      return {
+        ...prev,
+        [activeMealKey]: updatedMeal
       };
-      replaceInObject(newMenu);
-      return newMenu;
+    });
+    setCrudModalVisible(false);
+  };
+
+  const handleDeleteItem = (mealKey, index) => {
+    setCurrentMenu(prev => {
+      const updatedMeal = prev[mealKey].filter((_, idx) => idx !== index);
+      return {
+        ...prev,
+        [mealKey]: updatedMeal
+      };
     });
   };
 
+  const handleApplyAiMenu = (aiMenu) => {
+    if (!aiMenu) return;
+    
+    setCurrentMenu(prev => {
+      const updated = { ...prev };
+      
+      if (aiMenu.breakfast && (Array.isArray(aiMenu.breakfast) ? aiMenu.breakfast.length > 0 : aiMenu.breakfast)) {
+        updated.breakfast = Array.isArray(aiMenu.breakfast) ? aiMenu.breakfast : [aiMenu.breakfast].filter(Boolean);
+      }
+      if (aiMenu.morningSnack && (Array.isArray(aiMenu.morningSnack) ? aiMenu.morningSnack.length > 0 : aiMenu.morningSnack)) {
+        updated.morningSnack = Array.isArray(aiMenu.morningSnack) ? aiMenu.morningSnack : [aiMenu.morningSnack].filter(Boolean);
+      }
+      if (aiMenu.lunch && (Array.isArray(aiMenu.lunch) ? aiMenu.lunch.length > 0 : aiMenu.lunch)) {
+        updated.lunch = Array.isArray(aiMenu.lunch) ? aiMenu.lunch : [aiMenu.lunch].filter(Boolean);
+      }
+      if (aiMenu.afternoonSnack && (Array.isArray(aiMenu.afternoonSnack) ? aiMenu.afternoonSnack.length > 0 : aiMenu.afternoonSnack)) {
+        updated.afternoonSnack = Array.isArray(aiMenu.afternoonSnack) ? aiMenu.afternoonSnack : [aiMenu.afternoonSnack].filter(Boolean);
+      }
+      if (aiMenu.dinner && (Array.isArray(aiMenu.dinner) ? aiMenu.dinner.length > 0 : aiMenu.dinner)) {
+        updated.dinner = Array.isArray(aiMenu.dinner) ? aiMenu.dinner : [aiMenu.dinner].filter(Boolean);
+      }
+      
+      return updated;
+    });
+  };
 
-  const renderFoodItem = (label, foodName, mealType) => {
-    if (!foodName) return null;
+  const handleSwap = async (mealKey, index, currentFood) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/swap-food`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentFood,
+          alergies,
+          budget,
+          isVegetarian
+        })
+      });
+      const contentType = response.headers.get('content-type');
+      if (response.ok && contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        if (data.alternative) {
+          setCurrentMenu(prev => {
+            const updatedMeal = [...prev[mealKey]];
+            updatedMeal[index] = data.alternative;
+            return {
+              ...prev,
+              [mealKey]: updatedMeal
+            };
+          });
+        } else {
+          alert(data.message || 'Gagal mencari alternatif makanan.');
+        }
+      } else {
+        const textResponse = await response.text();
+        alert(`Server Error (${response.status}): ${textResponse || 'Gagal memproses permintaan.'}`);
+      }
+    } catch (e) {
+      alert('Koneksi terputus ke server backend.');
+      console.warn(e);
+    }
+  };
+
+  const renderMealSection = (mealTitle, mealKey, emoji) => {
+    const list = currentMenu[mealKey] || [];
     return (
-      <View style={styles.foodItemRow}>
-        <View style={styles.foodItemLeft}>
-          <Text style={styles.foodItemLabel}>{label}</Text>
-          <Text style={styles.foodItemName}>{foodName}</Text>
-        </View>
-        <View style={styles.foodItemActions}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => setSelectedRecipe(foodName)}>
-            <Ionicons name="book-outline" size={18} color="#2563EB" />
-            <Text style={styles.actionBtnText}>Resep</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, { borderColor: '#F59E0B' }]} onPress={() => handleSwap(mealType, foodName)}>
-            <Ionicons name="swap-horizontal-outline" size={18} color="#F59E0B" />
-            <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Ganti</Text>
+      <View style={[styles.mealSection, isDarkMode && { borderColor: '#334155' }]}>
+        <View style={styles.mealSectionHeader}>
+          <Text style={[styles.mealTitle, isDarkMode && { color: '#60A5FA' }]}>{emoji} {mealTitle}</Text>
+          <TouchableOpacity 
+            style={[styles.addBtn, isDarkMode && { backgroundColor: '#334155' }]} 
+            onPress={() => openAddModal(mealKey)}
+          >
+            <Ionicons name="add" size={16} color="#3B82F6" />
+            <Text style={styles.addBtnText}>Tambah</Text>
           </TouchableOpacity>
         </View>
+
+        {list.length === 0 ? (
+          <Text style={[styles.emptyMealText, isDarkMode && { color: '#64748B' }]}>Belum ada menu makan.</Text>
+        ) : (
+          list.map((food, idx) => (
+            <View key={`${food}-${idx}`} style={[styles.foodItemRow, isDarkMode && { borderBottomColor: '#334155' }]}>
+              <View style={styles.foodItemLeft}>
+                <Text style={[styles.foodItemName, isDarkMode && { color: '#F8FAFC' }]}>{food}</Text>
+              </View>
+              <View style={styles.foodItemActions}>
+                <TouchableOpacity 
+                  style={[styles.actionBtn, isDarkMode && { borderColor: '#475569' }]} 
+                  onPress={() => setSelectedRecipe(food)}
+                >
+                  <Ionicons name="book-outline" size={14} color="#3B82F6" />
+                  <Text style={styles.actionBtnText}>Resep</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.actionBtn, { borderColor: '#E2E8F0' }, isDarkMode && { borderColor: '#475569' }]} 
+                  onPress={() => openEditModal(mealKey, idx, food)}
+                >
+                  <Ionicons name="create-outline" size={14} color="#6B7280" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.actionBtn, { borderColor: '#FEE2E2' }, isDarkMode && { borderColor: '#475569' }]} 
+                  onPress={() => handleSwap(mealKey, idx, food)}
+                >
+                  <Ionicons name="swap-horizontal-outline" size={14} color="#F59E0B" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.actionBtn, { borderColor: '#FEE2E2' }, isDarkMode && { borderColor: '#475569' }]} 
+                  onPress={() => handleDeleteItem(mealKey, idx)}
+                >
+                  <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        )}
       </View>
     );
   };
 
+  const systemPrompt = 
+    "Berikan ide resep makanan lokal Indonesia sehat dan bergizi seimbang berdasarkan kebutuhan nutrisi. " +
+    "PENTING: HANYA jika Anda memberikan atau menyarankan rekomendasi menu makanan kepada pengguna, sertakan data menu tersebut di akhir respon Anda dalam format JSON mentah diapit tag <MENU_JSON>...</MENU_JSON>. " +
+    "PENTING LAINNYA: Jika Anda HANYA merekomendasikan salah satu waktu makan saja (misal: hanya sarapan), maka di dalam JSON Anda CUKUP sertakan key waktu makan tersebut saja (misal: hanya key \"breakfast\") dan jangan sertakan key lainnya yang tidak Anda rekomendasikan, agar tidak menimpa data makan siang atau makan malam pengguna saat ini yang sudah ada.\n\n" +
+    "Jika pengguna hanya bertanya secara umum, menanyakan definisi (misal: 'apa itu makan'), atau mengobrol biasa tanpa meminta/memberikan rekomendasi menu makanan baru, CUKUP jelaskan secara detail dan JANGAN sertakan tag <MENU_JSON> maupun data JSON apapun.\n\n" +
+    "Format struktur JSON jika direkomendasikan (bisa dikurangi/hanya mencantumkan key yang relevan):\n" +
+    "{\n" +
+    "  \"breakfast\": [\"menu utama\", \"lauk\", \"minuman\"],\n" +
+    "  \"morningSnack\": [\"camilan\"],\n" +
+    "  \"lunch\": [\"karbohidrat\", \"lauk\", \"sayur\"],\n" +
+    "  \"afternoonSnack\": [\"camilan\"],\n" +
+    "  \"dinner\": [\"menu utama\", \"sayur\"]\n" +
+    "}\n" +
+    "Jangan masukkan markdown codeblock (seperti ```json) di dalam tag <MENU_JSON> tersebut.";
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {}
+        {/* Header */}
         <View style={styles.headerRow}>
           <View style={styles.header}>
-            <Text style={styles.title}>Rekomendasi Makanan</Text>
-            <Text style={styles.subtitle}>Menu harian cerdas, sesuai gizi dan preferensi keluarga.</Text>
+            <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Rekomendasi Makanan</Text>
+            <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Menu harian cerdas, sesuai gizi dan preferensi keluarga.</Text>
           </View>
           <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setIsAiModalVisible(true)}>
-            <Ionicons name="sparkles" size={16} color="#FFF" />
+            <Ionicons name="sparkles" size={18} color="#FFF" />
           </TouchableOpacity>
         </View>
 
-        {}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Filter & Preferensi</Text>
+        {/* Filter Card */}
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
+          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Filter & Preferensi</Text>
+          
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Alergi & Pantangan:</Text>
+            <Text style={[styles.filterLabel, isDarkMode && { color: '#CBD5E1' }]}>Alergi & Pantangan:</Text>
             <View style={styles.alergyRow}>
               {Object.keys(alergies).map(key => (
                 <TouchableOpacity
                   key={key}
-                  style={[styles.alergyBtn, alergies[key] && styles.alergyBtnActive]}
+                  style={[
+                    styles.alergyBtn, 
+                    alergies[key] && styles.alergyBtnActive,
+                    isDarkMode && !alergies[key] && { backgroundColor: '#334155' }
+                  ]}
                   onPress={() => setAlergies(prev => ({ ...prev, [key]: !prev[key] }))}
                 >
-                  <Text style={[styles.alergyText, alergies[key] && styles.alergyTextActive]}>{key.charAt(0).toUpperCase() + key.slice(1)}</Text>
+                  <Text style={[
+                    styles.alergyText, 
+                    alergies[key] && styles.alergyTextActive,
+                    isDarkMode && !alergies[key] && { color: '#94A3B8' }
+                  ]}>
+                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          <View style={[styles.filterSection, { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 14, marginTop: 14 }]}>
+          <View style={[styles.filterSection, { borderTopWidth: 1, borderTopColor: isDarkMode ? '#334155' : '#F3F4F6', paddingTop: 14, marginTop: 14 }]}>
             <View style={styles.budgetRow}>
-              <Text style={styles.filterLabel}>Budget Harian:</Text>
+              <Text style={[styles.filterLabel, isDarkMode && { color: '#CBD5E1' }]}>Budget Harian:</Text>
               <View style={styles.budgetChips}>
                 {['Murah', 'Sedang', 'Mahal'].map(b => (
                   <TouchableOpacity
                     key={b}
-                    style={[styles.budgetChip, budget === b && styles.budgetChipActive]}
+                    style={[
+                      styles.budgetChip, 
+                      budget === b && styles.budgetChipActive,
+                      isDarkMode && budget !== b && { backgroundColor: '#334155' }
+                    ]}
                     onPress={() => setBudget(b)}
                   >
-                    <Text style={[styles.budgetChipText, budget === b && styles.budgetChipTextActive]}>{b === 'Murah' ? 'Rp 20k' : b === 'Sedang' ? 'Rp 50k' : 'Rp 100k+'}</Text>
+                    <Text style={[
+                      styles.budgetChipText, 
+                      budget === b && styles.budgetChipTextActive,
+                      isDarkMode && budget !== b && { color: '#94A3B8' }
+                    ]}>
+                      {b === 'Murah' ? 'Rp 20k' : b === 'Sedang' ? 'Rp 50k' : 'Rp 100k+'}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
+            
             <View style={styles.veganRow}>
-              <Text style={styles.filterLabel}>Preferensi Diet:</Text>
+              <Text style={[styles.filterLabel, isDarkMode && { color: '#CBD5E1' }]}>Preferensi Diet:</Text>
               <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Vegetarian</Text>
-                <Switch value={isVegetarian} onValueChange={setIsVegetarian} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
+                <Text style={[styles.switchLabel, isDarkMode && { color: '#94A3B8' }]}>Vegetarian</Text>
+                <Switch 
+                  value={isVegetarian} 
+                  onValueChange={setIsVegetarian} 
+                  trackColor={{ false: '#E5E7EB', true: '#3B82F6' }} 
+                />
               </View>
             </View>
           </View>
         </View>
 
-        {}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🍽️ Paket Menu Harian</Text>
-
-          <View style={styles.mealSection}>
-            <Text style={styles.mealTitle}>🍳 Sarapan</Text>
-            {renderFoodItem('Menu Utama', currentMenu.breakfast.main, 'breakfast')}
-            {renderFoodItem('Lauk', currentMenu.breakfast.side, 'breakfast')}
-            {renderFoodItem('Minuman', currentMenu.breakfast.drink, 'breakfast')}
-          </View>
-
-          <View style={[styles.mealSection, { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 14 }]}>
-            <Text style={styles.mealTitle}>🥗 Snack Pagi</Text>
-            {renderFoodItem('Camilan', currentMenu.morningSnack, 'morningSnack')}
-          </View>
-
-          <View style={[styles.mealSection, { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 14 }]}>
-            <Text style={styles.mealTitle}>🍱 Makan Siang</Text>
-            {renderFoodItem('Karbohidrat', currentMenu.lunch.main, 'lunch')}
-            {renderFoodItem('Lauk', currentMenu.lunch.side, 'lunch')}
-            {renderFoodItem('Sayur', currentMenu.lunch.veggie, 'lunch')}
-          </View>
-
-          <View style={[styles.mealSection, { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 14 }]}>
-            <Text style={styles.mealTitle}>🥤 Snack Sore</Text>
-            {renderFoodItem('Camilan', currentMenu.afternoonSnack, 'afternoonSnack')}
-          </View>
-
-          <View style={[styles.mealSection, { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 14 }]}>
-            <Text style={styles.mealTitle}>🍲 Makan Malam</Text>
-            {renderFoodItem('Menu Utama', currentMenu.dinner.main, 'dinner')}
-            {renderFoodItem('Sayur', currentMenu.dinner.veggie, 'dinner')}
-          </View>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', borderWidth: 1 }]}>
+        {/* AI Action Card */}
+        <View style={[styles.card, { backgroundColor: isDarkMode ? '#1E3A8A' : '#EFF6FF', borderColor: isDarkMode ? '#3B82F6' : '#BFDBFE', borderWidth: 1 }]}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="sparkles" size={22} color="#2563EB" style={{ marginRight: 8 }} />
-            <Text style={[styles.cardTitle, { color: '#1E3A8A', marginBottom: 0 }]}>Rekomendasi Resep AI (Gemini)</Text>
+            <Ionicons name="sparkles" size={22} color={isDarkMode ? '#60A5FA' : '#3B82F6'} style={{ marginRight: 8 }} />
+            <Text style={[styles.cardTitle, { color: isDarkMode ? '#F8FAFC' : '#1E3A8A', marginBottom: 0 }]}>Rekomendasi Resep AI (Gemini)</Text>
           </View>
-          <Text style={{ fontSize: 13, color: '#1E40AF', lineHeight: 18, marginBottom: 12 }}>
-            Ingin membuat resep khusus untuk anak atau menanyakan ide masak berbasis bahan-bahan yang ada di kulkas Anda? Tanyakan langsung ke Gemini AI!
+          <Text style={{ fontSize: 13, color: isDarkMode ? '#93C5FD' : '#1E40AF', lineHeight: 18, marginBottom: 12 }}>
+            Ingin membuat resep khusus untuk anak atau menanyakan ide masak berbasis bahan-bahan yang ada di kulkas Anda? Hubungkan menu harian Anda dengan Gemini AI secara instan!
           </Text>
           <TouchableOpacity
             style={styles.aiRecipeBtn}
-            onPress={() => {
-              setIsAiModalVisible(true);
-            }}
+            onPress={() => setIsAiModalVisible(true)}
           >
             <Ionicons name="chatbox-ellipses" size={18} color="#FFF" style={{ marginRight: 6 }} />
-            <Text style={styles.aiRecipeBtnText}>Tanya Resep Cerdas AI</Text>
+            <Text style={styles.aiRecipeBtnText}>Konsultasi Menu Cerdas AI</Text>
           </TouchableOpacity>
         </View>
 
-        {}
+        {/* Daily Menu Section */}
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
+          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>🍽️ Paket Menu Harian</Text>
+
+          {renderMealSection('Sarapan', 'breakfast', '🍳')}
+          {renderMealSection('Snack Pagi', 'morningSnack', '🥗')}
+          {renderMealSection('Makan Siang', 'lunch', '🍱')}
+          {renderMealSection('Snack Sore', 'afternoonSnack', '🥤')}
+          {renderMealSection('Makan Malam', 'dinner', '🍲')}
+        </View>
+
+        {/* Modals */}
         <RecipeModal
           visible={selectedRecipe !== null}
           foodName={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
         />
 
-      </ScrollView>
+        {/* CRUD Add/Edit Modal */}
+        <Modal visible={crudModalVisible} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { width: '85%' }, isDarkMode && { backgroundColor: '#1E293B' }]}>
+              <Text style={[styles.modalTitle, { marginBottom: 16 }, isDarkMode && { color: '#F8FAFC' }]}>
+                {crudMode === 'add' ? 'Tambah Makanan' : 'Ubah Makanan'}
+              </Text>
+              
+              <TextInput
+                style={[
+                  styles.crudInput,
+                  isDarkMode ? { backgroundColor: '#334155', color: '#F8FAFC', borderColor: '#475569' } : { backgroundColor: '#F9FAFB' }
+                ]}
+                placeholder="Nama makanan/minuman..."
+                placeholderTextColor={isDarkMode ? '#94A3B8' : '#9CA3AF'}
+                value={inputValue}
+                onChangeText={setInputValue}
+                autoFocus
+              />
 
-      <GeminiConsultantModal
-        visible={isAiModalVisible}
-        onClose={() => setIsAiModalVisible(false)}
-        context={{
-          type: 'rekomendasi_makanan',
-          currentMenu: currentMenu
-        }}
-        title="NutriOS AI: Rekomendasi Resep"
-        systemPrompt="Berikan ide resep makanan lokal Indonesia sehat dan bergizi seimbang berdasarkan kebutuhan nutrisi."
-      />
+              <View style={styles.crudModalButtons}>
+                <TouchableOpacity 
+                  style={[styles.crudCancelBtn, isDarkMode && { borderColor: '#475569' }]} 
+                  onPress={() => setCrudModalVisible(false)}
+                >
+                  <Text style={[styles.crudCancelText, isDarkMode && { color: '#94A3B8' }]}>Batal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.crudSaveBtn} 
+                  onPress={handleSaveCrud}
+                >
+                  <Text style={styles.crudSaveText}>Simpan</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <GeminiConsultantModal
+          visible={isAiModalVisible}
+          onClose={() => setIsAiModalVisible(false)}
+          context={{
+            type: 'rekomendasi_makanan',
+            currentMenu: currentMenu
+          }}
+          title="NutriOS AI: Rekomendasi Resep"
+          systemPrompt={systemPrompt}
+          onApplyMenu={handleApplyAiMenu}
+        />
+
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -347,13 +512,13 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   headerSparklesBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#2563EB',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#3B82F6',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2563EB',
+    shadowColor: '#3B82F6',
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
@@ -366,9 +531,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#6B7280',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -376,13 +541,15 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOpacity: 0.03,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   cardTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: '#111827',
     marginBottom: 14,
@@ -393,13 +560,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   aiRecipeBtn: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#3B82F6',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: 14,
-    shadowColor: '#2563EB',
+    shadowColor: '#3B82F6',
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
@@ -410,13 +577,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
-
-
   filterSection: {
     marginBottom: 10,
   },
   filterLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#374151',
     marginBottom: 8,
@@ -436,15 +601,15 @@ const styles = StyleSheet.create({
   },
   alergyBtnActive: {
     backgroundColor: '#FEE2E2',
-    borderColor: '#EF5350',
+    borderColor: '#EF4444',
   },
   alergyText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#4B5563',
   },
   alergyTextActive: {
-    color: '#EF5350',
+    color: '#EF4444',
     fontWeight: '600',
   },
   budgetRow: {
@@ -462,12 +627,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   budgetChipActive: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#3B82F6',
   },
   budgetChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#4B5563',
   },
   budgetChipTextActive: {
     color: '#FFFFFF',
@@ -476,6 +641,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 6,
   },
   switchRow: {
     flexDirection: 'row',
@@ -483,19 +649,47 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   switchLabel: {
-    fontSize: 14,
-    color: '#374151',
+    fontSize: 13,
+    color: '#4B5563',
+    fontWeight: '500',
   },
-
-
   mealSection: {
-    marginBottom: 8,
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingBottom: 10,
+  },
+  mealSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   mealTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#2563EB',
-    marginBottom: 10,
+    color: '#3B82F6',
+  },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  addBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#3B82F6',
+    marginLeft: 2,
+  },
+  emptyMealText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+    paddingLeft: 4,
+    paddingVertical: 6,
   },
   foodItemRow: {
     flexDirection: 'row',
@@ -503,41 +697,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F8FAFC',
   },
   foodItemLeft: {
     flex: 1,
   },
-  foodItemLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
   foodItemName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: '#1E293B',
   },
   foodItemActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    paddingHorizontal: 10,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 6,
     paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+    borderRadius: 8,
+    gap: 2,
   },
   actionBtnText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
-    color: '#2563EB',
+    color: '#3B82F6',
   },
-
-
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -558,31 +746,31 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: '#1E293B',
   },
   modalSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: 13,
+    color: '#64748B',
     marginBottom: 12,
   },
   modalSectionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#334155',
     marginTop: 12,
     marginBottom: 6,
   },
   modalItem: {
-    fontSize: 14,
-    color: '#4B5563',
+    fontSize: 13,
+    color: '#475569',
     marginBottom: 4,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   modalCloseBtn: {
     marginTop: 20,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#3B82F6',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
@@ -590,6 +778,43 @@ const styles = StyleSheet.create({
   modalCloseText: {
     color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 14,
+  },
+  crudInput: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 14,
+    marginBottom: 20,
+  },
+  crudModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  crudCancelBtn: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  crudCancelText: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  crudSaveBtn: {
+    backgroundColor: '#3B82F6',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  crudSaveText: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });

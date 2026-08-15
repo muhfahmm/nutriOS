@@ -64,69 +64,29 @@ const dbConfig = {
 let pool;
 async function initializeDatabase() {
   try {
-    console.log('');
-    console.log('🔍 Attempting to connect to MySQL...');
-    console.log(`   Host: ${dbConfig.host}`);
-    console.log(`   User: ${dbConfig.user}`);
-    console.log(`   Database: ${dbConfig.database}`);
-    console.log(`   Port: ${dbConfig.port}`);
-
     pool = mysql.createPool({
       ...dbConfig,
       connectionLimit: 10,
     });
 
     const connection = await pool.getConnection();
-    console.log('✅ Koneksi ke database MySQL berhasil.');
 
     try {
       const [tables] = await connection.execute('SHOW TABLES LIKE "jadwal_tidur"');
       if (tables.length === 0) {
-        console.warn('⚠️  WARNING: Tabel jadwal_tidur tidak ditemukan!');
-        console.warn('    Pastikan database.sql sudah dijalankan atau tabel sudah dibuat.');
-      } else {
-        console.log('✅ Tabel jadwal_tidur ditemukan.');
+        console.warn('⚠️ Tabel jadwal_tidur tidak ditemukan!');
       }
     } catch (tableError) {
-      console.warn('⚠️  Tidak bisa memverifikasi tabel jadwal_tidur:', tableError.message);
     }
 
     try {
       await connection.execute('TRUNCATE TABLE jadwal_makan;');
-      console.log('🔄 Tabel jadwal_makan berhasil di-reset (di-truncate) pada startup server.');
     } catch (resetError) {
-      console.warn('⚠️ Gagal melakukan reset tabel jadwal_makan:', resetError.message);
     }
 
     connection.release();
   } catch (error) {
-    console.error('');
-    console.error('❌ KONEKSI DATABASE GAGAL!');
-    console.error('');
-    console.error('Detail Error:');
-    console.error(`   Code: ${error.code}`);
-    console.error(`   Message: ${error.message}`);
-    console.error('');
-    console.error('Kemungkinan penyebab:');
-
-    if (error.code === 'PROTOCOL_CONNECTION_LOST') {
-      console.error('   1. MySQL service tidak berjalan');
-      console.error('   2. Host/Port tidak benar');
-      console.error('   3. Firewall memblokir koneksi');
-    } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
-      console.error('   1. Username atau password salah di .env');
-      console.error('   2. User tidak memiliki privilege');
-    } else if (error.code === 'ER_BAD_DB_ERROR') {
-      console.error('   1. Database belum dibuat');
-      console.error('   2. Nama database di .env tidak benar');
-    }
-
-    console.error('');
-    console.error('Solusi:');
-    console.error('   1. Pastikan XAMPP MySQL sudah running');
-    console.error('   2. Verifikasi .env file untuk DB_HOST, DB_USER, DB_PASSWORD, DB_NAME');
-    console.error('   3. Cek MySQL di XAMPP Control Panel');
-    console.error('');
+    console.error(`❌ Koneksi database gagal: ${error.message}`);
   }
 }
 
@@ -805,12 +765,17 @@ app.post('/api/ask-ai', async (req, res) => {
       return res.status(500).json({ message: 'Kunci API Gemini belum diatur di server.' });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-3.1-flash-lite',
+      generationConfig: { temperature: 0.95 }
+    });
 
     const systemInstruction =
       "Anda adalah NutriOS AI, asisten gizi & tumbuh kembang. " +
-      "Berikan jawaban dalam Bahasa Indonesia yang RAMAH, SANGAT RINGKAS, dan LANGSUNG PADA INTI JAWABAN. " +
-      "JANGAN menulis kalimat pembuka/penutup yang panjang. Batasi total jawaban maksimal 150 kata saja agar respon cepat.";
+      "Berikan jawaban dalam Bahasa Indonesia yang RAMAH dan LANGSUNG PADA INTI JAWABAN. " +
+      "PENTING: Harap selalu berikan variasi rekomendasi menu makanan yang unik, acak, kreatif, dan berbeda setiap kali ditanya agar pengguna mendapatkan variasi gizi dan tidak bosan. " +
+      "Batasi total jawaban Anda maksimal 10.000 kata. " +
+      "Pastikan Anda menulis seluruh penjelasan dan semua tag data <MENU_JSON> beserta data JSON di dalamnya sampai selesai sepenuhnya tanpa terpotong sedikit pun.";
 
     const formattedPrompt = `${systemInstruction}\n\nKonteks Pengguna: ${JSON.stringify(context || {})}\n\nPertanyaan: ${prompt}`;
 
@@ -863,23 +828,78 @@ app.post('/api/ai-suggestions', async (req, res) => {
   }
 });
 
+app.post('/api/generate-recipe', async (req, res) => {
+  try {
+    const { foodName } = req.body;
+    if (!foodName) {
+      return res.status(400).json({ message: 'Nama makanan wajib diisi.' });
+    }
+    if (!genAI) {
+      return res.status(500).json({ message: 'Kunci API Gemini belum diatur di server.' });
+    }
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+    const prompt = 
+      `Berikan resep lengkap untuk makanan: "${foodName}". ` +
+      `Format output WAJIB berupa raw JSON object tanpa markdown code block, dengan struktur exact seperti ini:\n` +
+      `{\n` +
+      `  "ingredients": ["bahan 1", "bahan 2", ...],\n` +
+      `  "steps": ["langkah 1", "langkah 2", ...],\n` +
+      `  "time": "estimasi durasi (misal: 30 menit)"\n` +
+      `}`;
+      
+    const result = await model.generateContent(prompt);
+    let text = result.response.text().trim();
+    if (text.startsWith('```')) {
+      text = text.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+    }
+    const recipe = JSON.parse(text);
+    return res.json({ recipe });
+  } catch (error) {
+    console.error('Error generating recipe:', error);
+    return res.status(500).json({ message: 'Gagal membuat resep secara dinamis.', error: error.message });
+  }
+});
+
+app.post('/api/swap-food', async (req, res) => {
+  try {
+    const { currentFood, alergies, budget, isVegetarian } = req.body;
+    if (!currentFood) {
+      return res.status(400).json({ message: 'Nama makanan saat ini wajib diisi.' });
+    }
+    if (!genAI) {
+      return res.status(500).json({ message: 'Kunci API Gemini belum diatur di server.' });
+    }
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-3.1-flash-lite',
+      generationConfig: { temperature: 0.85 }
+    });
+    const prompt = 
+      `Berikan satu nama alternatif makanan pengganti sehat yang BERBEDA dengan: "${currentFood}" tetapi setara/sejenis secara gizi. ` +
+      `PENTING: JANGAN PERNAH mengembalikan nama makanan "${currentFood}" itu sendiri. Makanan alternatif harus unik dan berbeda dari makanan asal.\n\n` +
+      `Kriteria filter:\n` +
+      `- Alergi/Pantangan: ${JSON.stringify(alergies || {})}\n` +
+      `- Budget harian: ${budget || 'Sedang'}\n` +
+      `- Apakah Vegetarian: ${isVegetarian ? 'Ya' : 'Tidak'}\n\n` +
+      `Format output WAJIB berupa raw JSON object tanpa markdown code block, dengan struktur exact seperti ini:\n` +
+      `{\n` +
+      `  "alternative": "Nama makanan pengganti baru yang berbeda"\n` +
+      `}`;
+      
+    const result = await model.generateContent(prompt);
+    let text = result.response.text().trim();
+    if (text.startsWith('```')) {
+      text = text.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+    }
+    const swapResult = JSON.parse(text);
+    return res.json({ alternative: swapResult.alternative });
+  } catch (error) {
+    console.error('Error swapping food:', error);
+    return res.status(500).json({ message: 'Gagal mencari alternatif makanan.', error: error.message });
+  }
+});
+
 const port = process.env.APP_PORT || 3000;
 const server = app.listen(port, '0.0.0.0', () => {
-  console.log('');
-  console.log('╔════════════════════════════════════════╗');
-  console.log('║         Auth Server Sudah Berjalan     ║');
-  console.log('╠════════════════════════════════════════╣');
-  console.log(`║  URL: http://localhost:${port.toString().padEnd(28)}║`);
-  console.log(`║  Health: http://localhost:${port}/api/health${' '.repeat(15)}║`);
-  console.log(`║  Port: ${port.toString().padEnd(32)}║`);
-  console.log('╚════════════════════════════════════════╝');
-  console.log('');
-  console.log('📝 Available endpoints:');
-  console.log('   - POST /api/register - Registrasi user');
-  console.log('   - POST /api/login - Login user');
-  console.log('   - POST /api/jadwal-tidur - Simpan jadwal tidur');
-  console.log('   - GET /api/jadwal-tidur/:userId - Ambil jadwal tidur');
-  console.log('');
 });
 
 server.on('error', (error) => {

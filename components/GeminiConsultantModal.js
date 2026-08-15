@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL, fetchWithTimeout } from '../auth/api';
 
-export default function GeminiConsultantModal({ visible, onClose, context, title, systemPrompt }) {
+export default function GeminiConsultantModal({ visible, onClose, context, title, systemPrompt, onApplyMenu }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -173,29 +173,63 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
             contentContainerStyle={styles.messageListContent}
             showsVerticalScrollIndicator={false}
           >
-            {messages.map((msg) => (
-              <View
-                key={msg.id}
-                style={[
-                  styles.bubbleContainer,
-                  msg.sender === 'user' ? styles.userBubbleContainer : styles.aiBubbleContainer
-                ]}
-              >
-                {msg.sender === 'ai' && (
-                  <View style={styles.aiAvatar}>
-                    <Ionicons name="sparkles-outline" size={14} color="#2563EB" />
-                  </View>
-                )}
+            {messages.map((msg) => {
+              const parseAiMessage = (msgText) => {
+                const regex = /<MENU_JSON>([\s\S]*?)<\/MENU_JSON>/;
+                const match = msgText.match(regex);
+                if (match) {
+                  const cleanText = msgText.replace(regex, '').trim();
+                  try {
+                    const jsonData = JSON.parse(match[1].trim());
+                    return { text: cleanText, menuData: jsonData };
+                  } catch (e) {
+                    console.warn('Failed to parse MENU_JSON:', e);
+                    return { text: msgText, menuData: null };
+                  }
+                }
+                return { text: msgText, menuData: null };
+              };
+
+              const { text, menuData } = msg.sender === 'ai' ? parseAiMessage(msg.text) : { text: msg.text, menuData: null };
+
+              return (
                 <View
+                  key={msg.id}
                   style={[
-                    styles.bubble,
-                    msg.sender === 'user' ? styles.userBubble : styles.aiBubble
+                    styles.bubbleContainer,
+                    msg.sender === 'user' ? styles.userBubbleContainer : styles.aiBubbleContainer
                   ]}
                 >
-                  {renderMessageText(msg.text, msg.sender === 'user')}
+                  {msg.sender === 'ai' && (
+                    <View style={styles.aiAvatar}>
+                      <Ionicons name="sparkles-outline" size={14} color="#2563EB" />
+                    </View>
+                  )}
+                  <View style={{ flex: 1, alignItems: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
+                    <View
+                      style={[
+                        styles.bubble,
+                        msg.sender === 'user' ? styles.userBubble : styles.aiBubble
+                      ]}
+                    >
+                      {renderMessageText(text, msg.sender === 'user')}
+                    </View>
+                    {menuData && onApplyMenu && (
+                      <TouchableOpacity 
+                        style={styles.applyMenuBtn}
+                        onPress={() => {
+                          onApplyMenu(menuData);
+                          onClose();
+                        }}
+                      >
+                        <Ionicons name="sparkles" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                        <Text style={styles.applyMenuBtnText}>Terapkan Menu Rekomendasi AI</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
 
             {loading && (
               <View style={[styles.bubbleContainer, styles.aiBubbleContainer]}>
@@ -407,5 +441,24 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {
     backgroundColor: '#93C5FD',
+  },
+  applyMenuBtn: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginTop: 8,
+    shadowColor: '#10B981',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  applyMenuBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 12,
   },
 });
