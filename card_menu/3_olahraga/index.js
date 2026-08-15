@@ -21,9 +21,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../../auth/AuthContext';
 import { API_BASE_URL } from '../../auth/api';
 
-
-
-
 const EXERCISE_DATA = {
   Dada: [
     {
@@ -296,7 +293,6 @@ const EXERCISE_DATA = {
   ],
 };
 
-
 const CATEGORY_TABS = [
   { id: 'Grup', label: 'Latihan', icon: 'grid-outline' },
   { id: 'GPS', label: 'Running', icon: 'navigate-outline' },
@@ -308,7 +304,6 @@ const CATEGORY_TABS = [
 export default function OlahragaScreen() {
   const navigation = useNavigation();
   const { user, isDarkMode } = useContext(AuthContext);
-
 
   const [activeTab, setActiveTab] = useState('Grup');
   const [activeSubTab, setActiveSubTab] = useState('Dada');
@@ -377,9 +372,34 @@ export default function OlahragaScreen() {
 
   const renderAiMessageText = (text, isUser) => {
     if (!text) return null;
-    const parts = text.split(/(\*\*.*?\*\*)/g);
+
+    let cleanText = text;
+    let menuText = "";
+
+    const jsonRegex = /<MENU_JSON>([\s\S]*?)<\/MENU_JSON>/;
+    const match = text.match(jsonRegex);
+    if (match) {
+      cleanText = text.replace(jsonRegex, '').trim();
+      try {
+        const jsonData = JSON.parse(match[1].trim());
+        const menuObj = jsonData.menu_hari_ini || jsonData;
+        if (menuObj) {
+          menuText = "\n\n📋 **Rekomendasi Menu Makanan Hari Ini:**\n" +
+            (menuObj.sarapan ? `• **Sarapan**: ${menuObj.sarapan}\n` : "") +
+            (menuObj.makan_siang ? `• **Makan Siang**: ${menuObj.makan_siang}\n` : "") +
+            (menuObj.makan_malam ? `• **Makan Malam**: ${menuObj.makan_malam}\n` : "") +
+            (menuObj.cemilan ? `• **Cemilan**: ${menuObj.cemilan}\n` : "");
+        }
+      } catch (e) {
+        console.warn('Gagal memproses JSON Rekomendasi Menu:', e);
+      }
+    }
+
+    const combinedText = cleanText + menuText;
+    const parts = combinedText.split(/(\*\*.*?\*\*)/g);
+
     return (
-      <Text style={isUser ? styles.aiUserText : styles.aiAiText}>
+      <Text style={[isUser ? styles.aiUserText : styles.aiAiText, isDarkMode && !isUser && { color: '#F8FAFC' }]}>
         {parts.map((part, index) => {
           if (part.startsWith('**') && part.endsWith('**')) {
             return (
@@ -394,16 +414,13 @@ export default function OlahragaScreen() {
     );
   };
 
-
   const [selectedVoice, setSelectedVoice] = useState(null);
   const [isVoiceLoaded, setIsVoiceLoaded] = useState(false);
-
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedExerciseForModal, setSelectedExerciseForModal] = useState(null);
   const [sets, setSets] = useState('1');
   const [durationSeconds, setDurationSeconds] = useState('30');
-
 
   const [finishMode, setFinishMode] = useState('stop');
   const finishModeRef = useRef('stop');
@@ -413,11 +430,9 @@ export default function OlahragaScreen() {
     finishModeRef.current = mode;
   };
 
-
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdownNum, setCountdownNum] = useState(null);
   const countdownTimeoutRef = useRef([]);
-
 
   const [autoPlay, setAutoPlay] = useState(false);
   const autoPlayRef = useRef(false);
@@ -431,9 +446,6 @@ export default function OlahragaScreen() {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const timerRef = useRef(null);
   const spokenCountRef = useRef(new Set());
-
-
-
 
   useEffect(() => {
     const updateStreak = async () => {
@@ -534,9 +546,6 @@ export default function OlahragaScreen() {
     } catch (e) { console.warn('Gagal menyimpan ke DB:', e); }
   };
 
-
-
-
   const speak = (text) => {
     try {
       Speech.speak(text, {
@@ -545,15 +554,9 @@ export default function OlahragaScreen() {
     } catch (error) { console.warn('Gagal memutar suara:', error); }
   };
 
-
-
-
   const toggleWishlist = (id) => {
     setWishlist((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
   };
-
-
-
 
   const openExerciseConfig = (exercise) => {
     setSets('1');
@@ -839,7 +842,6 @@ export default function OlahragaScreen() {
       return;
     }
 
-
     let fullList = [];
     if (activeTab === 'Grup') {
       const allGroups = ['Dada', 'Kaki', 'Bahu & Punggung', 'Otot perut', 'Lengan'];
@@ -901,9 +903,6 @@ export default function OlahragaScreen() {
     return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-
-
-
   const getDisplayedExercises = () => {
     if (activeTab === 'Wishlist') {
       const all = Object.values(EXERCISE_DATA).flat();
@@ -918,7 +917,6 @@ export default function OlahragaScreen() {
   };
 
   const displayedExercises = getDisplayedExercises();
-
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
@@ -938,7 +936,6 @@ export default function OlahragaScreen() {
           </View>
         </View>
 
-        {}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabRow}>
           {CATEGORY_TABS.map((tab) => (
             <TouchableOpacity
@@ -967,7 +964,6 @@ export default function OlahragaScreen() {
           ))}
         </ScrollView>
 
-        {}
         {activeExercise && (
           <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
             <View style={styles.sessionHeader}>
@@ -1047,12 +1043,10 @@ export default function OlahragaScreen() {
           </View>
         )}
 
-        {}
         {activeTab === 'GPS' && (
           <GpsTrackerScreen />
         )}
 
-        {}
         {activeTab !== 'GPS' && activeTab !== 'AI' && (
           <>
             <View style={styles.listSection}>
@@ -1060,7 +1054,6 @@ export default function OlahragaScreen() {
                 {activeTab === 'Wishlist' ? 'Gerakan Favorit Saya' : activeTab === 'History' ? 'Histori Latihan' : 'Semua Latihan'}
               </Text>
 
-              {}
               {activeTab === 'Grup' && (
                 <View style={styles.subTabContainer}>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subTabRow}>
@@ -1117,7 +1110,6 @@ export default function OlahragaScreen() {
                   });
                 })()
               ) : (
-
                 activeTab === 'History' ? (
                   history.length === 0 ? (
                     <View style={styles.emptyState}>
@@ -1133,17 +1125,16 @@ export default function OlahragaScreen() {
                         <View style={styles.exerciseInfo}>
                           <Text style={[styles.exerciseName, isDarkMode && { color: '#F8FAFC' }]}>{item.name}</Text>
                           <Text style={[styles.exerciseTarget, isDarkMode && { color: '#94A3B8' }]}>{item.target}</Text>
-                          <Text style={[styles.historyDate, isDarkMode && { color: '#64748B' }]}>{item.date}</Text>
+                          <Text style={[styles.historyDate, isDarkMode && { color: '#94A3B8' }]}>{item.date}</Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
-                          <Text style={styles.historySets}>{item.sets} Set</Text>
-                          <Text style={styles.historyDuration}>{item.duration}s / Set</Text>
+                          <Text style={[styles.historySets, isDarkMode && { color: '#F8FAFC' }]}>{item.sets} Set</Text>
+                          <Text style={[styles.historyDuration, isDarkMode && { color: '#94A3B8' }]}>{item.duration}s / Set</Text>
                         </View>
                       </View>
                     ))
                   )
                 ) : (
-
                   displayedExercises.length === 0 ? (
                     <View style={styles.emptyState}>
                       <Ionicons name="heart-outline" size={40} color="#9CA3AF" />
@@ -1177,7 +1168,6 @@ export default function OlahragaScreen() {
               )}
             </View>
 
-            {}
             <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
               <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Progres & Metrik</Text>
               <View style={styles.metricRow}>
@@ -1209,27 +1199,36 @@ export default function OlahragaScreen() {
             </View>
             <Text style={[styles.aiTabSubtitle, isDarkMode && { color: '#94A3B8' }]}>Analisis riwayat latihan, rancang jadwal kebugaran mingguan, atau diskusikan teknik gerakan langsung dengan Gemini.</Text>
 
-            <View style={styles.chatArea}>
+            <View style={[styles.chatArea, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
               {aiMessages.map((msg) => (
                 <View key={msg.id} style={[styles.bubbleWrap, msg.sender === 'user' ? styles.userBubbleWrap : styles.aiBubbleWrap]}>
                   {msg.sender === 'ai' && (
-                    <View style={styles.miniAvatar}>
-                      <Ionicons name="sparkles-outline" size={12} color="#2563EB" />
+                    <View style={[styles.miniAvatar, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
+                      <Ionicons name="sparkles-outline" size={12} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
                     </View>
                   )}
-                  <View style={[styles.chatBubble, msg.sender === 'user' ? styles.userChatBubble : styles.aiChatBubble]}>
+                  <View style={[
+                    styles.chatBubble,
+                    msg.sender === 'user' ? styles.userChatBubble : styles.aiChatBubble,
+                    isDarkMode && msg.sender === 'ai' && { backgroundColor: '#334155', borderColor: '#475569' }
+                  ]}>
                     {renderAiMessageText(msg.text, msg.sender === 'user')}
                   </View>
                 </View>
               ))}
               {aiLoading && (
                 <View style={[styles.bubbleWrap, styles.aiBubbleWrap]}>
-                  <View style={styles.miniAvatar}>
-                    <Ionicons name="sparkles-outline" size={12} color="#2563EB" />
+                  <View style={[styles.miniAvatar, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
+                    <Ionicons name="sparkles-outline" size={12} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
                   </View>
-                  <View style={[styles.chatBubble, styles.aiChatBubble, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
-                    <ActivityIndicator size="small" color="#2563EB" />
-                    <Text style={{ fontSize: 13, color: '#374151' }}>Memproses saran kebugaran...</Text>
+                  <View style={[
+                    styles.chatBubble,
+                    styles.aiChatBubble,
+                    isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' },
+                    { flexDirection: 'row', alignItems: 'center', gap: 6 }
+                  ]}>
+                    <ActivityIndicator size="small" color={isDarkMode ? '#60A5FA' : '#2563EB'} />
+                    <Text style={[{ fontSize: 13, color: '#374151' }, isDarkMode && { color: '#F8FAFC' }]}>Memproses saran kebugaran...</Text>
                   </View>
                 </View>
               )}
@@ -1242,8 +1241,8 @@ export default function OlahragaScreen() {
                   'Bagaimana melakukan push up yang benar?',
                   'Rekomendasi olahraga kardio ringan di rumah',
                 ].map((q, idx) => (
-                  <TouchableOpacity key={idx} style={styles.quickAskBtn} onPress={() => handleSendAi(q)}>
-                    <Text style={styles.quickAskText}>{q}</Text>
+                  <TouchableOpacity key={idx} style={[styles.quickAskBtn, isDarkMode && { backgroundColor: '#334155' }]} onPress={() => handleSendAi(q)}>
+                    <Text style={[styles.quickAskText, isDarkMode && { color: '#CBD5E1' }]}>{q}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -1265,7 +1264,6 @@ export default function OlahragaScreen() {
         )}
       </ScrollView>
 
-      {}
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -1298,7 +1296,6 @@ export default function OlahragaScreen() {
               </View>
             </View>
 
-            {}
             <View style={styles.modeSelectGroup}>
               <Text style={styles.inputLabel}>Setelah latihan ini selesai:</Text>
               <View style={styles.modeSelectRow}>
@@ -1334,9 +1331,6 @@ export default function OlahragaScreen() {
     </SafeAreaView>
   );
 }
-
-
-
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F7FF' },
@@ -1377,7 +1371,6 @@ const styles = StyleSheet.create({
   tabChipActive: { backgroundColor: '#F0F7FF', borderWidth: 1.5, borderColor: '#2563EB' },
   tabText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
   tabTextActive: { color: '#2563EB' },
-
 
   groupHeader: {
     fontSize: 16,

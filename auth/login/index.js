@@ -5,12 +5,12 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../AuthContext';
 import { API_BASE_URL, fetchWithTimeout } from '../api';
@@ -196,6 +196,14 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
+      <View style={styles.headerBar}>
+        <TouchableOpacity
+          style={[styles.backButton, isDarkMode && { backgroundColor: '#1E293B' }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={22} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
+        </TouchableOpacity>
+      </View>
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -468,5 +476,25 @@ const styles = StyleSheet.create({
     color: '#16A34A',
     backgroundColor: '#F0FDF4',
     borderColor: '#BBF7D0',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerBar: {
+    paddingHorizontal: 24,
+    paddingTop: 14,
+    paddingBottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

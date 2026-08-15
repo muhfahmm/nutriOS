@@ -5,9 +5,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../auth/AuthContext';
 import { logoutUser } from '../../auth/logout';
 import { LogoutConfirmModal, LogoutSuccessModal, MenuModal, ChangePasswordModal } from '../../auth/AuthModals';
-import { API_BASE_URL } from '../../auth/api';
+import { API_BASE_URL, fetchWithTimeout } from '../../auth/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
+
+let GoogleSignin = null;
+let auth = null;
+try {
+  const gModule = require('@react-native-google-signin/google-signin');
+  GoogleSignin = gModule.GoogleSignin;
+  const fModule = require('@react-native-firebase/auth');
+  auth = fModule.default;
+} catch (e) {
+  console.warn("Firebase/Google Sign-In modules not available in this environment.");
+}
 
 export default function ProfileScreen({ navigation }) {
   const { user, setUser, isDarkMode, toggleTheme } = useContext(AuthContext);
@@ -42,6 +53,96 @@ export default function ProfileScreen({ navigation }) {
       }
     }
   }, [user]);
+
+  useEffect(() => {
+    if (GoogleSignin) {
+      try {
+        GoogleSignin.configure({
+          webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'your_web_client_id_here.apps.googleusercontent.com',
+          offlineAccess: true,
+        });
+      } catch (err) {
+        console.error('Google Sign-In configuration failed:', err);
+      }
+    }
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    if (!GoogleSignin || !auth) {
+      Alert.alert(
+        'Simulasi Google Sign-In',
+        'Google Sign-in native membutuhkan build custom (.apk). Apakah Anda ingin login dengan Akun Simulasi Google untuk menguji integrasi database?',
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Masuk (Simulasi)',
+            onPress: async () => {
+              try {
+                const backendResponse = await fetchWithTimeout(`${API_BASE_URL}/api/login-google`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    uid: 'google-mock-uid-123',
+                    email: 'tester.google@gmail.com',
+                    displayName: 'user',
+                    photoURL: null,
+                  }),
+                });
+
+                const result = await backendResponse.json();
+
+                if (backendResponse.ok && result.user) {
+                  setUser(result.user);
+                  Alert.alert('Sukses', 'Login Google Simulasi Berhasil.');
+                } else {
+                  Alert.alert('Error', result.message || 'Gagal sinkronisasi akun Google.');
+                }
+              } catch (error) {
+                console.error('Google mock login error:', error);
+                Alert.alert('Error', 'Koneksi database/server gagal.');
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const { idToken, user: googleUser } = await GoogleSignin.signIn();
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+      const firebaseResult = await auth().signInWithCredential(googleCredential);
+      const firebaseUser = firebaseResult.user;
+
+      const backendResponse = await fetchWithTimeout(`${API_BASE_URL}/api/login-google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || googleUser.name,
+          photoURL: null,
+        }),
+      });
+
+      const result = await backendResponse.json();
+
+      if (backendResponse.ok && result.user) {
+        setUser(result.user);
+        Alert.alert('Sukses', 'Login Google Berhasil.');
+      } else {
+        Alert.alert('Error', result.message || 'Gagal sinkronisasi akun Google dengan server NutriOS.');
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      Alert.alert('Error', 'Gagal masuk dengan Google.');
+    }
+  };
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -388,7 +489,7 @@ export default function ProfileScreen({ navigation }) {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.googleButton} onPress={() => {}}>
+            <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
               <Ionicons name="logo-google" size={20} color="#FFFFFF" style={styles.googleIcon} />
               <Text style={styles.googleButtonText}>Login dengan Google</Text>
             </TouchableOpacity>
