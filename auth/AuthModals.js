@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,11 +7,14 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Platform
+  Platform,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AuthContext } from './AuthContext';
 
 export function LogoutConfirmModal({ visible, onClose, onConfirm }) {
+  const { isDarkMode } = useContext(AuthContext);
   return (
     <Modal
       transparent
@@ -20,18 +23,18 @@ export function LogoutConfirmModal({ visible, onClose, onConfirm }) {
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={[styles.iconContainer, { backgroundColor: '#FEE2E2' }]}>
+        <View style={[styles.modalContent, isDarkMode && { backgroundColor: '#1E293B' }]}>
+          <View style={[styles.iconContainer, { backgroundColor: isDarkMode ? '#7F1D1D' : '#FEE2E2' }]}>
             <Ionicons name="log-out" size={32} color="#EF4444" />
           </View>
-          <Text style={styles.modalTitle}>Keluar dari Akun?</Text>
-          <Text style={styles.modalDesc}>
+          <Text style={[styles.modalTitle, isDarkMode && { color: '#F8FAFC' }]}>Keluar dari Akun?</Text>
+          <Text style={[styles.modalDesc, isDarkMode && { color: '#94A3B8' }]}>
             Anda harus masuk kembali nanti untuk mensinkronkan data KMS dan jadwal tidur Anda.
           </Text>
 
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelBtnText}>Batal</Text>
+            <TouchableOpacity style={[styles.cancelBtn, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]} onPress={onClose}>
+              <Text style={[styles.cancelBtnText, isDarkMode && { color: '#CBD5E1' }]}>Batal</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.confirmRedBtn} onPress={onConfirm}>
               <Text style={styles.confirmBtnText}>Ya, Keluar</Text>
@@ -44,6 +47,7 @@ export function LogoutConfirmModal({ visible, onClose, onConfirm }) {
 }
 
 export function LogoutSuccessModal({ visible, onClose }) {
+  const { isDarkMode } = useContext(AuthContext);
   return (
     <Modal
       transparent
@@ -52,12 +56,12 @@ export function LogoutSuccessModal({ visible, onClose }) {
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={[styles.iconContainer, { backgroundColor: '#ECFDF5' }]}>
+        <View style={[styles.modalContent, isDarkMode && { backgroundColor: '#1E293B' }]}>
+          <View style={[styles.iconContainer, { backgroundColor: isDarkMode ? '#064E3B' : '#ECFDF5' }]}>
             <Ionicons name="checkmark-circle" size={36} color="#10B981" />
           </View>
-          <Text style={styles.modalTitle}>Berhasil Keluar</Text>
-          <Text style={styles.modalDesc}>
+          <Text style={[styles.modalTitle, isDarkMode && { color: '#F8FAFC' }]}>Berhasil Keluar</Text>
+          <Text style={[styles.modalDesc, isDarkMode && { color: '#94A3B8' }]}>
             Sesi Anda telah berakhir. Anda sekarang menggunakan aplikasi dalam mode Tamu (Guest).
           </Text>
 
@@ -70,9 +74,8 @@ export function LogoutSuccessModal({ visible, onClose }) {
   );
 }
 
-import { TouchableWithoutFeedback } from 'react-native';
-
 export function MenuModal({ visible, onClose, title, menus }) {
+  const { isDarkMode } = useContext(AuthContext);
   return (
     <Modal
       transparent
@@ -83,16 +86,16 @@ export function MenuModal({ visible, onClose, title, menus }) {
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.bottomOverlay}>
           <TouchableWithoutFeedback onPress={() => {}}>
-            <View style={styles.sheetContent}>
-              {}
+            <View style={[styles.sheetContent, isDarkMode && { backgroundColor: '#1E293B' }]}>
+              {/* Handle bar */}
               <View style={styles.dragIndicatorWrapper}>
-                <View style={styles.dragIndicator} />
+                <View style={[styles.dragIndicator, isDarkMode && { backgroundColor: '#475569' }]} />
               </View>
 
-              <View style={styles.sheetHeader}>
-                <Text style={styles.sheetTitle}>{title || 'Menu Opsi'}</Text>
+              <View style={[styles.sheetHeader, isDarkMode && { borderColor: '#334155' }]}>
+                <Text style={[styles.sheetTitle, isDarkMode && { color: '#F8FAFC' }]}>{title || 'Menu Opsi'}</Text>
                 <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                  <Ionicons name="close" size={24} color="#0F172A" />
+                  <Ionicons name="close" size={24} color={isDarkMode ? '#CBD5E1' : '#0F172A'} />
                 </TouchableOpacity>
               </View>
 
@@ -102,8 +105,8 @@ export function MenuModal({ visible, onClose, title, menus }) {
                     key={index}
                     style={[
                       styles.menuItem,
-                      index > 0 && styles.menuItemSeparator,
-                      menu.style === 'destructive' && styles.menuItemDestructive
+                      index > 0 && [styles.menuItemSeparator, isDarkMode && { borderColor: '#334155' }],
+                      menu.style === 'destructive' && (isDarkMode ? styles.menuItemDestructiveDark : styles.menuItemDestructive)
                     ]}
                     onPress={() => {
                       onClose();
@@ -118,6 +121,7 @@ export function MenuModal({ visible, onClose, title, menus }) {
                     />
                     <Text style={[
                       styles.menuText,
+                      isDarkMode && { color: '#E2E8F0' },
                       menu.style === 'destructive' && styles.menuTextDestructive
                     ]}>
                       {menu.label}
@@ -135,6 +139,7 @@ export function MenuModal({ visible, onClose, title, menus }) {
 }
 
 export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
+  const { isDarkMode } = useContext(AuthContext);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -170,13 +175,11 @@ export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
     }
     setErrorMsg('');
     onSave(oldPassword, newPassword, () => {
-
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
       onClose();
     }, (err) => {
-
       setErrorMsg(err || 'Gagal mengganti password.');
     });
   };
@@ -189,46 +192,45 @@ export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
       onRequestClose={onClose}
     >
       <View style={styles.bottomOverlay}>
-        <View style={styles.sheetContent}>
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Ganti Kata Sandi</Text>
+        <View style={[styles.sheetContent, isDarkMode && { backgroundColor: '#1E293B' }]}>
+          <View style={[styles.sheetHeader, isDarkMode && { borderColor: '#334155' }]}>
+            <Text style={[styles.sheetTitle, isDarkMode && { color: '#F8FAFC' }]}>Ganti Kata Sandi</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={24} color="#0F172A" />
+              <Ionicons name="close" size={24} color={isDarkMode ? '#CBD5E1' : '#0F172A'} />
             </TouchableOpacity>
           </View>
 
           <View style={[styles.sheetBody, { paddingBottom: 20 }]}>
             {errorMsg ? (
-              <View style={styles.errorAlert}>
+              <View style={[styles.errorAlert, isDarkMode && { backgroundColor: '#7F1D1D', borderColor: '#991B1B' }]}>
                 <Ionicons name="alert-circle-outline" size={18} color="#EF4444" style={{ marginRight: 6 }} />
-                <Text style={styles.errorAlertText}>{errorMsg}</Text>
+                <Text style={[styles.errorAlertText, isDarkMode && { color: '#FEE2E2' }]}>{errorMsg}</Text>
               </View>
             ) : null}
 
-            <Text style={styles.inputLabel}>Kata Sandi Lama</Text>
+            <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Kata Sandi Lama</Text>
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, isDarkMode && { backgroundColor: '#334155', color: '#F8FAFC', borderColor: '#475569' }]}
               secureTextEntry={!showPass}
               placeholder="Masukkan kata sandi saat ini"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={isDarkMode ? '#64748B' : '#94A3B8'}
               value={oldPassword}
               onChangeText={setOldPassword}
             />
 
-            <Text style={styles.inputLabel}>Kata Sandi Baru</Text>
+            <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Kata Sandi Baru</Text>
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, isDarkMode && { backgroundColor: '#334155', color: '#F8FAFC', borderColor: '#475569' }]}
               secureTextEntry={!showPass}
               placeholder="Masukkan kata sandi baru"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={isDarkMode ? '#64748B' : '#94A3B8'}
               value={newPassword}
               onChangeText={setNewPassword}
             />
 
-            {}
             {newPassword.length > 0 && (
               <View style={styles.strengthWrap}>
-                <Text style={styles.strengthLabel}>
+                <Text style={[styles.strengthLabel, isDarkMode && { color: '#94A3B8' }]}>
                   Kekuatan Sandi: <Text style={{ color: strength.color, fontWeight: 'bold' }}>{strength.text}</Text>
                 </Text>
                 <View style={styles.strengthBarBg}>
@@ -237,25 +239,25 @@ export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
               </View>
             )}
 
-            <Text style={styles.inputLabel}>Konfirmasi Kata Sandi Baru</Text>
+            <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Konfirmasi Kata Sandi Baru</Text>
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, isDarkMode && { backgroundColor: '#334155', color: '#F8FAFC', borderColor: '#475569' }]}
               secureTextEntry={!showPass}
               placeholder="Ulangi kata sandi baru"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={isDarkMode ? '#64748B' : '#94A3B8'}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
             />
 
             <TouchableOpacity
-              style={[styles.primaryBtn, { marginTop: 12 }]}
+              style={[styles.primaryBtn, { marginTop: 24 }]}
               onPress={handleSubmit}
               disabled={isSaving}
             >
               {isSaving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color="#FFF" />
               ) : (
-                <Text style={styles.primaryBtnText}>Perbarui Kata Sandi</Text>
+                <Text style={styles.primaryBtnText}>Simpan Kata Sandi</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -268,24 +270,21 @@ export function ChangePasswordModal({ visible, onClose, onSave, isSaving }) {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  bottomOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-    justifyContent: 'flex-end',
+    padding: 24,
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 24,
-    width: '85%',
     alignItems: 'center',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 10 },
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
     shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 10 },
     shadowRadius: 20,
     elevation: 8,
   },
@@ -293,13 +292,13 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 16,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '850',
+    fontWeight: '800',
     color: '#0F172A',
     marginBottom: 8,
     fontFamily: 'Roboto',
@@ -324,6 +323,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   cancelBtnText: {
     color: '#64748B',
@@ -355,7 +355,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 14,
   },
-
+  bottomOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
   sheetContent: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
@@ -405,6 +409,11 @@ const styles = StyleSheet.create({
   },
   menuItemDestructive: {
     backgroundColor: '#FEF2F2',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+  },
+  menuItemDestructiveDark: {
+    backgroundColor: '#7F1D1D',
     borderRadius: 10,
     paddingHorizontal: 10,
   },

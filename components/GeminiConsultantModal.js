@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../auth/AuthContext';
 import {
   StyleSheet,
   Text,
@@ -15,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL, fetchWithTimeout } from '../auth/api';
 
 export default function GeminiConsultantModal({ visible, onClose, context, title, systemPrompt, onApplyMenu }) {
+  const { isDarkMode } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -129,7 +131,7 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
     if (!text) return null;
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return (
-      <Text style={isUser ? styles.userText : styles.aiText}>
+      <Text style={isUser ? styles.userText : [styles.aiText, isDarkMode && { color: '#E2E8F0' }]}>
         {parts.map((part, index) => {
           if (part.startsWith('**') && part.endsWith('**')) {
             return (
@@ -149,27 +151,27 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
       <View style={styles.overlay}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.container}
+          style={[styles.container, isDarkMode && { backgroundColor: '#1E293B' }]}
         >
-          <View style={styles.header}>
+          <View style={[styles.header, isDarkMode && { borderColor: '#334155' }]}>
             <View style={styles.titleContainer}>
               <View style={styles.sparkleIcon}>
                 <Ionicons name="sparkles" size={16} color="#FFF" />
               </View>
-              <Text style={styles.title}>{title || 'Konsultan NutriOS AI'}</Text>
+              <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>{title || 'Konsultan NutriOS AI'}</Text>
             </View>
             <View style={styles.headerRight}>
               <TouchableOpacity onPress={clearChat} style={{ marginRight: 16 }}>
-                <Ionicons name="refresh-outline" size={22} color="#4B5563" />
+                <Ionicons name="refresh-outline" size={22} color={isDarkMode ? '#CBD5E1' : '#4B5563'} />
               </TouchableOpacity>
               <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={24} color="#1F2937" />
+                <Ionicons name="close" size={24} color={isDarkMode ? '#CBD5E1' : '#4B5563'} />
               </TouchableOpacity>
             </View>
           </View>
 
           <ScrollView
-            style={styles.messageList}
+            style={[styles.messageList, isDarkMode && { backgroundColor: '#0F172A' }]}
             contentContainerStyle={styles.messageListContent}
             showsVerticalScrollIndicator={false}
           >
@@ -201,7 +203,7 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
                   ]}
                 >
                   {msg.sender === 'ai' && (
-                    <View style={styles.aiAvatar}>
+                    <View style={[styles.aiAvatar, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
                       <Ionicons name="sparkles-outline" size={14} color="#2563EB" />
                     </View>
                   )}
@@ -209,7 +211,7 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
                     <View
                       style={[
                         styles.bubble,
-                        msg.sender === 'user' ? styles.userBubble : styles.aiBubble
+                        msg.sender === 'user' ? styles.userBubble : [styles.aiBubble, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]
                       ]}
                     >
                       {renderMessageText(text, msg.sender === 'user')}
@@ -233,41 +235,41 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
 
             {loading && (
               <View style={[styles.bubbleContainer, styles.aiBubbleContainer]}>
-                <View style={styles.aiAvatar}>
+                <View style={[styles.aiAvatar, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
                   <Ionicons name="sparkles-outline" size={14} color="#2563EB" />
                 </View>
-                <View style={[styles.bubble, styles.aiBubble, styles.loadingBubble]}>
+                <View style={[styles.bubble, [styles.aiBubble, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }], styles.loadingBubble]}>
                   <ActivityIndicator size="small" color="#2563EB" />
-                  <Text style={[styles.aiText, { marginLeft: 8 }]}>NutriOS AI sedang merangkum jawaban...</Text>
+                  <Text style={[[styles.aiText, isDarkMode && { color: '#E2E8F0' }], { marginLeft: 8 }]}>NutriOS AI sedang merangkum jawaban...</Text>
                 </View>
               </View>
             )}
           </ScrollView>
 
           {messages.length <= 1 && suggestions.length > 0 && (
-            <View style={styles.quickQuestionsContainer}>
-              <Text style={styles.quickQuestionsTitle}>Rekomendasi Pertanyaan:</Text>
+            <View style={[styles.quickQuestionsContainer, isDarkMode && { backgroundColor: '#1E293B', borderTopWidth: 1, borderTopColor: '#334155' }]}>
+              <Text style={[styles.quickQuestionsTitle, isDarkMode && { color: '#CBD5E1' }]}>Rekomendasi Pertanyaan:</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickQuestionsRow}>
                 {suggestions.map((q, idx) => (
                   <TouchableOpacity
                     key={idx}
-                    style={styles.quickQuestionBtn}
+                    style={[styles.quickQuestionBtn, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}
                     onPress={() => handleSend(q)}
                   >
-                    <Text style={styles.quickQuestionText}>{q}</Text>
+                    <Text style={[styles.quickQuestionText, isDarkMode && { color: '#CBD5E1' }]}>{q}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
           )}
 
-          <View style={styles.inputArea}>
+          <View style={[styles.inputArea, isDarkMode && { backgroundColor: '#1E293B', borderTopColor: '#334155' }]}>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, isDarkMode && { backgroundColor: '#334155', color: '#F8FAFC', borderColor: '#475569' }]}
               value={inputText}
               onChangeText={setInputText}
               placeholder="Tanyakan rekomendasi kesehatan..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={isDarkMode ? '#94A3B8' : '#9CA3AF'}
             />
             <TouchableOpacity
               onPress={() => handleSend()}

@@ -943,11 +943,26 @@ export default function OlahragaScreen() {
           {CATEGORY_TABS.map((tab) => (
             <TouchableOpacity
               key={tab.id}
-              style={[styles.tabChip, activeTab === tab.id && styles.tabChipActive, isDarkMode && !( activeTab === tab.id) && { backgroundColor: '#1E293B', borderColor: '#334155' }]}
+              style={[
+                styles.tabChip, 
+                activeTab === tab.id && styles.tabChipActive, 
+                isDarkMode && activeTab === tab.id && { backgroundColor: '#1E3A8A', borderColor: '#3B82F6' },
+                isDarkMode && activeTab !== tab.id && { backgroundColor: '#1E293B', borderColor: '#334155' }
+              ]}
               onPress={() => setActiveTab(tab.id)}
             >
-              <Ionicons name={tab.icon} size={16} color={activeTab === tab.id ? '#2563EB' : (isDarkMode ? '#94A3B8' : '#6B7280')} style={{ marginRight: 6 }} />
-              <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive, isDarkMode && !(activeTab === tab.id) && { color: '#94A3B8' }]}>{tab.label}</Text>
+              <Ionicons 
+                name={tab.icon} 
+                size={16} 
+                color={activeTab === tab.id ? (isDarkMode ? '#60A5FA' : '#2563EB') : (isDarkMode ? '#94A3B8' : '#6B7280')} 
+                style={{ marginRight: 6 }} 
+              />
+              <Text style={[
+                styles.tabText, 
+                activeTab === tab.id && styles.tabTextActive, 
+                isDarkMode && activeTab === tab.id && { color: '#60A5FA' },
+                isDarkMode && activeTab !== tab.id && { color: '#CBD5E1' }
+              ]}>{tab.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -1054,13 +1069,17 @@ export default function OlahragaScreen() {
                         key={groupKey}
                         style={[
                           styles.subTabChip,
-                          activeSubTab === groupKey && styles.subTabChipActive
+                          activeSubTab === groupKey && styles.subTabChipActive,
+                          isDarkMode && activeSubTab === groupKey && { backgroundColor: '#1E3A8A', borderColor: '#2563EB' },
+                          isDarkMode && activeSubTab !== groupKey && { backgroundColor: '#1E293B', borderColor: '#334155' }
                         ]}
                         onPress={() => setActiveSubTab(groupKey)}
                       >
                         <Text style={[
                           styles.subTabText,
-                          activeSubTab === groupKey && styles.subTabTextActive
+                          activeSubTab === groupKey && styles.subTabTextActive,
+                          isDarkMode && activeSubTab === groupKey && { color: '#60A5FA' },
+                          isDarkMode && activeSubTab !== groupKey && { color: '#CBD5E1' }
                         ]}>
                           {groupKey}
                         </Text>
@@ -1082,7 +1101,9 @@ export default function OlahragaScreen() {
                         <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
                           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
                         </TouchableOpacity>
-                        <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
+                        <View style={[styles.exerciseIconWrap, isDarkMode && { backgroundColor: '#334155' }]}>
+                          <Ionicons name={ex.icon} size={26} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
+                        </View>
                         <View style={styles.exerciseInfo}>
                           <Text style={[styles.exerciseName, isDarkMode && { color: '#F8FAFC' }]}>{ex.name}</Text>
                           <Text style={[styles.exerciseTarget, isDarkMode && { color: '#94A3B8' }]}>{ex.target}</Text>
@@ -1106,7 +1127,9 @@ export default function OlahragaScreen() {
                   ) : (
                     history.map((item) => (
                       <View key={item.id} style={[styles.historyCard, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
-                        <View style={styles.exerciseIconWrap}><Ionicons name={item.icon} size={24} color="#2563EB" /></View>
+                        <View style={[styles.exerciseIconWrap, isDarkMode && { backgroundColor: '#334155' }]}>
+                          <Ionicons name={item.icon} size={24} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
+                        </View>
                         <View style={styles.exerciseInfo}>
                           <Text style={[styles.exerciseName, isDarkMode && { color: '#F8FAFC' }]}>{item.name}</Text>
                           <Text style={[styles.exerciseTarget, isDarkMode && { color: '#94A3B8' }]}>{item.target}</Text>
@@ -1135,7 +1158,9 @@ export default function OlahragaScreen() {
                           <TouchableOpacity style={styles.wishlistBtn} onPress={() => toggleWishlist(ex.id)}>
                             <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#EF5350' : '#9CA3AF'} />
                           </TouchableOpacity>
-                          <View style={styles.exerciseIconWrap}><Ionicons name={ex.icon} size={26} color="#2563EB" /></View>
+                          <View style={[styles.exerciseIconWrap, isDarkMode && { backgroundColor: '#334155' }]}>
+                            <Ionicons name={ex.icon} size={26} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
+                          </View>
                           <View style={styles.exerciseInfo}>
                             <Text style={[styles.exerciseName, isDarkMode && { color: '#F8FAFC' }]}>{ex.name}</Text>
                             <Text style={[styles.exerciseTarget, isDarkMode && { color: '#94A3B8' }]}>{ex.target}</Text>
@@ -1156,17 +1181,17 @@ export default function OlahragaScreen() {
             <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
               <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Progres & Metrik</Text>
               <View style={styles.metricRow}>
-                <View style={styles.metricItem}>
+                <View style={[styles.metricItem, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569', borderWidth: 1 }]}>
                   <Ionicons name="flame-outline" size={24} color="#EF5350" />
                   <Text style={[styles.metricValue, isDarkMode && { color: '#F8FAFC' }]}>{caloriesBurned} <Text style={[styles.metricUnit, isDarkMode && { color: '#94A3B8' }]}>kcal</Text></Text>
                   <Text style={[styles.metricLabel, isDarkMode && { color: '#94A3B8' }]}>Terbakar</Text>
                 </View>
-                <View style={styles.metricItem}>
+                <View style={[styles.metricItem, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569', borderWidth: 1 }]}>
                   <Ionicons name="time-outline" size={24} color="#2563EB" />
                   <Text style={[styles.metricValue, isDarkMode && { color: '#F8FAFC' }]}>{activeMinutes} <Text style={[styles.metricUnit, isDarkMode && { color: '#94A3B8' }]}>min</Text></Text>
                   <Text style={[styles.metricLabel, isDarkMode && { color: '#94A3B8' }]}>Aktif Hari Ini</Text>
                 </View>
-                <View style={styles.metricItem}>
+                <View style={[styles.metricItem, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569', borderWidth: 1 }]}>
                   <Ionicons name="stats-chart" size={24} color="#F59E0B" />
                   <Text style={[styles.metricValue, isDarkMode && { color: '#F8FAFC' }]}>{streak} <Text style={[styles.metricUnit, isDarkMode && { color: '#94A3B8' }]}>hari</Text></Text>
                   <Text style={[styles.metricLabel, isDarkMode && { color: '#94A3B8' }]}>Streak 🔥</Text>

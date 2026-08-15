@@ -17,7 +17,7 @@ import SuccessModal from './SuccessModal';
 import { useSleepNotifications } from '../../components/SleepNotificationManager';
 
 export default function JadwalTidurScreen({ navigation }) {
-  const { user } = useContext(AuthContext);
+  const { user, isDarkMode } = useContext(AuthContext);
 
   const getCurrentFormattedTime = (offsetHours = 0) => {
     const now = new Date();
@@ -252,34 +252,34 @@ export default function JadwalTidurScreen({ navigation }) {
   const cycles = ['06.00', '07.30', '09.00'];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {}
+        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <Text style={styles.title}>Jadwal Tidur</Text>
-            <View style={styles.realTimeContainer}>
+            <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Jadwal Tidur</Text>
+            <View style={[styles.realTimeContainer, isDarkMode && { backgroundColor: '#1E293B' }]}>
               <Ionicons name="time-outline" size={16} color="#2563EB" style={{ marginRight: 6 }} />
-              <Text style={styles.realTimeText}>
+              <Text style={[styles.realTimeText, isDarkMode && { color: '#3B82F6' }]}>
                 {realTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })}
               </Text>
             </View>
           </View>
-          <Text style={styles.subtitle}>Pantau dan tingkatkan kualitas istirahat Anda & si kecil</Text>
+          <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Pantau dan tingkatkan kualitas istirahat Anda & si kecil</Text>
         </View>
 
-        {}
+        {/* Saved Data (If exists) */}
         {lastSavedData && (
           <TouchableOpacity
-            style={styles.savedDataCard}
+            style={[styles.savedDataCard, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}
             onPress={() => navigation.navigate('JadwalTidurDetail', lastSavedData)}
             activeOpacity={0.8}
           >
             <View style={styles.savedDataHeader}>
               <View style={styles.savedTitleContainer}>
                 <Ionicons name="cloud-done" size={20} color="#10B981" />
-                <Text style={styles.savedDataTitle}>Target Tidur Aktif (Terdaftar)</Text>
+                <Text style={[styles.savedDataTitle, isDarkMode && { color: '#F8FAFC' }]}>Target Tidur Aktif (Terdaftar)</Text>
               </View>
               <View style={styles.openDetailBadge}>
                 <Text style={styles.openDetailText}>Buka Detail</Text>
@@ -291,15 +291,15 @@ export default function JadwalTidurScreen({ navigation }) {
               <View style={styles.savedTableRow}>
                 <View style={styles.savedTableCell}>
                   <Ionicons name="moon" size={14} color="#64748B" />
-                  <Text style={styles.savedCellText}> Tidur: {lastSavedData.sleepTime}</Text>
+                  <Text style={[styles.savedCellText, isDarkMode && { color: '#CBD5E1' }]}> Tidur: {lastSavedData.sleepTime}</Text>
                 </View>
-                <View style={[styles.savedTableCell, { borderLeftWidth: 1, borderColor: '#E2E8F0', paddingLeft: 12 }]}>
+                <View style={[styles.savedTableCell, { borderLeftWidth: 1, borderColor: isDarkMode ? '#334155' : '#E2E8F0', paddingLeft: 12 }]}>
                   <Ionicons name="sunny" size={14} color="#64748B" />
-                  <Text style={styles.savedCellText}> Bangun: {lastSavedData.wakeTime}</Text>
+                  <Text style={[styles.savedCellText, isDarkMode && { color: '#CBD5E1' }]}> Bangun: {lastSavedData.wakeTime}</Text>
                 </View>
-                <View style={[styles.savedTableCell, { borderLeftWidth: 1, borderColor: '#E2E8F0', paddingLeft: 12 }]}>
+                <View style={[styles.savedTableCell, { borderLeftWidth: 1, borderColor: isDarkMode ? '#334155' : '#E2E8F0', paddingLeft: 12 }]}>
                   <Ionicons name="time" size={14} color="#64748B" />
-                  <Text style={styles.savedCellText}> Durasi: {lastSavedData.duration} Jam</Text>
+                  <Text style={[styles.savedCellText, isDarkMode && { color: '#CBD5E1' }]}> Durasi: {lastSavedData.duration} Jam</Text>
                 </View>
               </View>
             </View>
@@ -307,102 +307,118 @@ export default function JadwalTidurScreen({ navigation }) {
         )}
 
         {isLoadingData && (
-          <View style={styles.loadingContainer}>
+          <View style={[styles.loadingContainer, isDarkMode && { backgroundColor: '#1E293B' }]}>
             <ActivityIndicator size="small" color="#2563EB" />
-            <Text style={styles.loadingText}>Memuat jadwal tidur...</Text>
+            <Text style={[styles.loadingText, isDarkMode && { color: '#3B82F6' }]}>Memuat jadwal tidur...</Text>
           </View>
         )}
 
-        {}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Target Tidur Harian</Text>
+        {/* Main Card */}
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
+          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Target Tidur Harian</Text>
 
-          {}
-          <View style={styles.tabContainer}>
+          {/* Tab Container */}
+          <View style={[styles.tabContainer, isDarkMode && { backgroundColor: '#0F172A' }]}>
             <TouchableOpacity
-              style={[styles.tabButton, activePickerTab === 'sleep' && styles.tabButtonActive]}
+              style={[
+                styles.tabButton, 
+                activePickerTab === 'sleep' && styles.tabButtonActive,
+                activePickerTab === 'sleep' && isDarkMode && { backgroundColor: '#2563EB' }
+              ]}
               onPress={() => setActivePickerTab('sleep')}
             >
               <Ionicons name="moon" size={18} color={activePickerTab === 'sleep' ? '#FFFFFF' : '#2563EB'} />
-              <Text style={[styles.tabButtonText, activePickerTab === 'sleep' && styles.tabButtonTextActive]}>
+              <Text style={[
+                styles.tabButtonText, 
+                activePickerTab === 'sleep' && styles.tabButtonTextActive,
+                isDarkMode && activePickerTab !== 'sleep' && { color: '#94A3B8' }
+              ]}>
                 Tidur ({sleepTime})
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.tabButton, activePickerTab === 'wake' && styles.tabButtonActive]}
+              style={[
+                styles.tabButton, 
+                activePickerTab === 'wake' && styles.tabButtonActive,
+                activePickerTab === 'wake' && isDarkMode && { backgroundColor: '#F59E0B' }
+              ]}
               onPress={() => setActivePickerTab('wake')}
             >
               <Ionicons name="sunny" size={18} color={activePickerTab === 'wake' ? '#FFFFFF' : '#F59E0B'} />
-              <Text style={[styles.tabButtonText, activePickerTab === 'wake' && styles.tabButtonTextActive]}>
+              <Text style={[
+                styles.tabButtonText, 
+                activePickerTab === 'wake' && styles.tabButtonTextActive,
+                isDarkMode && activePickerTab !== 'wake' && { color: '#94A3B8' }
+              ]}>
                 Bangun ({wakeTime})
               </Text>
             </TouchableOpacity>
           </View>
 
-          {}
-          <View style={styles.pickerSection}>
-            <Text style={styles.pickerTitle}>
+          {/* Picker Section */}
+          <View style={[styles.pickerSection, isDarkMode && { backgroundColor: '#0F172A', borderColor: '#334155' }]}>
+            <Text style={[styles.pickerTitle, isDarkMode && { color: '#CBD5E1' }]}>
               Atur Jam {activePickerTab === 'sleep' ? 'Tidur' : 'Bangun'}
             </Text>
 
             <View style={styles.timeControlsRow}>
-              {}
+              {/* Hour Control */}
               <View style={styles.controlColumn}>
                 <TouchableOpacity
                   style={styles.adjustArrow}
                   onPress={() => adjustTime(activePickerTab, 'hour_up')}
                 >
-                  <Ionicons name="chevron-up" size={24} color="#2563EB" />
+                  <Ionicons name="chevron-up" size={24} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
                 </TouchableOpacity>
-                <Text style={styles.controlTimeValue}>
+                <Text style={[styles.controlTimeValue, isDarkMode && { color: '#F8FAFC' }]}>
                   {(activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.')[0]}
                 </Text>
                 <TouchableOpacity
                   style={styles.adjustArrow}
                   onPress={() => adjustTime(activePickerTab, 'hour_down')}
                 >
-                  <Ionicons name="chevron-down" size={24} color="#2563EB" />
+                  <Ionicons name="chevron-down" size={24} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
                 </TouchableOpacity>
-                <Text style={styles.controlUnitLabel}>Jam</Text>
+                <Text style={[styles.controlUnitLabel, isDarkMode && { color: '#94A3B8' }]}>Jam</Text>
               </View>
 
-              <Text style={styles.timeColon}>:</Text>
+              <Text style={[styles.timeColon, isDarkMode && { color: '#F8FAFC' }]}>:</Text>
 
-              {}
+              {/* Minute Control */}
               <View style={styles.controlColumn}>
                 <TouchableOpacity
                   style={styles.adjustArrow}
                   onPress={() => adjustTime(activePickerTab, 'minute_up')}
                 >
-                  <Ionicons name="chevron-up" size={24} color="#2563EB" />
+                  <Ionicons name="chevron-up" size={24} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
                 </TouchableOpacity>
-                <Text style={styles.controlTimeValue}>
+                <Text style={[styles.controlTimeValue, isDarkMode && { color: '#F8FAFC' }]}>
                   {(activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.')[1]}
                 </Text>
                 <TouchableOpacity
                   style={styles.adjustArrow}
                   onPress={() => adjustTime(activePickerTab, 'minute_down')}
                 >
-                  <Ionicons name="chevron-down" size={24} color="#2563EB" />
+                  <Ionicons name="chevron-down" size={24} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
                 </TouchableOpacity>
-                <Text style={styles.controlUnitLabel}>Menit</Text>
+                <Text style={[styles.controlUnitLabel, isDarkMode && { color: '#94A3B8' }]}>Menit</Text>
               </View>
             </View>
           </View>
 
-          {}
+          {/* Progress Bar */}
           <View style={styles.progressContainer}>
-            <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarBg, isDarkMode && { backgroundColor: '#334155' }]}>
               <View style={[styles.progressBarFill, { width: `${percentProgress}%` }]} />
             </View>
             <View style={styles.progressTextRow}>
-              <Text style={styles.progressLabelLeft}>{durasiTerpenuhi} Jam terhitung</Text>
-              <Text style={styles.progressLabelRight}>Target: 8 Jam</Text>
+              <Text style={[styles.progressLabelLeft, isDarkMode && { color: '#94A3B8' }]}>{durasiTerpenuhi} Jam terhitung</Text>
+              <Text style={[styles.progressLabelRight, isDarkMode && { color: '#CBD5E1' }]}>Target: 8 Jam</Text>
             </View>
           </View>
 
-          {}
+          {/* Save Button */}
           <TouchableOpacity
             style={[styles.saveDatabaseButton, isSaving && styles.saveDatabaseButtonDisabled]}
             onPress={handleSaveToDatabase}
@@ -419,43 +435,51 @@ export default function JadwalTidurScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Kalkulator Kebutuhan Tidur</Text>
+        {/* Sleep Calculator Card */}
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
+          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Kalkulator Kebutuhan Tidur</Text>
           <View style={styles.ageSelector}>
             {['Bayi', 'Anak', 'Dewasa'].map((age) => (
               <TouchableOpacity
                 key={age}
-                style={[styles.ageBtn, ageGroup === age && styles.ageBtnActive]}
+                style={[
+                  styles.ageBtn, 
+                  ageGroup === age && styles.ageBtnActive,
+                  isDarkMode && ageGroup !== age && { backgroundColor: '#334155', borderColor: '#475569' }
+                ]}
                 onPress={() => setAgeGroup(age)}
               >
-                <Text style={[styles.ageBtnText, ageGroup === age && styles.ageBtnTextActive]}>{age}</Text>
+                <Text style={[
+                  styles.ageBtnText, 
+                  ageGroup === age && styles.ageBtnTextActive,
+                  isDarkMode && ageGroup !== age && { color: '#94A3B8' }
+                ]}>{age}</Text>
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.recommendationText}>
-            Rekomendasi Durasi: <Text style={{ fontWeight: '800', color: '#111827' }}>{rekomendasi}</Text>
+          <Text style={[styles.recommendationText, isDarkMode && { color: '#CBD5E1' }]}>
+            Rekomendasi Durasi: <Text style={[{ fontWeight: '800', color: '#111827' }, isDarkMode && { color: '#F8FAFC' }]}>{rekomendasi}</Text>
           </Text>
 
-          <View style={styles.cycleContainer}>
-            <Text style={styles.cycleLabel}>Siklus Tidur 90 Menit (Bangun Paling Segar):</Text>
+          <View style={[styles.cycleContainer, isDarkMode && { backgroundColor: '#0F172A', borderTopColor: '#334155' }]}>
+            <Text style={[styles.cycleLabel, isDarkMode && { color: '#94A3B8' }]}>Siklus Tidur 90 Menit (Bangun Paling Segar):</Text>
             <View style={styles.cycleRow}>
               {cycles.map((time, idx) => (
-                <View key={idx} style={styles.cycleChip}>
-                  <Text style={styles.cycleChipText}>{time}</Text>
+                <View key={idx} style={[styles.cycleChip, isDarkMode && { backgroundColor: '#334155' }]}>
+                  <Text style={[styles.cycleChipText, isDarkMode && { color: '#F8FAFC' }]}>{time}</Text>
                 </View>
               ))}
             </View>
           </View>
         </View>
 
-        {}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Pengingat Cerdas</Text>
+        {/* Smart Reminder Card */}
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
+          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Pengingat Cerdas</Text>
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextWrap}>
-              <Ionicons name="notifications-outline" size={20} color="#4B5563" style={{ marginRight: 10 }} />
-              <Text style={styles.toggleLabel}>Pengingat Persiapan Tidur (30 menit sebelumnya)</Text>
+              <Ionicons name="notifications-outline" size={20} color={isDarkMode ? '#94A3B8' : '#4B5563'} style={{ marginRight: 10 }} />
+              <Text style={[styles.toggleLabel, isDarkMode && { color: '#E2E8F0' }]}>Pengingat Persiapan Tidur (30 menit sebelumnya)</Text>
             </View>
             <Switch value={notifBedtime} onValueChange={setNotifBedtime} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
           </View>

@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Animated, Easing, Platform, ActivityIndicator } from 'react-native';
 import { useState, useContext, useRef, useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -163,7 +163,17 @@ export const GridItem = ({ color, iconName, label, badge, onPress, onLongPress }
   const { isDarkMode } = useContext(AuthContext);
   return (
     <LiquidGlassTouchable onPress={onPress} onLongPress={onLongPress} style={styles.gridTouch}>
-      <View style={[styles.gridItem, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
+      <View style={[
+        styles.gridItem, 
+        isDarkMode && { 
+          backgroundColor: '#1E293B', 
+          borderColor: '#334155', 
+          borderWidth: 1, 
+          borderRadius: 16, 
+          paddingVertical: 14, 
+          paddingHorizontal: 6 
+        }
+      ]}>
         <View style={[styles.gridIconBox, { backgroundColor: color }]}>
           {badge && (
             <View style={styles.badgeContainer}>
@@ -687,11 +697,26 @@ export default function Navigation() {
     );
   }
 
+  const baseTheme = isDarkMode ? DarkTheme : DefaultTheme;
+  const MyTheme = {
+    ...baseTheme,
+    dark: isDarkMode,
+    colors: {
+      ...baseTheme.colors,
+      primary: '#2563EB',
+      background: isDarkMode ? '#0F172A' : '#F4F7FF',
+      card: isDarkMode ? '#1E293B' : '#FFFFFF',
+      text: isDarkMode ? '#F8FAFC' : '#0F172A',
+      border: isDarkMode ? '#334155' : '#E2E8F0',
+      notification: '#EF4444',
+    },
+  };
+
   return (
     <AuthContext.Provider value={{ user, setUser, isDarkMode, toggleTheme }}>
       <SafeAreaProvider>
-        <NavigationContainer>
-          <RootStackNavigator.Navigator screenOptions={{ headerShown: false }}>
+        <NavigationContainer theme={MyTheme}>
+          <RootStackNavigator.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: isDarkMode ? '#0F172A' : '#F4F7FF' } }}>
             <RootStackNavigator.Screen name="MainTabs" component={MainTabs} />
             <RootStackNavigator.Screen name="JadwalOlahraga" component={JadwalOlahragaScreen} />
             <RootStackNavigator.Screen name="Login" component={LoginScreen} />

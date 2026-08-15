@@ -10,7 +10,7 @@ import { scheduleSleepReminder, getTimeUntilReminder, triggerTestNotification } 
 const { width } = Dimensions.get('window');
 
 export default function JadwalTidurDetail({ route, navigation }) {
-  const { user } = useContext(AuthContext);
+  const { user, isDarkMode } = useContext(AuthContext);
 
   const getCurrentFormattedTime = (offsetHours = 0) => {
     const now = new Date();
@@ -166,108 +166,107 @@ export default function JadwalTidurDetail({ route, navigation }) {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      {}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
+      {/* Header */}
+      <View style={[styles.header, isDarkMode && { backgroundColor: '#0F172A', borderBottomColor: '#1E293B' }]}>
+        <TouchableOpacity style={[styles.backButton, isDarkMode && { backgroundColor: '#1E293B' }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#CBD5E1' : '#0F172A'} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rencana Tidur Anda</Text>
+        <Text style={[styles.headerTitle, isDarkMode && { color: '#F8FAFC' }]}>Rencana Tidur Anda</Text>
         <View style={styles.headerRightPlaceholder} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {}
-        <View style={styles.summaryCard}>
+        {/* Summary Card */}
+        <View style={[styles.summaryCard, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <View style={styles.summaryHeader}>
             <View style={styles.summaryTitleContainer}>
               <Ionicons name="sparkles" size={20} color="#3B82F6" />
-              <Text style={styles.summaryTitle}>Target Tidur Harian</Text>
+              <Text style={[styles.summaryTitle, isDarkMode && { color: '#CBD5E1' }]}>Target Tidur Harian</Text>
             </View>
             {!isEditing ? (
-              <TouchableOpacity style={styles.editBadgeButton} onPress={() => setIsEditing(true)}>
+              <TouchableOpacity style={[styles.editBadgeButton, isDarkMode && { backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#475569' }]} onPress={() => setIsEditing(true)}>
                 <Ionicons name="create-outline" size={14} color="#3B82F6" />
-                <Text style={styles.editBadgeText}>Ubah</Text>
+                <Text style={[styles.editBadgeText, isDarkMode && { color: '#60A5FA' }]}>Ubah</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={styles.cancelBadgeButton} onPress={() => {
+              <TouchableOpacity style={[styles.cancelBadgeButton, isDarkMode && { backgroundColor: '#334155' }]} onPress={() => {
                 setSleepTime(initialSleepTime);
                 setWakeTime(initialWakeTime);
                 setIsEditing(false);
               }}>
-                <Text style={styles.cancelBadgeText}>Batal</Text>
+                <Text style={[styles.cancelBadgeText, isDarkMode && { color: '#94A3B8' }]}>Batal</Text>
               </TouchableOpacity>
             )}
           </View>
 
           <View style={styles.timeRow}>
-            {}
+            {/* Sleep Time */}
             <View style={styles.timeBlock}>
-              <Text style={styles.timeLabel}>Tidur</Text>
+              <Text style={[styles.timeLabel, isDarkMode && { color: '#CBD5E1' }]}>Tidur</Text>
               {isEditing && (
                 <TouchableOpacity style={styles.adjustButtonMini} onPress={() => adjustTime('sleep', 'hour_up')}>
                   <Ionicons name="chevron-up" size={20} color="#3B82F6" />
                 </TouchableOpacity>
               )}
-              <Text style={styles.timeValue}>{sleepTime}</Text>
+              <Text style={[styles.timeValue, isDarkMode && { color: '#F8FAFC' }]}>{sleepTime}</Text>
               {isEditing && (
                 <TouchableOpacity style={styles.adjustButtonMini} onPress={() => adjustTime('sleep', 'hour_down')}>
                   <Ionicons name="chevron-down" size={20} color="#3B82F6" />
                 </TouchableOpacity>
               )}
-              <Text style={styles.timeUnit}>WIB</Text>
+              <Text style={[styles.timeUnit, isDarkMode && { color: '#94A3B8' }]}>WIB</Text>
             </View>
 
             <View style={styles.arrowConnector}>
               <Ionicons name="arrow-forward" size={24} color="#94A3B8" />
             </View>
 
-            {}
+            {/* Wake Time */}
             <View style={styles.timeBlock}>
-              <Text style={styles.timeLabel}>Bangun</Text>
+              <Text style={[styles.timeLabel, isDarkMode && { color: '#CBD5E1' }]}>Bangun</Text>
               {isEditing && (
                 <TouchableOpacity style={styles.adjustButtonMini} onPress={() => adjustTime('wake', 'hour_up')}>
                   <Ionicons name="chevron-up" size={20} color="#F59E0B" />
                 </TouchableOpacity>
               )}
-              <Text style={styles.timeValue}>{wakeTime}</Text>
+              <Text style={[styles.timeValue, isDarkMode && { color: '#F8FAFC' }]}>{wakeTime}</Text>
               {isEditing && (
                 <TouchableOpacity style={styles.adjustButtonMini} onPress={() => adjustTime('wake', 'hour_down')}>
                   <Ionicons name="chevron-down" size={20} color="#F59E0B" />
                 </TouchableOpacity>
               )}
-              <Text style={styles.timeUnit}>WIB</Text>
+              <Text style={[styles.timeUnit, isDarkMode && { color: '#94A3B8' }]}>WIB</Text>
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, isDarkMode && { backgroundColor: '#334155' }]} />
 
           <View style={styles.metaRow}>
             <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>Total Durasi</Text>
-              <Text style={styles.metaValue}>{duration} Jam</Text>
+              <Text style={[styles.metaLabel, isDarkMode && { color: '#CBD5E1' }]}>Total Durasi</Text>
+              <Text style={[styles.metaValue, isDarkMode && { color: '#F8FAFC' }]}>{duration} Jam</Text>
             </View>
           </View>
 
-          {}
-          <View style={styles.notificationTimeBox}>
+          {/* Reminder Time Box */}
+          <View style={[styles.notificationTimeBox, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#475569' }]}>
             <Ionicons name="notifications-outline" size={16} color="#2563EB" style={{ marginRight: 6 }} />
-            <Text style={styles.notificationTimeText}>
-              Pengingat berbunyi: <Text style={styles.timeHighlight}>{timeUntilReminder}</Text>
+            <Text style={[styles.notificationTimeText, isDarkMode && { color: '#CBD5E1' }]}>
+              Pengingat berbunyi: <Text style={[styles.timeHighlight, isDarkMode && { color: '#60A5FA' }]}>{timeUntilReminder}</Text>
             </Text>
           </View>
 
-          {}
+          {/* Test Reminder Trigger */}
           <TouchableOpacity
-            style={styles.testNotifButton}
+            style={[styles.testNotifButton, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}
             onPress={handleTestNotif}
             activeOpacity={0.8}
           >
             <Ionicons name="notifications-circle-outline" size={20} color="#2563EB" style={{ marginRight: 6 }} />
-            <Text style={styles.testNotifText}>Coba Test Notifikasi (3 Detik)</Text>
+            <Text style={[styles.testNotifText, isDarkMode && { color: '#CBD5E1' }]}>Coba Test Notifikasi (3 Detik)</Text>
           </TouchableOpacity>
 
-          {}
           {isEditing && (
             <TouchableOpacity
               style={styles.saveChangesButton}
@@ -286,49 +285,49 @@ export default function JadwalTidurDetail({ route, navigation }) {
           )}
         </View>
 
-        {}
-        <View style={styles.card}>
+        {/* Cycle Analysis Card */}
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="repeat" size={22} color="#10B981" />
-            <Text style={styles.cardTitle}>Analisis Siklus Tidur (90m)</Text>
+            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Analisis Siklus Tidur (90m)</Text>
           </View>
-          <Text style={styles.cardDescription}>
+          <Text style={[styles.cardDescription, isDarkMode && { color: '#CBD5E1' }]}>
             Tidur manusia terdiri dari beberapa siklus berdurasi sekitar 90 menit. Bangun di akhir siklus membuat tubuh terasa segar bugar.
           </Text>
 
-          <View style={styles.cycleBadgeBox}>
-            <Text style={styles.cycleValue}>{cycleData.count}</Text>
-            <Text style={styles.cycleLabel}>Siklus Terpenuhi</Text>
+          <View style={[styles.cycleBadgeBox, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}>
+            <Text style={[styles.cycleValue, isDarkMode && { color: '#34D399' }]}>{cycleData.count}</Text>
+            <Text style={[styles.cycleLabel, isDarkMode && { color: '#6EE7B7' }]}>Siklus Terpenuhi</Text>
           </View>
 
-          <View style={styles.statusBox}>
+          <View style={[styles.statusBox, isDarkMode && { backgroundColor: '#064E3B' }]}>
             <Ionicons name="information-circle" size={18} color="#059669" style={{ marginRight: 8 }} />
-            <Text style={styles.statusText}>{cycleData.note}</Text>
+            <Text style={[styles.statusText, isDarkMode && { color: '#A7F3D0' }]}>{cycleData.note}</Text>
           </View>
         </View>
 
-        {}
-        <View style={styles.card}>
+        {/* Pre-sleep Routines Card */}
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="moon-outline" size={22} color="#8B5CF6" />
-            <Text style={styles.cardTitle}>Rutinitas Sebelum Tidur</Text>
+            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Rutinitas Sebelum Tidur</Text>
           </View>
 
           {bedtimeTips.map((tip, idx) => (
             <View key={idx} style={styles.tipItem}>
-              <View style={styles.tipIconContainer}>
+              <View style={[styles.tipIconContainer, isDarkMode && { backgroundColor: '#334155' }]}>
                 <Ionicons name={tip.icon} size={22} color="#8B5CF6" />
               </View>
               <View style={styles.tipTextContent}>
-                <Text style={styles.tipTitle}>{tip.title}</Text>
-                <Text style={styles.tipDesc}>{tip.desc}</Text>
+                <Text style={[styles.tipTitle, isDarkMode && { color: '#F8FAFC' }]}>{tip.title}</Text>
+                <Text style={[styles.tipDesc, isDarkMode && { color: '#CBD5E1' }]}>{tip.desc}</Text>
               </View>
             </View>
           ))}
         </View>
       </ScrollView>
 
-      {}
+      {/* Success Modal */}
       <SuccessModal
         visible={isSuccessVisible}
         onClose={() => setIsSuccessVisible(false)}

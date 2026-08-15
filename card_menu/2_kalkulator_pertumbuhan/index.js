@@ -23,7 +23,7 @@ import GeminiConsultantModal from '../../components/GeminiConsultantModal';
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function KalkulatorPertumbuhanScreen({ navigation }) {
-  const { user } = useContext(AuthContext);
+  const { user, isDarkMode } = useContext(AuthContext);
   const userId = user?.id || null;
 
   const [userWeight, setUserWeight] = useState('');
@@ -274,14 +274,14 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {}
+        {/* Header */}
         <View style={styles.headerRow}>
           <View style={styles.header}>
-            <Text style={styles.title}>Kalkulator Gizi & IMT</Text>
-            <Text style={styles.subtitle}>Ukur Indeks Massa Tubuh (IMT) Anda dan kelola catatan tumbuh kembang buah hati.</Text>
+            <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Kalkulator Gizi & IMT</Text>
+            <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Ukur Indeks Massa Tubuh (IMT) Anda dan kelola catatan tumbuh kembang buah hati.</Text>
           </View>
           <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => {
             setAiContext({ type: 'calculator', user });
@@ -291,57 +291,65 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Kalkulator IMT Orang Tua</Text>
+        {/* IMT Calculator Card */}
+        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
+          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Kalkulator IMT Orang Tua</Text>
 
-          {}
-          <Text style={styles.smallLabel}>Jenis Kelamin</Text>
+          {/* Gender */}
+          <Text style={[styles.smallLabel, isDarkMode && { color: '#CBD5E1' }]}>Jenis Kelamin</Text>
           <View style={styles.inlineButtonRow}>
             {['Laki-laki', 'Perempuan'].map((item) => (
               <TouchableOpacity
                 key={item}
-                style={[styles.inlineBtn, userGender === item && styles.inlineBtnActive]}
+                style={[
+                  styles.inlineBtn,
+                  userGender === item && styles.inlineBtnActive,
+                  isDarkMode && userGender !== item && { backgroundColor: '#334155', borderColor: '#475569' }
+                ]}
                 onPress={() => setUserGender(item)}
               >
-                <Text style={[styles.inlineBtnText, userGender === item && styles.inlineBtnTextActive]}>{item}</Text>
+                <Text style={[
+                  styles.inlineBtnText,
+                  userGender === item && styles.inlineBtnTextActive,
+                  isDarkMode && userGender !== item && { color: '#94A3B8' }
+                ]}>{item}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {}
+          {/* Inputs */}
           <View style={styles.rowInputGroup}>
             <View style={styles.inputWrapper}>
-              <Text style={styles.smallLabel}>BB (kg)</Text>
+              <Text style={[styles.smallLabel, isDarkMode && { color: '#CBD5E1' }]}>BB (kg)</Text>
               <TextInput
-                style={styles.inputNumeric}
+                style={[styles.inputNumeric, isDarkMode && { backgroundColor: '#334155', color: '#F8FAFC', borderColor: '#475569' }]}
                 keyboardType="numeric"
                 value={userWeight}
                 onChangeText={setUserWeight}
                 placeholder="60.5"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={isDarkMode ? '#64748B' : '#94A3B8'}
               />
             </View>
             <View style={styles.inputWrapper}>
-              <Text style={styles.smallLabel}>TB (cm)</Text>
+              <Text style={[styles.smallLabel, isDarkMode && { color: '#CBD5E1' }]}>TB (cm)</Text>
               <TextInput
-                style={styles.inputNumeric}
+                style={[styles.inputNumeric, isDarkMode && { backgroundColor: '#334155', color: '#F8FAFC', borderColor: '#475569' }]}
                 keyboardType="numeric"
                 value={userHeight}
                 onChangeText={setUserHeight}
                 placeholder="165"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={isDarkMode ? '#64748B' : '#94A3B8'}
               />
             </View>
             <View style={styles.inputWrapper}>
-              <Text style={styles.smallLabel}>Usia (Thn)</Text>
+              <Text style={[styles.smallLabel, isDarkMode && { color: '#CBD5E1' }]}>Usia (Thn)</Text>
               <TextInput
-                style={styles.inputNumeric}
+                style={[styles.inputNumeric, isDarkMode && { backgroundColor: '#334155', color: '#F8FAFC', borderColor: '#475569' }]}
                 keyboardType="numeric"
                 value={userAge}
                 onChangeText={setUserAge}
                 placeholder="25"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={isDarkMode ? '#64748B' : '#94A3B8'}
               />
             </View>
           </View>
@@ -355,11 +363,11 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
 
         {}
         {isUserCalculated && userImtResult && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Hasil Indeks Massa Tubuh</Text>
+          <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
+            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Hasil Indeks Massa Tubuh</Text>
 
-            <View style={styles.scoreBox}>
-              <Text style={styles.scoreLabel}>Nilai IMT Anda</Text>
+            <View style={[styles.scoreBox, isDarkMode && { backgroundColor: '#334155' }]}>
+              <Text style={[styles.scoreLabel, isDarkMode && { color: '#94A3B8' }]}>Nilai IMT Anda</Text>
               <Text style={[styles.scoreValue, { color: userImtResult.color }]}>{userImtResult.imt}</Text>
 
               <View style={[styles.statusBadge, { backgroundColor: userImtResult.color + '20', alignSelf: 'center', marginTop: 10 }]}>
@@ -369,10 +377,10 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                 </Text>
               </View>
 
-              <Text style={styles.scoreNote}>{userImtResult.desc}</Text>
+              <Text style={[styles.scoreNote, isDarkMode && { color: '#CBD5E1' }]}>{userImtResult.desc}</Text>
             </View>
 
-            {}
+            {/* Scale Bar */}
             <View style={styles.imtBarContainer}>
               <View style={styles.imtScale}>
                 <View style={[styles.scaleSegment, { flex: 18.5, backgroundColor: '#F59E0B' }]} />
@@ -381,25 +389,23 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                 <View style={[styles.scaleSegment, { flex: 10.0, backgroundColor: '#EF4444' }]} />
               </View>
               <View style={styles.scaleLabels}>
-                <Text style={styles.scaleLabelText}>Kurus</Text>
-                <Text style={styles.scaleLabelText}>Normal</Text>
-                <Text style={styles.scaleLabelText}>Gemuk</Text>
-                <Text style={styles.scaleLabelText}>Obesitas</Text>
+                <Text style={[styles.scaleLabelText, isDarkMode && { color: '#94A3B8' }]}>Kurus</Text>
+                <Text style={[styles.scaleLabelText, isDarkMode && { color: '#94A3B8' }]}>Normal</Text>
+                <Text style={[styles.scaleLabelText, isDarkMode && { color: '#94A3B8' }]}>Gemuk</Text>
+                <Text style={[styles.scaleLabelText, isDarkMode && { color: '#94A3B8' }]}>Obesitas</Text>
               </View>
             </View>
           </View>
         )}
 
-        {}
         {isUserCalculated && userImtResult && (
-          <View style={styles.card}>
+          <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
             <View style={styles.aiHeaderRow}>
               <Ionicons name="sparkles" size={20} color="#2563EB" />
-              <Text style={[styles.cardTitle, { marginBottom: 0, marginLeft: 8 }]}>Saran Kesehatan AI (Untuk Anda)</Text>
+              <Text style={[styles.cardTitle, { marginBottom: 0, marginLeft: 8 }, isDarkMode && { color: '#F8FAFC' }]}>Saran Kesehatan AI (Untuk Anda)</Text>
             </View>
-            <Text style={styles.aiSubtitle}>Rekomendasi gaya hidup disesuaikan dengan profil gizi Anda</Text>
+            <Text style={[styles.aiSubtitle, isDarkMode && { color: '#94A3B8' }]}>Rekomendasi gaya hidup disesuaikan dengan profil gizi Anda</Text>
 
-            {}
             {(() => {
               const suggestions = getAISuggestions({
                 type: 'adult',
@@ -412,47 +418,47 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
 
               return (
                 <View style={styles.aiContainer}>
-                  {}
+                  {/* Meal Plan */}
                   <View style={styles.aiItem}>
-                    <View style={[styles.aiIconBox, { backgroundColor: '#EFF6FF' }]}>
+                    <View style={[styles.aiIconBox, { backgroundColor: isDarkMode ? '#1E3A8A' : '#EFF6FF' }]}>
                       <Ionicons name="restaurant" size={20} color="#2563EB" />
                     </View>
                     <View style={styles.aiTextContainer}>
-                      <Text style={styles.aiItemTitle}>{suggestions.polaMakan.title}</Text>
-                      <Text style={styles.aiItemDesc}>{suggestions.polaMakan.desc}</Text>
+                      <Text style={[styles.aiItemTitle, isDarkMode && { color: '#F8FAFC' }]}>{suggestions.polaMakan.title}</Text>
+                      <Text style={[styles.aiItemDesc, isDarkMode && { color: '#CBD5E1' }]}>{suggestions.polaMakan.desc}</Text>
                     </View>
                   </View>
 
-                  {}
+                  {/* Sleep Plan */}
                   <View style={styles.aiItem}>
-                    <View style={[styles.aiIconBox, { backgroundColor: '#F5F3FF' }]}>
+                    <View style={[styles.aiIconBox, { backgroundColor: isDarkMode ? '#4C1D95' : '#F5F3FF' }]}>
                       <Ionicons name="moon" size={20} color="#8B5CF6" />
                     </View>
                     <View style={styles.aiTextContainer}>
-                      <Text style={styles.aiItemTitle}>{suggestions.polaTidur.title}</Text>
-                      <Text style={styles.aiItemDesc}>{suggestions.polaTidur.desc}</Text>
+                      <Text style={[styles.aiItemTitle, isDarkMode && { color: '#F8FAFC' }]}>{suggestions.polaTidur.title}</Text>
+                      <Text style={[styles.aiItemDesc, isDarkMode && { color: '#CBD5E1' }]}>{suggestions.polaTidur.desc}</Text>
                     </View>
                   </View>
 
-                  {}
+                  {/* Sports Plan */}
                   <View style={styles.aiItem}>
-                    <View style={[styles.aiIconBox, { backgroundColor: '#ECFDF5' }]}>
+                    <View style={[styles.aiIconBox, { backgroundColor: isDarkMode ? '#064E3B' : '#ECFDF5' }]}>
                       <Ionicons name="barbell" size={20} color="#10B981" />
                     </View>
                     <View style={styles.aiTextContainer}>
-                      <Text style={styles.aiItemTitle}>{suggestions.olahraga.title}</Text>
-                      <Text style={styles.aiItemDesc}>{suggestions.olahraga.desc}</Text>
+                      <Text style={[styles.aiItemTitle, isDarkMode && { color: '#F8FAFC' }]}>{suggestions.olahraga.title}</Text>
+                      <Text style={[styles.aiItemDesc, isDarkMode && { color: '#CBD5E1' }]}>{suggestions.olahraga.desc}</Text>
                     </View>
                   </View>
 
-                  {}
+                  {/* Extra Plan */}
                   <View style={styles.aiItem}>
-                    <View style={[styles.aiIconBox, { backgroundColor: '#FFF7ED' }]}>
+                    <View style={[styles.aiIconBox, { backgroundColor: isDarkMode ? '#7C2D12' : '#FFF7ED' }]}>
                       <Ionicons name="medical" size={20} color="#F97316" />
                     </View>
                     <View style={styles.aiTextContainer}>
-                      <Text style={styles.aiItemTitle}>{suggestions.tambahan.title}</Text>
-                      <Text style={styles.aiItemDesc}>{suggestions.tambahan.desc}</Text>
+                      <Text style={[styles.aiItemTitle, isDarkMode && { color: '#F8FAFC' }]}>{suggestions.tambahan.title}</Text>
+                      <Text style={[styles.aiItemDesc, isDarkMode && { color: '#CBD5E1' }]}>{suggestions.tambahan.desc}</Text>
                     </View>
                   </View>
 
@@ -479,22 +485,21 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
           </View>
         )}
 
-        {}
         {userId && userHistory.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Riwayat IMT Anda</Text>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 1.8 }]}>Waktu</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }]}>Tinggi/BB</Text>
-              <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }]}>Usia</Text>
-              <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }]}>IMT</Text>
+          <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
+            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Riwayat IMT Anda</Text>
+            <View style={[styles.tableHeader, isDarkMode && { borderBottomColor: '#334155' }]}>
+              <Text style={[styles.tableHeaderText, { flex: 1.8 }, isDarkMode && { color: '#94A3B8' }]}>Waktu</Text>
+              <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }, isDarkMode && { color: '#94A3B8' }]}>Tinggi/BB</Text>
+              <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }, isDarkMode && { color: '#94A3B8' }]}>Usia</Text>
+              <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }, isDarkMode && { color: '#94A3B8' }]}>IMT</Text>
             </View>
             {userHistory.slice(0, 5).map((item, index) => (
-              <View key={item.id || index} style={styles.tableRow}>
-                <Text style={[styles.tableRowText, { flex: 1.8 }]}>{item.date}</Text>
-                <Text style={[styles.tableRowText, { flex: 1, textAlign: 'center' }]}>{item.tinggi_badan}c / {item.berat_badan}k</Text>
-                <Text style={[styles.tableRowText, { flex: 0.8, textAlign: 'center' }]}>{item.umur_tahun} thn</Text>
-                <Text style={[styles.tableRowText, { flex: 0.8, textAlign: 'center', fontWeight: 'bold' }]}>{item.imt}</Text>
+              <View key={item.id || index} style={[styles.tableRow, isDarkMode && { borderBottomColor: '#334155' }]}>
+                <Text style={[styles.tableRowText, { flex: 1.8 }, isDarkMode && { color: '#CBD5E1' }]}>{item.date}</Text>
+                <Text style={[styles.tableRowText, { flex: 1, textAlign: 'center' }, isDarkMode && { color: '#CBD5E1' }]}>{item.tinggi_badan}c / {item.berat_badan}k</Text>
+                <Text style={[styles.tableRowText, { flex: 0.8, textAlign: 'center' }, isDarkMode && { color: '#CBD5E1' }]}>{item.umur_tahun} thn</Text>
+                <Text style={[styles.tableRowText, { flex: 0.8, textAlign: 'center', fontWeight: 'bold' }, isDarkMode && { color: '#F8FAFC' }]}>{item.imt}</Text>
               </View>
             ))}
           </View>
@@ -502,9 +507,9 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
 
         {}
         {userId && (
-          <View style={styles.card}>
+          <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
             <View style={styles.rowBetween}>
-              <Text style={styles.cardTitle}>Data Tumbuh Kembang Anak</Text>
+              <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Data Tumbuh Kembang Anak</Text>
               <TouchableOpacity
                 style={styles.addChildButton}
                 onPress={() => {
@@ -527,12 +532,12 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
               children.map((anak) => (
                 <TouchableOpacity
                   key={anak.id}
-                  style={styles.childItemRow}
+                  style={[styles.childItemRow, isDarkMode && { borderBottomColor: '#334155' }]}
                   onPress={() => handleOpenAnakDetail(anak)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.childInfoLeft}>
-                    <View style={styles.childAvatarContainer}>
+                    <View style={[styles.childAvatarContainer, isDarkMode && { backgroundColor: '#334155' }]}>
                       <Ionicons
                         name={anak.jenis_kelamin === 'Laki-laki' ? 'boy' : 'girl'}
                         size={24}
@@ -540,16 +545,16 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                       />
                     </View>
                     <View>
-                      <Text style={styles.childNameText}>{anak.nama_anak}</Text>
-                      <Text style={styles.childAgeText}>
+                      <Text style={[styles.childNameText, isDarkMode && { color: '#F8FAFC' }]}>{anak.nama_anak}</Text>
+                      <Text style={[styles.childAgeText, isDarkMode && { color: '#94A3B8' }]}>
                         Lahir: {anak.tanggal_lahir ? new Date(anak.tanggal_lahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'} ({calculateAgeInMonths(anak.tanggal_lahir)} Bulan)
                       </Text>
                     </View>
                   </View>
 
                   <View style={styles.childInfoRight}>
-                    <View style={styles.miniStatusBadge}>
-                      <Text style={styles.miniStatusBadgeText}>{anak.status_z_score}</Text>
+                    <View style={[styles.miniStatusBadge, isDarkMode && { backgroundColor: '#334155' }]}>
+                      <Text style={[styles.miniStatusBadgeText, isDarkMode && { color: '#E2E8F0' }]}>{anak.status_z_score}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color="#64748B" />
                   </View>
