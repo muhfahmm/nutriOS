@@ -29,8 +29,21 @@ export default function JadwalOlahragaScreen({ navigation }) {
   const [exerciseName, setExerciseName] = useState('');
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
+  const [workoutHour, setWorkoutHour] = useState('07');
+  const [workoutMin, setWorkoutMin] = useState('00');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const handleOpenModal = () => {
+    setExerciseName('');
+    setDate(new Date());
+    const now = new Date();
+    const hh = now.getHours().toString().padStart(2, '0');
+    const mm = now.getMinutes().toString().padStart(2, '0');
+    setWorkoutHour(hh);
+    setWorkoutMin(mm);
+    setModalVisible(true);
+  };
 
   useEffect(() => {
     loadSchedules();
@@ -83,13 +96,20 @@ export default function JadwalOlahragaScreen({ navigation }) {
       return;
     }
 
+    let hour = parseInt(workoutHour.trim(), 10);
+    let minute = parseInt(workoutMin.trim(), 10);
+
+    if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      Alert.alert('Format Waktu Salah', 'Jam harus di antara 00-23 dan menit di antara 00-59');
+      return;
+    }
 
     const scheduledDateTime = new Date(
       date.getFullYear(),
       date.getMonth(),
       date.getDate(),
-      time.getHours(),
-      time.getMinutes(),
+      hour,
+      minute,
       0
     );
 
@@ -107,7 +127,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
       await Notifications.scheduleNotificationAsync({
         identifier: `workout-${newId}`,
         content: {
-          title: 'Waktunya Olahraga! 🏋️‍♂️',
+          title: 'Waktunya Olahraga!',
           body: `Ayo mulai latihan rutin Anda: ${exerciseName}! Tetap konsisten untuk hidup sehat.`,
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
@@ -348,7 +368,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
       </ScrollView>
 
 
-      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity style={styles.fab} onPress={handleOpenModal}>
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
 
@@ -389,16 +409,34 @@ export default function JadwalOlahragaScreen({ navigation }) {
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Jam</Text>
-                <TouchableOpacity
-                  style={[styles.pickerToggle, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}
-                  onPress={() => setShowTimePicker(true)}
-                >
-                  <Text style={[styles.pickerToggleText, isDarkMode && { color: '#F8FAFC' }]}>
-                    {time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                  <Ionicons name="time-outline" size={16} color="#3B82F6" />
-                </TouchableOpacity>
+                <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Waktu</Text>
+                <View style={styles.timeInputContainer}>
+                  <TextInput
+                    style={[styles.miniTimeInput, isDarkMode && { color: '#60A5FA', backgroundColor: '#334155', borderColor: '#475569' }]}
+                    value={workoutHour}
+                    onChangeText={(val) => {
+                      let clean = val.replace(/[^0-9]/g, '');
+                      if (clean.length > 2) clean = clean.slice(0, 2);
+                      setWorkoutHour(clean);
+                    }}
+                    keyboardType="numeric"
+                    maxLength={2}
+                    placeholder="07"
+                  />
+                  <Text style={[styles.timeInputColon, isDarkMode && { color: '#F8FAFC' }]}>:</Text>
+                  <TextInput
+                    style={[styles.miniTimeInput, isDarkMode && { color: '#60A5FA', backgroundColor: '#334155', borderColor: '#475569' }]}
+                    value={workoutMin}
+                    onChangeText={(val) => {
+                      let clean = val.replace(/[^0-9]/g, '');
+                      if (clean.length > 2) clean = clean.slice(0, 2);
+                      setWorkoutMin(clean);
+                    }}
+                    keyboardType="numeric"
+                    maxLength={2}
+                    placeholder="00"
+                  />
+                </View>
               </View>
             </View>
 
@@ -410,15 +448,6 @@ export default function JadwalOlahragaScreen({ navigation }) {
                 display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                 minimumDate={new Date()}
                 onChange={onDateChange}
-              />
-            )}
-
-            {showTimePicker && (
-              <DateTimePicker
-                value={time}
-                mode="time"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={onTimeChange}
               />
             )}
 
@@ -676,6 +705,29 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
     marginBottom: 16,
+  },
+  timeInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  miniTimeInput: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
+    textAlign: 'center',
+    width: 60,
+  },
+  timeInputColon: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
   },
   pickersRow: {
     flexDirection: 'row',

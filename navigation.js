@@ -201,9 +201,27 @@ export function HomeScreen({ navigation }) {
   const [totalCalories, setTotalCalories] = useState(0);
   const [workoutHistory, setWorkoutHistory] = useState([]);
   const [isAiModalVisible, setIsAiModalVisible] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
 
   const [appUsage, setAppUsage] = useState({});
   const lastSaveTime = useRef(Date.now());
+
+  const updateNotifCount = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('notification_history');
+      const history = stored ? JSON.parse(stored) : [];
+      setNotifCount(history.length);
+    } catch (e) {
+      setNotifCount(0);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      updateNotifCount();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     const loadUsage = async () => {
@@ -376,8 +394,13 @@ export function HomeScreen({ navigation }) {
             <Ionicons name="person-circle" size={40} color={isDarkMode ? '#94A3B8' : '#6B7280'} style={{ marginRight: 10 }} />
             <Text style={[styles.greetingText, isDarkMode && { color: '#F8FAFC' }]}>{greetingName}</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ position: 'relative' }}>
             <Ionicons name="notifications-outline" size={26} color={isDarkMode ? '#F8FAFC' : '#111827'} />
+            {notifCount > 0 && (
+              <View style={styles.badgeContainer}>
+                <Text style={styles.badgeText}>{notifCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -1165,5 +1188,24 @@ const styles = StyleSheet.create({
   barLabelToday: {
     color: '#3B82F6',
     fontWeight: '700',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    right: -6,
+    top: -6,
+    backgroundColor: '#EF4444',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    zIndex: 10,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+    textAlign: 'center',
   },
 });

@@ -77,7 +77,7 @@ export async function scheduleSleepReminder(sleepTime) {
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Waktunya Tidur 🌙',
+      title: 'Waktunya Tidur',
       body: `Sudah pukul ${sleepHour.toString().padStart(2, '0')}.${sleepMinute.toString().padStart(2, '0')}. Mari matikan gadget Anda dan tidur sekarang!`,
       sound: true,
       priority: Notifications.AndroidNotificationPriority.MAX,
@@ -91,7 +91,7 @@ export async function scheduleSleepReminder(sleepTime) {
 
   return await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Persiapan Tidur 🌙',
+      title: 'Persiapan Tidur',
       body: `Sudah pukul ${formattedPrepHour}.${formattedPrepMinute}. Mari bersiap untuk tidur 30 menit lagi (target tidur: ${sleepTime}). Matikan gadget Anda sekarang!`,
       sound: true,
       priority: Notifications.AndroidNotificationPriority.MAX,

@@ -41,7 +41,7 @@ export async function scheduleMealReminders(schedule, notifEnabled) {
       await Notifications.scheduleNotificationAsync({
         identifier: 'meal-breakfast',
         content: {
-          title: 'Waktunya Sarapan! ☕',
+          title: 'Waktunya Sarapan!',
           body: 'Sudah memasuki jam sarapan pagi Anda. Yuk, isi energi terlebih dahulu!',
           sound: true,
         },
@@ -63,7 +63,7 @@ export async function scheduleMealReminders(schedule, notifEnabled) {
       await Notifications.scheduleNotificationAsync({
         identifier: 'meal-lunch',
         content: {
-          title: 'Waktunya Makan Siang! 🍽️',
+          title: 'Waktunya Makan Siang!',
           body: 'Sudah jam makan siang. Istirahat sejenak dan nikmati makan siang sehat Anda!',
           sound: true,
         },
@@ -85,7 +85,7 @@ export async function scheduleMealReminders(schedule, notifEnabled) {
       await Notifications.scheduleNotificationAsync({
         identifier: 'meal-dinner',
         content: {
-          title: 'Waktunya Makan Malam! 🌙',
+          title: 'Waktunya Makan Malam!',
           body: 'Sudah memasuki jam makan malam. Pilih menu ringan agar tidur lebih berkualitas!',
           sound: true,
         },

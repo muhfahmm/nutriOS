@@ -15,7 +15,7 @@ export default function NotificationScreen({ navigation }) {
   const [mealNotifs, setMealNotifs] = useState({ breakfast: false, lunch: false, dinner: false });
 
   const [workoutSchedules, setWorkoutSchedules] = useState([]);
-  const [realLogs, setRealLogs] = useState([]);
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -37,71 +37,72 @@ export default function NotificationScreen({ navigation }) {
       const storedMealNotifs = await AsyncStorage.getItem('meal_notif_states');
       if (storedMealNotifs) setMealNotifs(JSON.parse(storedMealNotifs));
 
+      let activeWorkouts = [];
       const storedWorkout = await AsyncStorage.getItem('workout_schedules');
       if (storedWorkout) {
         const list = JSON.parse(storedWorkout);
-        const upcoming = list.filter(item => new Date(item.dateTime) > new Date())
+        activeWorkouts = list.filter(item => new Date(item.dateTime) > new Date())
                              .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
-        setWorkoutSchedules(upcoming);
+        setWorkoutSchedules(activeWorkouts);
       }
 
       const storedLogs = await AsyncStorage.getItem('notification_history');
-      if (storedLogs) {
-        setRealLogs(JSON.parse(storedLogs));
+      if (storedLogs && JSON.parse(storedLogs).length > 0) {
+        setLogs(JSON.parse(storedLogs));
       } else {
-        setRealLogs([]);
+        setLogs(getSimulatedLogs(storedSleepEnabled === 'true', storedSleepTime || '22:00', storedMealNotifs ? JSON.parse(storedMealNotifs) : { breakfast: false, lunch: false, dinner: false }, storedMealSchedule ? JSON.parse(storedMealSchedule) : { breakfast: '-', lunch: '-', dinner: '-' }, activeWorkouts));
       }
     } catch (e) {
       console.warn('Gagal memuat data notifikasi di Notification Center:', e);
     }
   };
 
-  const getSimulatedLogs = () => {
-    const logs = [];
+  const getSimulatedLogs = (isSleepOn, sTime, mNotifs, mSched, wSchedules) => {
+    const sLogs = [];
 
-    if (sleepEnabled) {
-      logs.push({
+    if (isSleepOn) {
+      sLogs.push({
         id: 'sleep-log',
         category: 'Jadwal Tidur',
         title: 'Pengingat Waktu Tidur',
-        desc: `Persiapan tidur dianjurkan 30 menit sebelum jam ${sleepTime}.`,
+        desc: `Persiapan tidur dianjurkan 30 menit sebelum jam ${sTime}.`,
         time: 'Tadi Malam',
         icon: 'moon',
         color: '#818CF8'
       });
     }
 
-    if (mealNotifs.breakfast) {
-      logs.push({
+    if (mNotifs?.breakfast) {
+      sLogs.push({
         id: 'meal-b-log',
         category: 'Pola Makan',
         title: 'Saatnya Sarapan Pagi',
-        desc: `Waktunya sarapan sehat sesuai jadwal Anda pada pukul ${mealSchedule.breakfast}.`,
+        desc: `Waktunya sarapan sehat sesuai jadwal Anda pada pukul ${mSched?.breakfast}.`,
         time: 'Pagi Ini',
         icon: 'cafe',
         color: '#34D399'
       });
     }
 
-    if (mealNotifs.lunch) {
-      logs.push({
+    if (mNotifs?.lunch) {
+      sLogs.push({
         id: 'meal-l-log',
         category: 'Pola Makan',
         title: 'Saatnya Makan Siang',
-        desc: `Jangan lewatkan asupan nutrisi makan siang Anda pada jam ${mealSchedule.lunch}.`,
+        desc: `Jangan lewatkan asupan nutrisi makan siang Anda pada jam ${mSched?.lunch}.`,
         time: 'Siang Ini',
         icon: 'restaurant',
         color: '#FB7185'
       });
     }
 
-    if (workoutSchedules.length > 0) {
-      workoutSchedules.forEach((item, index) => {
+    if (wSchedules && wSchedules.length > 0) {
+      wSchedules.forEach((item, index) => {
         const dateObj = new Date(item.dateTime);
         const formatted = dateObj.toLocaleDateString('id-ID', {
           weekday: 'long', hour: '2-digit', minute: '2-digit'
         });
-        logs.push({
+        sLogs.push({
           id: `workout-log-${index}`,
           category: 'Olahraga',
           title: `Latihan Rutin: ${item.exerciseName}`,
@@ -113,10 +114,22 @@ export default function NotificationScreen({ navigation }) {
       });
     }
 
-    return logs;
+    return sLogs;
   };
 
-  const logs = realLogs.length > 0 ? realLogs : getSimulatedLogs();
+  const deleteLog = async (id) => {
+    try {
+      const updated = logs.filter(log => log.id !== id);
+      setLogs(updated);
+      const stored = await AsyncStorage.getItem('notification_history');
+      if (stored) {
+        const updatedStored = JSON.parse(stored).filter(log => log.id !== id);
+        await AsyncStorage.setItem('notification_history', JSON.stringify(updatedStored));
+      }
+    } catch (e) {
+      console.warn('Gagal menghapus log notifikasi:', e);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
@@ -131,7 +144,7 @@ export default function NotificationScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Kartu 1: Status Pengingat Harian */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="notifications-outline" size={20} color={isDarkMode ? '#60A5FA' : '#2563EB'} style={{ marginRight: 8 }} />
@@ -161,26 +174,15 @@ export default function NotificationScreen({ navigation }) {
                 <Ionicons name="cafe" size={18} color="#10B981" />
               </View>
               <View style={styles.textBox}>
-                <Text style={[styles.itemTitle, isDarkMode && { color: '#F8FAFC' }]}>Pengingat Sarapan</Text>
+                <Text style={[styles.itemTitle, isDarkMode && { color: '#F8FAFC' }]}>Jadwal Makan</Text>
                 <Text style={[styles.itemSub, isDarkMode && { color: '#94A3B8' }]}>
-                  {mealNotifs.breakfast ? `Aktif • Jam ${mealSchedule.breakfast}` : 'Nonaktif'}
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('MainTabs', { screen: 'Beranda', params: { screen: 'PolaMakan' } })}>
-              <Text style={styles.actionBtnText}>Ubah</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={[styles.notifRow, isDarkMode && { borderBottomColor: '#334155' }]}>
-            <View style={styles.notifInfo}>
-              <View style={[styles.iconBox, { backgroundColor: '#FFFBEB' }, isDarkMode && { backgroundColor: '#78350F' }]}>
-                <Ionicons name="restaurant" size={18} color="#F59E0B" />
-              </View>
-              <View style={styles.textBox}>
-                <Text style={[styles.itemTitle, isDarkMode && { color: '#F8FAFC' }]}>Makan Siang</Text>
-                <Text style={[styles.itemSub, isDarkMode && { color: '#94A3B8' }]}>
-                  {mealNotifs.lunch ? `Aktif • Jam ${mealSchedule.lunch}` : 'Nonaktif'}
+                  {(() => {
+                    const activeMeals = [];
+                    if (mealNotifs.breakfast) activeMeals.push(`Pagi ${mealSchedule.breakfast}`);
+                    if (mealNotifs.lunch) activeMeals.push(`Siang ${mealSchedule.lunch}`);
+                    if (mealNotifs.dinner) activeMeals.push(`Malam ${mealSchedule.dinner}`);
+                    return activeMeals.length > 0 ? activeMeals.join(' • ') : 'Nonaktif';
+                  })()}
                 </Text>
               </View>
             </View>
@@ -191,59 +193,23 @@ export default function NotificationScreen({ navigation }) {
 
           <View style={styles.notifRow}>
             <View style={styles.notifInfo}>
-              <View style={[styles.iconBox, { backgroundColor: '#FEF2F2' }, isDarkMode && { backgroundColor: '#7F1D1D' }]}>
-                <Ionicons name="alarm" size={18} color="#EF4444" />
+              <View style={[styles.iconBox, { backgroundColor: '#FFFBEB' }, isDarkMode && { backgroundColor: '#78350F' }]}>
+                <Ionicons name="barbell" size={18} color="#F59E0B" />
               </View>
               <View style={styles.textBox}>
-                <Text style={[styles.itemTitle, isDarkMode && { color: '#F8FAFC' }]}>Makan Malam</Text>
+                <Text style={[styles.itemTitle, isDarkMode && { color: '#F8FAFC' }]}>Jadwal Olahraga</Text>
                 <Text style={[styles.itemSub, isDarkMode && { color: '#94A3B8' }]}>
-                  {mealNotifs.dinner ? `Aktif • Jam ${mealSchedule.dinner}` : 'Nonaktif'}
+                  {workoutSchedules.length > 0 ? `${workoutSchedules.length} Jadwal Aktif` : 'Nonaktif'}
                 </Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('MainTabs', { screen: 'Beranda', params: { screen: 'PolaMakan' } })}>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('JadwalOlahraga')}>
               <Text style={styles.actionBtnText}>Ubah</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Kartu 2: Jadwal Olahraga Mendatang */}
-        <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="calendar-outline" size={20} color={isDarkMode ? '#60A5FA' : '#2563EB'} style={{ marginRight: 8 }} />
-            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Jadwal Olahraga Mendatang</Text>
-          </View>
-          {workoutSchedules.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="calendar-outline" size={32} color="#9CA3AF" />
-              <Text style={[styles.emptyText, isDarkMode && { color: '#94A3B8' }]}>Tidak ada jadwal olahraga mendatang.</Text>
-              <TouchableOpacity style={styles.createBtn} onPress={() => navigation.navigate('JadwalOlahraga')}>
-                <Text style={styles.createBtnText}>Buat Jadwal Baru</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            workoutSchedules.map((item) => {
-              const dateObj = new Date(item.dateTime);
-              const formattedDate = dateObj.toLocaleDateString('id-ID', {
-                weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-              });
-              return (
-                <View key={item.id} style={[styles.workoutRow, isDarkMode && { borderBottomColor: '#334155' }]}>
-                  <View style={styles.workoutInfo}>
-                    <Ionicons name="barbell-outline" size={20} color="#2563EB" style={{ marginRight: 10 }} />
-                    <View>
-                      <Text style={[styles.itemTitle, isDarkMode && { color: '#F8FAFC' }]}>{item.exerciseName}</Text>
-                      <Text style={[styles.itemSub, isDarkMode && { color: '#94A3B8' }]}>{formattedDate}</Text>
-                    </View>
-                  </View>
-                  <Ionicons name="notifications-circle" size={22} color="#10B981" />
-                </View>
-              );
-            })
-          )}
-        </View>
 
-        {/* Kartu 3: Riwayat Notifikasi */}
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="list-outline" size={20} color={isDarkMode ? '#60A5FA' : '#2563EB'} style={{ marginRight: 8 }} />
@@ -268,6 +234,9 @@ export default function NotificationScreen({ navigation }) {
                   <Text style={[styles.logTitle, isDarkMode && { color: '#F8FAFC' }]}>{log.title}</Text>
                   <Text style={[styles.logDesc, isDarkMode && { color: '#CBD5E1' }]}>{log.desc}</Text>
                 </View>
+                <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteLog(log.id)}>
+                  <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                </TouchableOpacity>
               </View>
             ))
           )}
@@ -329,7 +298,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#1F2937',
-    // marginBottom dihapus karena sudah ditangani oleh cardHeader
+
   },
   notifRow: {
     flexDirection: 'row',
@@ -452,5 +421,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     lineHeight: 16,
+  },
+  deleteBtn: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingLeft: 12,
+    paddingRight: 4,
   },
 });
