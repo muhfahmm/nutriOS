@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import GpsTrackerScreen from './GpsTrackerScreen';
 import {
   StyleSheet,
@@ -305,7 +306,7 @@ const CATEGORY_TABS = [
 ];
 
 export default function OlahragaScreen() {
-
+  const navigation = useNavigation();
   const { user, isDarkMode } = useContext(AuthContext);
 
 
@@ -927,9 +928,14 @@ export default function OlahragaScreen() {
             <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Olahraga</Text>
             <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Aktivitas fisik ringan dengan panduan suara.</Text>
           </View>
-          <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setActiveTab('AI')}>
-            <Ionicons name="sparkles" size={16} color="#FFF" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={[styles.headerSparklesBtn, { marginRight: 8 }]} onPress={() => navigation.navigate('JadwalOlahraga')}>
+              <Ionicons name="calendar-outline" size={18} color="#FFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setActiveTab('AI')}>
+              <Ionicons name="sparkles" size={16} color="#FFF" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {}
@@ -1333,6 +1339,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
     elevation: 4,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },
   subtitle: { fontSize: 15, color: '#6B7280', lineHeight: 22 },

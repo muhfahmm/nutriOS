@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Animated, Easing, Platform } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Animated, Easing, Platform, ActivityIndicator } from 'react-native';
 import { useState, useContext, useRef, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -21,6 +21,7 @@ import JadwalTidurScreen from './card_menu/1_jadwal_tidur';
 import JadwalTidurDetail from './card_menu/1_jadwal_tidur/JadwalTidurDetail';
 import KalkulatorPertumbuhanScreen from './card_menu/2_kalkulator_pertumbuhan';
 import OlahragaScreen from './card_menu/3_olahraga';
+import JadwalOlahragaScreen from './card_menu/3_olahraga/JadwalOlahragaScreen';
 import PengelolaStresScreen from './card_menu/4_pengelola_stres';
 import PolaMakanScreen from './card_menu/5_pola_makan';
 import SarapanScreen from './card_menu/5_pola_makan/SarapanScreen';
@@ -204,7 +205,7 @@ export function HomeScreen({ navigation }) {
           d.setDate(d.getDate() - i);
           const dateStr = d.toISOString().slice(0, 10);
           if (data[dateStr] === undefined) {
-            data[dateStr] = i === 0 ? 30 : (Math.floor(Math.random() * 25) + 10) * 60;
+            data[dateStr] = 0;
             changed = true;
           }
         }
@@ -636,7 +637,25 @@ export default function Navigation() {
   const [user, setUser] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  const [isResetDone, setIsResetDone] = useState(!__DEV__);
+
   useEffect(() => {
+    if (__DEV__) {
+      AsyncStorage.multiRemove([
+        'olahraga_streak',
+        'olahraga_history',
+        'app_usage_stats',
+        'gps_activities',
+        'workout_schedules'
+      ]).then(() => {
+        console.log('[DevReset] AsyncStorage keys reset on development startup.');
+        setIsResetDone(true);
+      }).catch(err => {
+        console.warn(err);
+        setIsResetDone(true);
+      });
+    }
+
     const loadTheme = async () => {
       try {
         const savedTheme = await AsyncStorage.getItem('app_theme');
@@ -660,12 +679,21 @@ export default function Navigation() {
     }
   };
 
+  if (__DEV__ && !isResetDone) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: isDarkMode ? '#0F172A' : '#F4F7FF' }}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </View>
+    );
+  }
+
   return (
     <AuthContext.Provider value={{ user, setUser, isDarkMode, toggleTheme }}>
       <SafeAreaProvider>
         <NavigationContainer>
           <RootStackNavigator.Navigator screenOptions={{ headerShown: false }}>
             <RootStackNavigator.Screen name="MainTabs" component={MainTabs} />
+            <RootStackNavigator.Screen name="JadwalOlahraga" component={JadwalOlahragaScreen} />
             <RootStackNavigator.Screen name="Login" component={LoginScreen} />
             <RootStackNavigator.Screen name="Register" component={RegisterScreen} />
           </RootStackNavigator.Navigator>

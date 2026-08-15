@@ -81,6 +81,7 @@ async function initializeDatabase() {
 
     try {
       await connection.execute('TRUNCATE TABLE jadwal_makan;');
+      await connection.execute('TRUNCATE TABLE riwayat_olahraga;');
     } catch (resetError) {
     }
 
