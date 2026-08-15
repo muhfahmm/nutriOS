@@ -766,7 +766,7 @@ app.post('/api/ask-ai', async (req, res) => {
       return res.status(500).json({ message: 'Kunci API Gemini belum diatur di server.' });
     }
 
-    const model = genAI.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({
       model: 'gemini-3.1-flash-lite',
       generationConfig: { temperature: 0.95 }
     });
@@ -839,7 +839,7 @@ app.post('/api/generate-recipe', async (req, res) => {
       return res.status(500).json({ message: 'Kunci API Gemini belum diatur di server.' });
     }
     const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-    const prompt = 
+    const prompt =
       `Berikan resep lengkap untuk makanan: "${foodName}". ` +
       `Format output WAJIB berupa raw JSON object tanpa markdown code block, dengan struktur exact seperti ini:\n` +
       `{\n` +
@@ -847,7 +847,7 @@ app.post('/api/generate-recipe', async (req, res) => {
       `  "steps": ["langkah 1", "langkah 2", ...],\n` +
       `  "time": "estimasi durasi (misal: 30 menit)"\n` +
       `}`;
-      
+
     const result = await model.generateContent(prompt);
     let text = result.response.text().trim();
     if (text.startsWith('```')) {
@@ -870,11 +870,11 @@ app.post('/api/swap-food', async (req, res) => {
     if (!genAI) {
       return res.status(500).json({ message: 'Kunci API Gemini belum diatur di server.' });
     }
-    const model = genAI.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({
       model: 'gemini-3.1-flash-lite',
       generationConfig: { temperature: 0.85 }
     });
-    const prompt = 
+    const prompt =
       `Berikan satu nama alternatif makanan pengganti sehat yang BERBEDA dengan: "${currentFood}" tetapi setara/sejenis secara gizi. ` +
       `PENTING: JANGAN PERNAH mengembalikan nama makanan "${currentFood}" itu sendiri. Makanan alternatif harus unik dan berbeda dari makanan asal.\n\n` +
       `Kriteria filter:\n` +
@@ -885,7 +885,7 @@ app.post('/api/swap-food', async (req, res) => {
       `{\n` +
       `  "alternative": "Nama makanan pengganti baru yang berbeda"\n` +
       `}`;
-      
+
     const result = await model.generateContent(prompt);
     let text = result.response.text().trim();
     if (text.startsWith('```')) {

@@ -277,7 +277,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {/* Header */}
+
         <View style={styles.headerRow}>
           <View style={styles.header}>
             <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Kalkulator Gizi & IMT</Text>
@@ -291,11 +291,11 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* IMT Calculator Card */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Kalkulator IMT Orang Tua</Text>
 
-          {/* Gender */}
+
           <Text style={[styles.smallLabel, isDarkMode && { color: '#CBD5E1' }]}>Jenis Kelamin</Text>
           <View style={styles.inlineButtonRow}>
             {['Laki-laki', 'Perempuan'].map((item) => (
@@ -317,7 +317,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
             ))}
           </View>
 
-          {/* Inputs */}
+
           <View style={styles.rowInputGroup}>
             <View style={styles.inputWrapper}>
               <Text style={[styles.smallLabel, isDarkMode && { color: '#CBD5E1' }]}>BB (kg)</Text>
@@ -380,7 +380,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
               <Text style={[styles.scoreNote, isDarkMode && { color: '#CBD5E1' }]}>{userImtResult.desc}</Text>
             </View>
 
-            {/* Scale Bar */}
+
             <View style={styles.imtBarContainer}>
               <View style={styles.imtScale}>
                 <View style={[styles.scaleSegment, { flex: 18.5, backgroundColor: '#F59E0B' }]} />
@@ -418,7 +418,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
 
               return (
                 <View style={styles.aiContainer}>
-                  {/* Meal Plan */}
+
                   <View style={styles.aiItem}>
                     <View style={[styles.aiIconBox, { backgroundColor: isDarkMode ? '#1E3A8A' : '#EFF6FF' }]}>
                       <Ionicons name="restaurant" size={20} color="#2563EB" />
@@ -429,7 +429,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                     </View>
                   </View>
 
-                  {/* Sleep Plan */}
+
                   <View style={styles.aiItem}>
                     <View style={[styles.aiIconBox, { backgroundColor: isDarkMode ? '#4C1D95' : '#F5F3FF' }]}>
                       <Ionicons name="moon" size={20} color="#8B5CF6" />
@@ -440,7 +440,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                     </View>
                   </View>
 
-                  {/* Sports Plan */}
+
                   <View style={styles.aiItem}>
                     <View style={[styles.aiIconBox, { backgroundColor: isDarkMode ? '#064E3B' : '#ECFDF5' }]}>
                       <Ionicons name="barbell" size={20} color="#10B981" />
@@ -451,7 +451,7 @@ export default function KalkulatorPertumbuhanScreen({ navigation }) {
                     </View>
                   </View>
 
-                  {/* Extra Plan */}
+
                   <View style={styles.aiItem}>
                     <View style={[styles.aiIconBox, { backgroundColor: isDarkMode ? '#7C2D12' : '#FFF7ED' }]}>
                       <Ionicons name="medical" size={20} color="#F97316" />

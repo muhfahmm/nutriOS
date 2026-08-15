@@ -944,22 +944,22 @@ export default function OlahragaScreen() {
             <TouchableOpacity
               key={tab.id}
               style={[
-                styles.tabChip, 
-                activeTab === tab.id && styles.tabChipActive, 
+                styles.tabChip,
+                activeTab === tab.id && styles.tabChipActive,
                 isDarkMode && activeTab === tab.id && { backgroundColor: '#1E3A8A', borderColor: '#3B82F6' },
                 isDarkMode && activeTab !== tab.id && { backgroundColor: '#1E293B', borderColor: '#334155' }
               ]}
               onPress={() => setActiveTab(tab.id)}
             >
-              <Ionicons 
-                name={tab.icon} 
-                size={16} 
-                color={activeTab === tab.id ? (isDarkMode ? '#60A5FA' : '#2563EB') : (isDarkMode ? '#94A3B8' : '#6B7280')} 
-                style={{ marginRight: 6 }} 
+              <Ionicons
+                name={tab.icon}
+                size={16}
+                color={activeTab === tab.id ? (isDarkMode ? '#60A5FA' : '#2563EB') : (isDarkMode ? '#94A3B8' : '#6B7280')}
+                style={{ marginRight: 6 }}
               />
               <Text style={[
-                styles.tabText, 
-                activeTab === tab.id && styles.tabTextActive, 
+                styles.tabText,
+                activeTab === tab.id && styles.tabTextActive,
                 isDarkMode && activeTab === tab.id && { color: '#60A5FA' },
                 isDarkMode && activeTab !== tab.id && { color: '#CBD5E1' }
               ]}>{tab.label}</Text>

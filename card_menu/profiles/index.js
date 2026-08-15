@@ -184,7 +184,7 @@ export default function ProfileScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* JIKA USER SUDAH LOGIN */}
+
         {user ? (
           <View>
             <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B' }]}>
@@ -370,7 +370,7 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         ) : (
-          /* JIKA USER BELUM LOGIN (Guest) - PERBAIKAN DARK MODE DITERAPKAN DISINI */
+
           <View>
             <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B' }]}>
               <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Silakan masuk</Text>
@@ -395,7 +395,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
         )}
 
-        {/* SARAN GIZI PINTAR (AI) */}
+
         {user && (() => {
 
           if (!user.tanggal_lahir || !user.tinggi_badan || !user.berat_badan || !user.jenis_kelamin) {

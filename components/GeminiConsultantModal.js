@@ -217,7 +217,7 @@ export default function GeminiConsultantModal({ visible, onClose, context, title
                       {renderMessageText(text, msg.sender === 'user')}
                     </View>
                     {menuData && onApplyMenu && (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.applyMenuBtn}
                         onPress={() => {
                           onApplyMenu(menuData);

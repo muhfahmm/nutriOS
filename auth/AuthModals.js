@@ -87,7 +87,7 @@ export function MenuModal({ visible, onClose, title, menus }) {
         <View style={styles.bottomOverlay}>
           <TouchableWithoutFeedback onPress={() => {}}>
             <View style={[styles.sheetContent, isDarkMode && { backgroundColor: '#1E293B' }]}>
-              {/* Handle bar */}
+
               <View style={styles.dragIndicatorWrapper}>
                 <View style={[styles.dragIndicator, isDarkMode && { backgroundColor: '#475569' }]} />
               </View>

@@ -255,7 +255,7 @@ export default function JadwalTidurScreen({ navigation }) {
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {/* Header */}
+
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Jadwal Tidur</Text>
@@ -269,7 +269,7 @@ export default function JadwalTidurScreen({ navigation }) {
           <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Pantau dan tingkatkan kualitas istirahat Anda & si kecil</Text>
         </View>
 
-        {/* Saved Data (If exists) */}
+
         {lastSavedData && (
           <TouchableOpacity
             style={[styles.savedDataCard, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}
@@ -313,15 +313,15 @@ export default function JadwalTidurScreen({ navigation }) {
           </View>
         )}
 
-        {/* Main Card */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Target Tidur Harian</Text>
 
-          {/* Tab Container */}
+
           <View style={[styles.tabContainer, isDarkMode && { backgroundColor: '#0F172A' }]}>
             <TouchableOpacity
               style={[
-                styles.tabButton, 
+                styles.tabButton,
                 activePickerTab === 'sleep' && styles.tabButtonActive,
                 activePickerTab === 'sleep' && isDarkMode && { backgroundColor: '#2563EB' }
               ]}
@@ -329,7 +329,7 @@ export default function JadwalTidurScreen({ navigation }) {
             >
               <Ionicons name="moon" size={18} color={activePickerTab === 'sleep' ? '#FFFFFF' : '#2563EB'} />
               <Text style={[
-                styles.tabButtonText, 
+                styles.tabButtonText,
                 activePickerTab === 'sleep' && styles.tabButtonTextActive,
                 isDarkMode && activePickerTab !== 'sleep' && { color: '#94A3B8' }
               ]}>
@@ -339,7 +339,7 @@ export default function JadwalTidurScreen({ navigation }) {
 
             <TouchableOpacity
               style={[
-                styles.tabButton, 
+                styles.tabButton,
                 activePickerTab === 'wake' && styles.tabButtonActive,
                 activePickerTab === 'wake' && isDarkMode && { backgroundColor: '#F59E0B' }
               ]}
@@ -347,7 +347,7 @@ export default function JadwalTidurScreen({ navigation }) {
             >
               <Ionicons name="sunny" size={18} color={activePickerTab === 'wake' ? '#FFFFFF' : '#F59E0B'} />
               <Text style={[
-                styles.tabButtonText, 
+                styles.tabButtonText,
                 activePickerTab === 'wake' && styles.tabButtonTextActive,
                 isDarkMode && activePickerTab !== 'wake' && { color: '#94A3B8' }
               ]}>
@@ -356,14 +356,14 @@ export default function JadwalTidurScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Picker Section */}
+
           <View style={[styles.pickerSection, isDarkMode && { backgroundColor: '#0F172A', borderColor: '#334155' }]}>
             <Text style={[styles.pickerTitle, isDarkMode && { color: '#CBD5E1' }]}>
               Atur Jam {activePickerTab === 'sleep' ? 'Tidur' : 'Bangun'}
             </Text>
 
             <View style={styles.timeControlsRow}>
-              {/* Hour Control */}
+
               <View style={styles.controlColumn}>
                 <TouchableOpacity
                   style={styles.adjustArrow}
@@ -385,7 +385,7 @@ export default function JadwalTidurScreen({ navigation }) {
 
               <Text style={[styles.timeColon, isDarkMode && { color: '#F8FAFC' }]}>:</Text>
 
-              {/* Minute Control */}
+
               <View style={styles.controlColumn}>
                 <TouchableOpacity
                   style={styles.adjustArrow}
@@ -407,7 +407,7 @@ export default function JadwalTidurScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Progress Bar */}
+
           <View style={styles.progressContainer}>
             <View style={[styles.progressBarBg, isDarkMode && { backgroundColor: '#334155' }]}>
               <View style={[styles.progressBarFill, { width: `${percentProgress}%` }]} />
@@ -418,7 +418,7 @@ export default function JadwalTidurScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Save Button */}
+
           <TouchableOpacity
             style={[styles.saveDatabaseButton, isSaving && styles.saveDatabaseButtonDisabled]}
             onPress={handleSaveToDatabase}
@@ -435,7 +435,7 @@ export default function JadwalTidurScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Sleep Calculator Card */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Kalkulator Kebutuhan Tidur</Text>
           <View style={styles.ageSelector}>
@@ -443,14 +443,14 @@ export default function JadwalTidurScreen({ navigation }) {
               <TouchableOpacity
                 key={age}
                 style={[
-                  styles.ageBtn, 
+                  styles.ageBtn,
                   ageGroup === age && styles.ageBtnActive,
                   isDarkMode && ageGroup !== age && { backgroundColor: '#334155', borderColor: '#475569' }
                 ]}
                 onPress={() => setAgeGroup(age)}
               >
                 <Text style={[
-                  styles.ageBtnText, 
+                  styles.ageBtnText,
                   ageGroup === age && styles.ageBtnTextActive,
                   isDarkMode && ageGroup !== age && { color: '#94A3B8' }
                 ]}>{age}</Text>
@@ -473,7 +473,7 @@ export default function JadwalTidurScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Smart Reminder Card */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Pengingat Cerdas</Text>
           <View style={styles.toggleRow}>

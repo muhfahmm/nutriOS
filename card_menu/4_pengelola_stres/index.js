@@ -167,7 +167,7 @@ export default function PengelolaStresScreen() {
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {/* HEADER */}
+
         <View style={styles.headerRow}>
           <View style={styles.header}>
             <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Pengelola Stres</Text>
@@ -176,14 +176,14 @@ export default function PengelolaStresScreen() {
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            {/* Tombol AI Sparkles */}
+
             <TouchableOpacity style={styles.headerSparklesBtn} onPress={() => setIsAiModalVisible(true)}>
               <Ionicons name="sparkles" size={16} color="#FFF" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* MOOD CHECK-IN */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Mood Check-in</Text>
           <Text style={[styles.subCardTitle, isDarkMode && { color: '#94A3B8' }]}>Bagaimana perasaan Anda hari ini?</Text>
@@ -205,9 +205,9 @@ export default function PengelolaStresScreen() {
               </TouchableOpacity>
             ))}
           </View>
-          {/* Tombol Simpan Mood - Dark Mode dioptimalkan */}
-          <TouchableOpacity 
-            style={[styles.saveBtn, isDarkMode && { borderColor: '#60A5FA' }]} 
+
+          <TouchableOpacity
+            style={[styles.saveBtn, isDarkMode && { borderColor: '#60A5FA' }]}
             onPress={() => alert('Data mood tersimpan untuk grafik mingguan!')}
           >
             <Text style={[styles.saveBtnText, isDarkMode && { color: '#60A5FA' }]}>
@@ -216,7 +216,7 @@ export default function PengelolaStresScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* LATIHAN PERNAPASAN */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Latihan Pernapasan</Text>
 
@@ -264,7 +264,7 @@ export default function PengelolaStresScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ANALISIS & KORELASI */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Analisis & Korelasi</Text>
           <View style={[styles.insightBox, isDarkMode && { backgroundColor: '#334155' }]}>
@@ -283,7 +283,7 @@ export default function PengelolaStresScreen() {
           </View>
         </View>
 
-        {/* JURNAL PEMICU STRES */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Jurnal Pemicu Stres</Text>
           <Text style={[styles.subCardTitle, isDarkMode && { color: '#94A3B8' }]}>
@@ -297,9 +297,9 @@ export default function PengelolaStresScreen() {
                 <TouchableOpacity
                   key={tag}
                   style={[
-                    styles.tagItem, 
+                    styles.tagItem,
                     isActive && styles.tagItemActive,
-                    isActive && isDarkMode && { backgroundColor: '#064E3B', borderColor: '#10B981' } // Warna aktif di dark mode
+                    isActive && isDarkMode && { backgroundColor: '#064E3B', borderColor: '#10B981' }
                   ]}
                   onPress={() => toggleTag(tag)}
                 >
@@ -320,8 +320,8 @@ export default function PengelolaStresScreen() {
             value={journalText}
             onChangeText={setJournalText}
           />
-          <TouchableOpacity 
-            style={[styles.saveJournalBtn, isDarkMode && { borderColor: '#34D399' }]} 
+          <TouchableOpacity
+            style={[styles.saveJournalBtn, isDarkMode && { borderColor: '#34D399' }]}
             onPress={handleSaveJournal}
           >
             <Text style={[styles.saveJournalBtnText, isDarkMode && { color: '#34D399' }]}>
@@ -330,7 +330,7 @@ export default function PengelolaStresScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* SARAN CERDAS */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B' }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Saran Cerdas</Text>
           <Text style={[styles.subCardTitle, isDarkMode && { color: '#94A3B8' }]}>
@@ -350,16 +350,16 @@ export default function PengelolaStresScreen() {
             <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
-              styles.aiSuggestion, 
-              { 
-                borderTopWidth: 1, 
-                borderTopColor: isDarkMode ? '#334155' : '#F3F4F6', // Garis pemisah menyesuaikan tema
-                paddingTop: 14, 
-                marginTop: 14 
+              styles.aiSuggestion,
+              {
+                borderTopWidth: 1,
+                borderTopColor: isDarkMode ? '#334155' : '#F3F4F6',
+                paddingTop: 14,
+                marginTop: 14
               }
-            ]} 
+            ]}
             onPress={() => alert('Mengarahkan ke Rekomendasi Makanan')}
           >
             <View style={[styles.aiIconWrap, { backgroundColor: '#FEF3C7' }]}>
@@ -377,7 +377,7 @@ export default function PengelolaStresScreen() {
 
       </ScrollView>
 
-      {/* MODAL AI GEMINI */}
+
       <GeminiConsultantModal
         visible={isAiModalVisible}
         onClose={() => setIsAiModalVisible(false)}
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // MOOD
+
   moodRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // BREATHING
+
   modeSelector: {
     flexDirection: 'row',
     gap: 8,
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // INSIGHTS
+
   insightBox: {
     backgroundColor: '#F8FAFC',
     padding: 14,
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
 
-  // JOURNAL
+
   tagGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // SMART SUGGESTIONS
+
   aiSuggestion: {
     flexDirection: 'row',
     alignItems: 'center',

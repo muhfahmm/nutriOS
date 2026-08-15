@@ -23,8 +23,8 @@ export default function JadwalOlahragaScreen({ navigation }) {
   const [schedules, setSchedules] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
-  // Form states
+
+
   const [modalVisible, setModalVisible] = useState(false);
   const [exerciseName, setExerciseName] = useState('');
   const [date, setDate] = useState(new Date());
@@ -83,7 +83,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
       return;
     }
 
-    // Combine date and time
+
     const scheduledDateTime = new Date(
       date.getFullYear(),
       date.getMonth(),
@@ -102,7 +102,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
 
     const secondsDiff = Math.max(1, Math.round((scheduledDateTime.getTime() - Date.now()) / 1000));
 
-    // Schedule notification using TIME_INTERVAL to ensure it triggers exactly at the calculated delay
+
     try {
       await Notifications.scheduleNotificationAsync({
         identifier: `workout-${newId}`,
@@ -132,8 +132,8 @@ export default function JadwalOlahragaScreen({ navigation }) {
       setExerciseName('');
       setDate(new Date());
       setTime(new Date());
-      
-      // Auto switch selectedDate and currentMonth to the added workout day
+
+
       setSelectedDate(scheduledDateTime);
       setCurrentMonth(scheduledDateTime);
 
@@ -175,7 +175,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
     );
   };
 
-  // Month navigation
+
   const prevMonth = () => {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
@@ -184,35 +184,35 @@ export default function JadwalOlahragaScreen({ navigation }) {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
-  // Generate monthly grid data
+
   const getDaysInMonthGrid = (dateObj) => {
     const year = dateObj.getFullYear();
     const month = dateObj.getMonth();
-    
+
     const firstDay = new Date(year, month, 1);
-    let startDayOfWeek = firstDay.getDay(); // 0 is Sunday, 1 is Monday...
-    startDayOfWeek = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1; // adjust to Mon=0, Sun=6
-    
+    let startDayOfWeek = firstDay.getDay();
+    startDayOfWeek = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+
     const totalDays = new Date(year, month + 1, 0).getDate();
-    
+
     const grid = [];
-    
-    // Padding for previous month's days
+
+
     for (let i = 0; i < startDayOfWeek; i++) {
       grid.push(null);
     }
-    
-    // Month's days
+
+
     for (let day = 1; day <= totalDays; day++) {
       grid.push(new Date(year, month, day));
     }
-    
+
     return grid;
   };
 
   const gridData = getDaysInMonthGrid(currentMonth);
 
-  // Filter schedules for selected date
+
   const displayedSchedules = schedules
     .filter((item) => isSameDay(new Date(item.dateTime), selectedDate))
     .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
@@ -233,7 +233,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
-      {/* Header */}
+
       <View style={[styles.headerRow, isDarkMode && { borderBottomColor: '#1E293B' }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#F8FAFC' : '#1F2937'} />
@@ -243,9 +243,9 @@ export default function JadwalOlahragaScreen({ navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Monthly Grid Calendar Component */}
+
         <View style={[styles.calendarCard, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
-          {/* Month Selector */}
+
           <View style={styles.monthHeader}>
             <TouchableOpacity onPress={prevMonth} style={styles.monthNavBtn}>
               <Ionicons name="chevron-back" size={20} color={isDarkMode ? '#CBD5E1' : '#4B5563'} />
@@ -258,7 +258,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Weekday Labels */}
+
           <View style={styles.weekLabelsRow}>
             {['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((dayLabel) => (
               <Text key={dayLabel} style={[styles.weekLabelText, isDarkMode && { color: '#64748B' }]}>
@@ -267,7 +267,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
             ))}
           </View>
 
-          {/* Calendar Grid */}
+
           <View style={styles.gridContainer}>
             {gridData.map((cellDate, idx) => {
               if (!cellDate) {
@@ -307,7 +307,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Selected Day Agenda */}
+
         <View style={{ paddingHorizontal: 20, paddingTop: 10 }}>
           <Text style={[styles.sectionTitle, isDarkMode && { color: '#F8FAFC' }]}>
             Agenda - {selectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -347,12 +347,12 @@ export default function JadwalOlahragaScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* Floating Add Button */}
+
       <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
 
-      {/* Add Schedule Modal */}
+
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, isDarkMode && { backgroundColor: '#1E293B' }]}>
@@ -363,7 +363,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            {/* Input Nama Latihan */}
+
             <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Nama Latihan</Text>
             <TextInput
               style={[styles.textInput, isDarkMode && { backgroundColor: '#334155', color: '#F8FAFC', borderColor: '#475569' }]}
@@ -373,7 +373,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
               onChangeText={setExerciseName}
             />
 
-            {/* Pickers Toggle */}
+
             <View style={styles.pickersRow}>
               <View style={{ flex: 1, marginRight: 10 }}>
                 <Text style={[styles.inputLabel, isDarkMode && { color: '#CBD5E1' }]}>Tanggal</Text>
@@ -402,7 +402,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
               </View>
             </View>
 
-            {/* DateTimePicker modals */}
+
             {showDatePicker && (
               <DateTimePicker
                 value={date}
@@ -422,7 +422,7 @@ export default function JadwalOlahragaScreen({ navigation }) {
               />
             )}
 
-            {/* Save Buttons */}
+
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.cancelBtn, isDarkMode && { borderColor: '#475569' }]}

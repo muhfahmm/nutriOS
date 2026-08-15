@@ -167,7 +167,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
-      {/* Header */}
+
       <View style={[styles.header, isDarkMode && { backgroundColor: '#0F172A', borderBottomColor: '#1E293B' }]}>
         <TouchableOpacity style={[styles.backButton, isDarkMode && { backgroundColor: '#1E293B' }]} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#CBD5E1' : '#0F172A'} />
@@ -177,7 +177,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Summary Card */}
+
         <View style={[styles.summaryCard, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <View style={styles.summaryHeader}>
             <View style={styles.summaryTitleContainer}>
@@ -201,7 +201,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
           </View>
 
           <View style={styles.timeRow}>
-            {/* Sleep Time */}
+
             <View style={styles.timeBlock}>
               <Text style={[styles.timeLabel, isDarkMode && { color: '#CBD5E1' }]}>Tidur</Text>
               {isEditing && (
@@ -222,7 +222,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
               <Ionicons name="arrow-forward" size={24} color="#94A3B8" />
             </View>
 
-            {/* Wake Time */}
+
             <View style={styles.timeBlock}>
               <Text style={[styles.timeLabel, isDarkMode && { color: '#CBD5E1' }]}>Bangun</Text>
               {isEditing && (
@@ -249,7 +249,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
             </View>
           </View>
 
-          {/* Reminder Time Box */}
+
           <View style={[styles.notificationTimeBox, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#475569' }]}>
             <Ionicons name="notifications-outline" size={16} color="#2563EB" style={{ marginRight: 6 }} />
             <Text style={[styles.notificationTimeText, isDarkMode && { color: '#CBD5E1' }]}>
@@ -257,7 +257,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
             </Text>
           </View>
 
-          {/* Test Reminder Trigger */}
+
           <TouchableOpacity
             style={[styles.testNotifButton, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}
             onPress={handleTestNotif}
@@ -285,7 +285,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
           )}
         </View>
 
-        {/* Cycle Analysis Card */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="repeat" size={22} color="#10B981" />
@@ -306,7 +306,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
           </View>
         </View>
 
-        {/* Pre-sleep Routines Card */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1 }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="moon-outline" size={22} color="#8B5CF6" />
@@ -327,7 +327,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
         </View>
       </ScrollView>
 
-      {/* Success Modal */}
+
       <SuccessModal
         visible={isSuccessVisible}
         onClose={() => setIsSuccessVisible(false)}

@@ -67,7 +67,7 @@ const RecipeModal = ({ visible, foodName, onClose }) => {
               <Ionicons name="close" size={24} color={isDarkMode ? '#94A3B8' : '#6B7280'} />
             </TouchableOpacity>
           </View>
-          
+
           {loading && (
             <View style={{ marginVertical: 30, alignItems: 'center' }}>
               <ActivityIndicator size="large" color="#3B82F6" />
@@ -121,7 +121,7 @@ export default function RekomendasiMakananScreen() {
   const [isVegetarian, setIsVegetarian] = useState(false);
 
   const [selectedRecipe, setSelectedRecipe] = useState(null);
-  
+
   const [currentMenu, setCurrentMenu] = useState({
     breakfast: [],
     morningSnack: [],
@@ -130,9 +130,9 @@ export default function RekomendasiMakananScreen() {
     dinner: []
   });
 
-  // CRUD States
+
   const [crudModalVisible, setCrudModalVisible] = useState(false);
-  const [crudMode, setCrudMode] = useState('add'); // 'add' or 'edit'
+  const [crudMode, setCrudMode] = useState('add');
   const [activeMealKey, setActiveMealKey] = useState('breakfast');
   const [activeItemIndex, setActiveItemIndex] = useState(-1);
   const [inputValue, setInputValue] = useState('');
@@ -154,7 +154,7 @@ export default function RekomendasiMakananScreen() {
 
   const handleSaveCrud = () => {
     if (!inputValue.trim()) return;
-    
+
     setCurrentMenu(prev => {
       const updatedMeal = [...prev[activeMealKey]];
       if (crudMode === 'add') {
@@ -182,10 +182,10 @@ export default function RekomendasiMakananScreen() {
 
   const handleApplyAiMenu = (aiMenu) => {
     if (!aiMenu) return;
-    
+
     setCurrentMenu(prev => {
       const updated = { ...prev };
-      
+
       if (aiMenu.breakfast && (Array.isArray(aiMenu.breakfast) ? aiMenu.breakfast.length > 0 : aiMenu.breakfast)) {
         updated.breakfast = Array.isArray(aiMenu.breakfast) ? aiMenu.breakfast : [aiMenu.breakfast].filter(Boolean);
       }
@@ -201,7 +201,7 @@ export default function RekomendasiMakananScreen() {
       if (aiMenu.dinner && (Array.isArray(aiMenu.dinner) ? aiMenu.dinner.length > 0 : aiMenu.dinner)) {
         updated.dinner = Array.isArray(aiMenu.dinner) ? aiMenu.dinner : [aiMenu.dinner].filter(Boolean);
       }
-      
+
       return updated;
     });
   };
@@ -249,8 +249,8 @@ export default function RekomendasiMakananScreen() {
       <View style={[styles.mealSection, isDarkMode && { borderColor: '#334155' }]}>
         <View style={styles.mealSectionHeader}>
           <Text style={[styles.mealTitle, isDarkMode && { color: '#60A5FA' }]}>{emoji} {mealTitle}</Text>
-          <TouchableOpacity 
-            style={[styles.addBtn, isDarkMode && { backgroundColor: '#334155' }]} 
+          <TouchableOpacity
+            style={[styles.addBtn, isDarkMode && { backgroundColor: '#334155' }]}
             onPress={() => openAddModal(mealKey)}
           >
             <Ionicons name="add" size={16} color="#3B82F6" />
@@ -267,27 +267,27 @@ export default function RekomendasiMakananScreen() {
                 <Text style={[styles.foodItemName, isDarkMode && { color: '#F8FAFC' }]}>{food}</Text>
               </View>
               <View style={styles.foodItemActions}>
-                <TouchableOpacity 
-                  style={[styles.actionBtn, isDarkMode && { borderColor: '#475569' }]} 
+                <TouchableOpacity
+                  style={[styles.actionBtn, isDarkMode && { borderColor: '#475569' }]}
                   onPress={() => setSelectedRecipe(food)}
                 >
                   <Ionicons name="book-outline" size={14} color="#3B82F6" />
                   <Text style={styles.actionBtnText}>Resep</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.actionBtn, { borderColor: '#E2E8F0' }, isDarkMode && { borderColor: '#475569' }]} 
+                <TouchableOpacity
+                  style={[styles.actionBtn, { borderColor: '#E2E8F0' }, isDarkMode && { borderColor: '#475569' }]}
                   onPress={() => openEditModal(mealKey, idx, food)}
                 >
                   <Ionicons name="create-outline" size={14} color="#6B7280" />
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.actionBtn, { borderColor: '#FEE2E2' }, isDarkMode && { borderColor: '#475569' }]} 
+                <TouchableOpacity
+                  style={[styles.actionBtn, { borderColor: '#FEE2E2' }, isDarkMode && { borderColor: '#475569' }]}
                   onPress={() => handleSwap(mealKey, idx, food)}
                 >
                   <Ionicons name="swap-horizontal-outline" size={14} color="#F59E0B" />
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.actionBtn, { borderColor: '#FEE2E2' }, isDarkMode && { borderColor: '#475569' }]} 
+                <TouchableOpacity
+                  style={[styles.actionBtn, { borderColor: '#FEE2E2' }, isDarkMode && { borderColor: '#475569' }]}
                   onPress={() => handleDeleteItem(mealKey, idx)}
                 >
                   <Ionicons name="trash-outline" size={14} color="#EF4444" />
@@ -300,7 +300,7 @@ export default function RekomendasiMakananScreen() {
     );
   };
 
-  const systemPrompt = 
+  const systemPrompt =
     "Berikan ide resep makanan lokal Indonesia sehat dan bergizi seimbang berdasarkan kebutuhan nutrisi. " +
     "PENTING: HANYA jika Anda memberikan atau menyarankan rekomendasi menu makanan kepada pengguna, sertakan data menu tersebut di akhir respon Anda dalam format JSON mentah diapit tag <MENU_JSON>...</MENU_JSON>. " +
     "PENTING LAINNYA: Jika Anda HANYA merekomendasikan salah satu waktu makan saja (misal: hanya sarapan), maka di dalam JSON Anda CUKUP sertakan key waktu makan tersebut saja (misal: hanya key \"breakfast\") dan jangan sertakan key lainnya yang tidak Anda rekomendasikan, agar tidak menimpa data makan siang atau makan malam pengguna saat ini yang sudah ada.\n\n" +
@@ -319,7 +319,7 @@ export default function RekomendasiMakananScreen() {
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {/* Header */}
+
         <View style={styles.headerRow}>
           <View style={styles.header}>
             <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Rekomendasi Makanan</Text>
@@ -330,7 +330,7 @@ export default function RekomendasiMakananScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* AI Action Card */}
+
         <View style={[styles.card, { backgroundColor: isDarkMode ? '#1E3A8A' : '#EFF6FF', borderColor: isDarkMode ? '#3B82F6' : '#BFDBFE', borderWidth: 1 }]}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="sparkles" size={22} color={isDarkMode ? '#60A5FA' : '#3B82F6'} style={{ marginRight: 8 }} />
@@ -348,7 +348,7 @@ export default function RekomendasiMakananScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Daily Menu Section */}
+
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>🍽️ Paket Menu Harian</Text>
 
@@ -359,21 +359,21 @@ export default function RekomendasiMakananScreen() {
           {renderMealSection('Makan Malam', 'dinner', '🍲')}
         </View>
 
-        {/* Modals */}
+
         <RecipeModal
           visible={selectedRecipe !== null}
           foodName={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
         />
 
-        {/* CRUD Add/Edit Modal */}
+
         <Modal visible={crudModalVisible} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { width: '85%' }, isDarkMode && { backgroundColor: '#1E293B' }]}>
               <Text style={[styles.modalTitle, { marginBottom: 16 }, isDarkMode && { color: '#F8FAFC' }]}>
                 {crudMode === 'add' ? 'Tambah Makanan' : 'Ubah Makanan'}
               </Text>
-              
+
               <TextInput
                 style={[
                   styles.crudInput,
@@ -387,14 +387,14 @@ export default function RekomendasiMakananScreen() {
               />
 
               <View style={styles.crudModalButtons}>
-                <TouchableOpacity 
-                  style={[styles.crudCancelBtn, isDarkMode && { borderColor: '#475569' }]} 
+                <TouchableOpacity
+                  style={[styles.crudCancelBtn, isDarkMode && { borderColor: '#475569' }]}
                   onPress={() => setCrudModalVisible(false)}
                 >
                   <Text style={[styles.crudCancelText, isDarkMode && { color: '#94A3B8' }]}>Batal</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.crudSaveBtn} 
+                <TouchableOpacity
+                  style={styles.crudSaveBtn}
                   onPress={handleSaveCrud}
                 >
                   <Text style={styles.crudSaveText}>Simpan</Text>
