@@ -75,7 +75,7 @@ export default function NotificationScreen({ navigation }) {
       logs.push({
         id: 'meal-b-log',
         category: 'Pola Makan',
-        title: 'Saatnya Sarapan Pagi ☕',
+        title: 'Saatnya Sarapan Pagi',
         desc: `Waktunya sarapan sehat sesuai jadwal Anda pada pukul ${mealSchedule.breakfast}.`,
         time: 'Pagi Ini',
         icon: 'cafe',
@@ -87,7 +87,7 @@ export default function NotificationScreen({ navigation }) {
       logs.push({
         id: 'meal-l-log',
         category: 'Pola Makan',
-        title: 'Saatnya Makan Siang 🍽️',
+        title: 'Saatnya Makan Siang',
         desc: `Jangan lewatkan asupan nutrisi makan siang Anda pada jam ${mealSchedule.lunch}.`,
         time: 'Siang Ini',
         icon: 'restaurant',
@@ -131,8 +131,12 @@ export default function NotificationScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Kartu 1: Status Pengingat Harian */}
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
-          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>🔔 Status Pengingat Harian</Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="notifications-outline" size={20} color={isDarkMode ? '#60A5FA' : '#2563EB'} style={{ marginRight: 8 }} />
+            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Status Pengingat Harian</Text>
+          </View>
 
           <View style={[styles.notifRow, isDarkMode && { borderBottomColor: '#334155' }]}>
             <View style={styles.notifInfo}>
@@ -203,8 +207,12 @@ export default function NotificationScreen({ navigation }) {
           </View>
         </View>
 
+        {/* Kartu 2: Jadwal Olahraga Mendatang */}
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
-          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>📅 Jadwal Olahraga Mendatang</Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="calendar-outline" size={20} color={isDarkMode ? '#60A5FA' : '#2563EB'} style={{ marginRight: 8 }} />
+            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Jadwal Olahraga Mendatang</Text>
+          </View>
           {workoutSchedules.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={32} color="#9CA3AF" />
@@ -235,8 +243,12 @@ export default function NotificationScreen({ navigation }) {
           )}
         </View>
 
+        {/* Kartu 3: Riwayat Notifikasi */}
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
-          <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>📋 Riwayat Notifikasi</Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="list-outline" size={20} color={isDarkMode ? '#60A5FA' : '#2563EB'} style={{ marginRight: 8 }} />
+            <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Riwayat Notifikasi</Text>
+          </View>
           {logs.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="notifications-off-outline" size={32} color="#9CA3AF" />
@@ -308,11 +320,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   cardTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 16,
+    // marginBottom dihapus karena sudah ditangani oleh cardHeader
   },
   notifRow: {
     flexDirection: 'row',
