@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   Switch,
   ActivityIndicator,
-  Alert
+  Alert,
+  TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,12 +76,7 @@ export default function JadwalTidurScreen({ navigation }) {
 
   useEffect(() => {
     const fetchJadwalTidur = async () => {
-      const queryId = user?.id || '';
-
-      if (!user?.id) {
-        console.log('User adalah guest, menggunakan data lokal default');
-        return;
-      }
+      const queryId = user?.id || 'guest';
 
       setIsLoadingData(true);
       try {
@@ -158,13 +154,29 @@ export default function JadwalTidurScreen({ navigation }) {
   };
 
   const handleSaveToDatabase = async () => {
+    let [sH, sM] = sleepTime.split('.').map(Number);
+    let [wH, wM] = wakeTime.split('.').map(Number);
+
+    if (isNaN(sH) || isNaN(sM) || isNaN(wH) || isNaN(wM) ||
+        sH < 0 || sH > 23 || sM < 0 || sM > 59 ||
+        wH < 0 || wH > 23 || wM < 0 || wM > 59) {
+      Alert.alert('Format Salah', 'Jam harus di antara 00-23 dan menit di antara 00-59');
+      return;
+    }
+
+    const normSleep = `${sH.toString().padStart(2, '0')}.${sM.toString().padStart(2, '0')}`;
+    const normWake = `${wH.toString().padStart(2, '0')}.${wM.toString().padStart(2, '0')}`;
+
+    setSleepTime(normSleep);
+    setWakeTime(normWake);
+
     setIsSaving(true);
     try {
       console.log('[Jadwal Tidur] Attempting to save data to:', `${API_BASE_URL}/api/jadwal-tidur`);
       console.log('[Jadwal Tidur] Payload:', {
         userId: user?.id || null,
-        sleepTime,
-        wakeTime,
+        sleepTime: normSleep,
+        wakeTime: normWake,
         ageGroup,
         notifBedtime,
         notifScreenFree: false,
@@ -172,8 +184,8 @@ export default function JadwalTidurScreen({ navigation }) {
 
       const payload = {
         userId: user?.id || null,
-        sleepTime,
-        wakeTime,
+        sleepTime: normSleep,
+        wakeTime: normWake,
         ageGroup,
         notifBedtime,
         notifScreenFree: false,
@@ -363,45 +375,49 @@ export default function JadwalTidurScreen({ navigation }) {
             </Text>
 
             <View style={styles.timeControlsRow}>
-
               <View style={styles.controlColumn}>
-                <TouchableOpacity
-                  style={styles.adjustArrow}
-                  onPress={() => adjustTime(activePickerTab, 'hour_up')}
-                >
-                  <Ionicons name="chevron-up" size={24} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
-                </TouchableOpacity>
-                <Text style={[styles.controlTimeValue, isDarkMode && { color: '#F8FAFC' }]}>
-                  {(activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.')[0]}
-                </Text>
-                <TouchableOpacity
-                  style={styles.adjustArrow}
-                  onPress={() => adjustTime(activePickerTab, 'hour_down')}
-                >
-                  <Ionicons name="chevron-down" size={24} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
-                </TouchableOpacity>
+                <TextInput
+                  style={[styles.numberInput, isDarkMode && { color: '#60A5FA', backgroundColor: '#1E293B', borderColor: '#475569' }]}
+                  value={(activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.')[0]}
+                  onChangeText={(val) => {
+                    let clean = val.replace(/[^0-9]/g, '');
+                    if (clean.length > 2) clean = clean.slice(0, 2);
+                    const currentParts = (activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.');
+                    const mPart = currentParts[1] || '00';
+                    if (activePickerTab === 'sleep') {
+                      setSleepTime(`${clean}.${mPart}`);
+                    } else {
+                      setWakeTime(`${clean}.${mPart}`);
+                    }
+                  }}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  placeholder="22"
+                />
                 <Text style={[styles.controlUnitLabel, isDarkMode && { color: '#94A3B8' }]}>Jam</Text>
               </View>
 
               <Text style={[styles.timeColon, isDarkMode && { color: '#F8FAFC' }]}>:</Text>
 
-
               <View style={styles.controlColumn}>
-                <TouchableOpacity
-                  style={styles.adjustArrow}
-                  onPress={() => adjustTime(activePickerTab, 'minute_up')}
-                >
-                  <Ionicons name="chevron-up" size={24} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
-                </TouchableOpacity>
-                <Text style={[styles.controlTimeValue, isDarkMode && { color: '#F8FAFC' }]}>
-                  {(activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.')[1]}
-                </Text>
-                <TouchableOpacity
-                  style={styles.adjustArrow}
-                  onPress={() => adjustTime(activePickerTab, 'minute_down')}
-                >
-                  <Ionicons name="chevron-down" size={24} color={isDarkMode ? '#60A5FA' : '#2563EB'} />
-                </TouchableOpacity>
+                <TextInput
+                  style={[styles.numberInput, isDarkMode && { color: '#60A5FA', backgroundColor: '#1E293B', borderColor: '#475569' }]}
+                  value={(activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.')[1]}
+                  onChangeText={(val) => {
+                    let clean = val.replace(/[^0-9]/g, '');
+                    if (clean.length > 2) clean = clean.slice(0, 2);
+                    const currentParts = (activePickerTab === 'sleep' ? sleepTime : wakeTime).split('.');
+                    const hPart = currentParts[0] || '00';
+                    if (activePickerTab === 'sleep') {
+                      setSleepTime(`${hPart}.${clean}`);
+                    } else {
+                      setWakeTime(`${hPart}.${clean}`);
+                    }
+                  }}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  placeholder="00"
+                />
                 <Text style={[styles.controlUnitLabel, isDarkMode && { color: '#94A3B8' }]}>Menit</Text>
               </View>
             </View>
@@ -647,6 +663,20 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     color: '#1E293B',
+    marginVertical: 4,
+  },
+  numberInput: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#2563EB',
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    textAlign: 'center',
+    width: 65,
     marginVertical: 4,
   },
   controlUnitLabel: {

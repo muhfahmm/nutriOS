@@ -9,6 +9,7 @@ import { AuthContext } from './auth/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from './auth/api';
 import GeminiConsultantModal from './components/GeminiConsultantModal';
+import * as Notifications from 'expo-notifications';
 
 if (Text && !Text.defaultProps) {
   Text.defaultProps = {};
@@ -32,6 +33,7 @@ import ProfilesScreen from './card_menu/profiles';
 import RekomendasiMakananScreen from './card_menu/6_rekomendasi_makanan';
 import LoginScreen from './auth/login';
 import RegisterScreen from './auth/register';
+import NotificationScreen from './card_menu/notifications';
 
 
 const LiquidGlassTouchable = ({ onPress, onLongPress, style, children }) => {
@@ -374,7 +376,9 @@ export function HomeScreen({ navigation }) {
             <Ionicons name="person-circle" size={40} color={isDarkMode ? '#94A3B8' : '#6B7280'} style={{ marginRight: 10 }} />
             <Text style={[styles.greetingText, isDarkMode && { color: '#F8FAFC' }]}>{greetingName}</Text>
           </View>
-          <Ionicons name="notifications-outline" size={26} color={isDarkMode ? '#F8FAFC' : '#111827'} />
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+            <Ionicons name="notifications-outline" size={26} color={isDarkMode ? '#F8FAFC' : '#111827'} />
+          </TouchableOpacity>
         </View>
 
         {}
@@ -647,24 +651,36 @@ export default function Navigation() {
   const [user, setUser] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  const [isResetDone, setIsResetDone] = useState(!__DEV__);
+  const [isResetDone, setIsResetDone] = useState(false);
 
   useEffect(() => {
-    if (__DEV__) {
-      AsyncStorage.multiRemove([
-        'olahraga_streak',
-        'olahraga_history',
-        'app_usage_stats',
-        'gps_activities',
-        'workout_schedules'
-      ]).then(() => {
-        console.log('[DevReset] AsyncStorage keys reset on development startup.');
+    const performStartupReset = async () => {
+      try {
+        const keysToRemove = [
+          'sleep_reminder_enabled',
+          'sleep_reminder_time',
+          'notification_history'
+        ];
+        if (__DEV__) {
+          keysToRemove.push(
+            'olahraga_streak',
+            'olahraga_history',
+            'app_usage_stats',
+            'gps_activities',
+            'workout_schedules'
+          );
+        }
+        await AsyncStorage.multiRemove(keysToRemove);
+        await fetch(`${API_BASE_URL}/api/reset-jadwal-tidur`, { method: 'POST' });
+        console.log('[StartupReset] Sleep schedule and notification history data cleared.');
+      } catch (err) {
+        console.warn('Failed to reset sleep schedule data on startup:', err);
+      } finally {
         setIsResetDone(true);
-      }).catch(err => {
-        console.warn(err);
-        setIsResetDone(true);
-      });
-    }
+      }
+    };
+
+    performStartupReset();
 
     const loadTheme = async () => {
       try {
@@ -677,6 +693,50 @@ export default function Navigation() {
       }
     };
     loadTheme();
+  }, []);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener(async (notification) => {
+      try {
+        const { title, body } = notification.request.content;
+        const newLog = {
+          id: notification.request.identifier || String(Date.now()),
+          title: title || 'Notifikasi Baru',
+          desc: body || '',
+          time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+          timestamp: Date.now()
+        };
+
+        const tLower = (title || '').toLowerCase();
+        const bLower = (body || '').toLowerCase();
+        if (tLower.includes('tidur') || bLower.includes('tidur')) {
+          newLog.category = 'Jadwal Tidur';
+          newLog.icon = 'moon';
+          newLog.color = '#818CF8';
+        } else if (tLower.includes('makan') || tLower.includes('sarapan') || bLower.includes('makan') || bLower.includes('sarapan')) {
+          newLog.category = 'Pola Makan';
+          newLog.icon = 'cafe';
+          newLog.color = '#34D399';
+        } else {
+          newLog.category = 'Olahraga';
+          newLog.icon = 'barbell';
+          newLog.color = '#3B82F6';
+        }
+
+        const stored = await AsyncStorage.getItem('notification_history');
+        const history = stored ? JSON.parse(stored) : [];
+        history.unshift(newLog);
+        if (history.length > 50) {
+          history.pop();
+        }
+        await AsyncStorage.setItem('notification_history', JSON.stringify(history));
+      } catch (err) {
+        console.warn('Gagal menyimpan riwayat notifikasi:', err);
+      }
+    });
+
+    return () => subscription.remove();
   }, []);
 
   const toggleTheme = async () => {
@@ -721,6 +781,7 @@ export default function Navigation() {
             <RootStackNavigator.Screen name="JadwalOlahraga" component={JadwalOlahragaScreen} />
             <RootStackNavigator.Screen name="Login" component={LoginScreen} />
             <RootStackNavigator.Screen name="Register" component={RegisterScreen} />
+            <RootStackNavigator.Screen name="Notifications" component={NotificationScreen} />
           </RootStackNavigator.Navigator>
         </NavigationContainer>
       </SafeAreaProvider>

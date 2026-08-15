@@ -319,7 +319,7 @@ app.post('/api/jadwal-tidur', async (req, res) => {
       } else {
         console.log('[API] Guest record belum ada, INSERT...');
         await pool.execute(
-          ` jadwal_tidur (user_id, sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free)
+          `INSERT INTO jadwal_tidur (user_id, sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free)
            VALUES (NULL, ?, ?, ?, ?, ?)`,
           [sleepTime, wakeTime, ageGroup || 'Dewasa', notifBedtime ? 1 : 0, notifScreenFree ? 1 : 0]
         );
@@ -344,7 +344,15 @@ app.get('/api/jadwal-tidur/:userId', async (req, res) => {
       return res.status(500).json({ message: 'Database tidak terkoneksi.' });
     }
 
-    const [rows] = await pool.execute('SELECT sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free FROM jadwal_tidur WHERE user_id = ?', [userId]);
+    let rows;
+    if (userId === 'guest' || userId === 'null' || !userId) {
+      const [guestRows] = await pool.execute('SELECT sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free FROM jadwal_tidur WHERE user_id IS NULL ORDER BY id DESC LIMIT 1');
+      rows = guestRows;
+    } else {
+      const [userRows] = await pool.execute('SELECT sleep_time, wake_time, age_group, notif_bedtime, notif_screen_free FROM jadwal_tidur WHERE user_id = ?', [userId]);
+      rows = userRows;
+    }
+
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Jadwal tidur belum diatur.' });
     }
@@ -362,6 +370,17 @@ app.get('/api/jadwal-tidur/:userId', async (req, res) => {
     return res.status(500).json({ message: 'Terjadi kesalahan server saat mengambil jadwal tidur.' });
   }
 });
+
+app.post('/api/reset-jadwal-tidur', async (req, res) => {
+  try {
+    if (!pool) return res.status(500).json({ message: 'Database tidak terkoneksi.' });
+    await pool.execute('DELETE FROM jadwal_tidur');
+    return res.json({ message: 'Semua jadwal tidur berhasil di-reset.' });
+  } catch (e) {
+    return res.status(500).json({ message: 'Gagal mereset jadwal tidur.' });
+  }
+});
+
 
 app.get('/api/ganti-password', async (req, res) => {
   try {

@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../auth/AuthContext';
@@ -117,12 +117,29 @@ export default function JadwalTidurDetail({ route, navigation }) {
   };
 
   const handleSaveChanges = async () => {
+    let cleanSleep = sleepTime.trim().replace(':', '.');
+    let cleanWake = wakeTime.trim().replace(':', '.');
+
+    const timeReg = /^([0-1]?[0-9]|2[0-3])\.([0-5][0-9])$/;
+    if (!timeReg.test(cleanSleep) || !timeReg.test(cleanWake)) {
+      Alert.alert('Format Salah', 'Format waktu harus HH.MM atau HH:MM (contoh: 22.00 atau 06:15)');
+      return;
+    }
+
+    const [sH, sM] = cleanSleep.split('.').map(Number);
+    const [wH, wM] = cleanWake.split('.').map(Number);
+    const normSleep = `${sH.toString().padStart(2, '0')}.${sM.toString().padStart(2, '0')}`;
+    const normWake = `${wH.toString().padStart(2, '0')}.${wM.toString().padStart(2, '0')}`;
+
+    setSleepTime(normSleep);
+    setWakeTime(normWake);
+
     setIsSaving(true);
     try {
       const payload = {
         userId: user?.id || null,
-        sleepTime,
-        wakeTime,
+        sleepTime: normSleep,
+        wakeTime: normWake,
         ageGroup: initialAgeGroup,
         notifBedtime: true,
         notifScreenFree: false,
@@ -201,19 +218,19 @@ export default function JadwalTidurDetail({ route, navigation }) {
           </View>
 
           <View style={styles.timeRow}>
-
-            <View style={styles.timeBlock}>
+             <View style={styles.timeBlock}>
               <Text style={[styles.timeLabel, isDarkMode && { color: '#CBD5E1' }]}>Tidur</Text>
-              {isEditing && (
-                <TouchableOpacity style={styles.adjustButtonMini} onPress={() => adjustTime('sleep', 'hour_up')}>
-                  <Ionicons name="chevron-up" size={20} color="#3B82F6" />
-                </TouchableOpacity>
-              )}
-              <Text style={[styles.timeValue, isDarkMode && { color: '#F8FAFC' }]}>{sleepTime}</Text>
-              {isEditing && (
-                <TouchableOpacity style={styles.adjustButtonMini} onPress={() => adjustTime('sleep', 'hour_down')}>
-                  <Ionicons name="chevron-down" size={20} color="#3B82F6" />
-                </TouchableOpacity>
+              {isEditing ? (
+                <TextInput
+                  style={[styles.timeInput, isDarkMode && { color: '#60A5FA', backgroundColor: '#1E293B', borderColor: '#475569' }]}
+                  value={sleepTime}
+                  onChangeText={setSleepTime}
+                  placeholder="22.00"
+                  keyboardType="numeric"
+                  maxLength={5}
+                />
+              ) : (
+                <Text style={[styles.timeValue, isDarkMode && { color: '#F8FAFC' }]}>{sleepTime}</Text>
               )}
               <Text style={[styles.timeUnit, isDarkMode && { color: '#94A3B8' }]}>WIB</Text>
             </View>
@@ -222,19 +239,19 @@ export default function JadwalTidurDetail({ route, navigation }) {
               <Ionicons name="arrow-forward" size={24} color="#94A3B8" />
             </View>
 
-
             <View style={styles.timeBlock}>
               <Text style={[styles.timeLabel, isDarkMode && { color: '#CBD5E1' }]}>Bangun</Text>
-              {isEditing && (
-                <TouchableOpacity style={styles.adjustButtonMini} onPress={() => adjustTime('wake', 'hour_up')}>
-                  <Ionicons name="chevron-up" size={20} color="#F59E0B" />
-                </TouchableOpacity>
-              )}
-              <Text style={[styles.timeValue, isDarkMode && { color: '#F8FAFC' }]}>{wakeTime}</Text>
-              {isEditing && (
-                <TouchableOpacity style={styles.adjustButtonMini} onPress={() => adjustTime('wake', 'hour_down')}>
-                  <Ionicons name="chevron-down" size={20} color="#F59E0B" />
-                </TouchableOpacity>
+              {isEditing ? (
+                <TextInput
+                  style={[styles.timeInput, isDarkMode && { color: '#F59E0B', backgroundColor: '#1E293B', borderColor: '#475569' }]}
+                  value={wakeTime}
+                  onChangeText={setWakeTime}
+                  placeholder="06.00"
+                  keyboardType="numeric"
+                  maxLength={5}
+                />
+              ) : (
+                <Text style={[styles.timeValue, isDarkMode && { color: '#F8FAFC' }]}>{wakeTime}</Text>
               )}
               <Text style={[styles.timeUnit, isDarkMode && { color: '#94A3B8' }]}>WIB</Text>
             </View>
@@ -256,16 +273,6 @@ export default function JadwalTidurDetail({ route, navigation }) {
               Pengingat berbunyi: <Text style={[styles.timeHighlight, isDarkMode && { color: '#60A5FA' }]}>{timeUntilReminder}</Text>
             </Text>
           </View>
-
-
-          <TouchableOpacity
-            style={[styles.testNotifButton, isDarkMode && { backgroundColor: '#334155', borderColor: '#475569' }]}
-            onPress={handleTestNotif}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="notifications-circle-outline" size={20} color="#2563EB" style={{ marginRight: 6 }} />
-            <Text style={[styles.testNotifText, isDarkMode && { color: '#CBD5E1' }]}>Coba Test Notifikasi (3 Detik)</Text>
-          </TouchableOpacity>
 
           {isEditing && (
             <TouchableOpacity
@@ -455,6 +462,20 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#0F172A',
     fontFamily: 'Roboto',
+    marginVertical: 4,
+  },
+  timeInput: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#2563EB',
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    textAlign: 'center',
+    width: 95,
     marginVertical: 4,
   },
   timeUnit: {

@@ -59,62 +59,47 @@ export function getTimeMinusMinutes(timeStr, minutesToSubtract = 30) {
 }
 
 export async function scheduleSleepReminder(sleepTime) {
-
   await cancelSleepReminder();
 
   const hasPermission = await registerSleepNotificationsAsync();
   if (!hasPermission) return null;
-
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
 
   let [sleepHour, sleepMinute] = sleepTime.split('.').map(Number);
   if (isNaN(sleepHour) || isNaN(sleepMinute)) {
     [sleepHour, sleepMinute] = [22, 0];
   }
 
-  const nowMinutes = currentHour * 60 + currentMinute;
-  const sleepMinutes = sleepHour * 60 + sleepMinute;
+  const { hour: prepHour, minute: prepMinute } = getTimeMinusMinutes(sleepTime, 30);
+  const formattedPrepHour = prepHour.toString().padStart(2, '0');
+  const formattedPrepMinute = prepMinute.toString().padStart(2, '0');
 
-  const { hour, minute } = getTimeMinusMinutes(sleepTime, 30);
-  const reminderMinutes = hour * 60 + minute;
+  console.log(`[SleepNotifications] Menjadwalkan pengingat tidur harian pada ${sleepHour}.${sleepMinute} dan persiapan pada ${formattedPrepHour}.${formattedPrepMinute}`);
 
-  let diffReminder = reminderMinutes - nowMinutes;
-  let diffSleep = sleepMinutes - nowMinutes;
-
-  if (diffSleep > 0 && diffReminder <= 0) {
-
-    console.log(`[SleepNotifications] Pengingat sudah terlewat, memicu notifikasi peringatan terlambat sekarang.`);
-    return await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Waktunya Tidur 🌙',
-        body: `Target tidur Anda adalah pukul ${sleepTime}. Waktu bersiap sudah terlewat, silakan matikan gadget dan bersiap tidur sekarang!`,
-        sound: true,
-        priority: Notifications.AndroidNotificationPriority.MAX,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: 2,
-      },
-    });
-  }
-
-  const formattedHour = hour.toString().padStart(2, '0');
-  const formattedMinute = minute.toString().padStart(2, '0');
-
-  console.log(`[SleepNotifications] Menjadwalkan pengingat tidur harian pada ${formattedHour}.${formattedMinute} (30 menit sebelum tidur jam ${sleepTime})`);
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Waktunya Tidur 🌙',
+      body: `Sudah pukul ${sleepHour.toString().padStart(2, '0')}.${sleepMinute.toString().padStart(2, '0')}. Mari matikan gadget Anda dan tidur sekarang!`,
+      sound: true,
+      priority: Notifications.AndroidNotificationPriority.MAX,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+      hour: sleepHour,
+      minute: sleepMinute,
+    },
+  });
 
   return await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Persiapan Tidur 🌙',
-      body: `Sudah pukul ${formattedHour}.${formattedMinute}. Mari bersiap untuk tidur 30 menit lagi (target tidur: ${sleepTime}). Matikan gadget Anda sekarang!`,
+      body: `Sudah pukul ${formattedPrepHour}.${formattedPrepMinute}. Mari bersiap untuk tidur 30 menit lagi (target tidur: ${sleepTime}). Matikan gadget Anda sekarang!`,
       sound: true,
+      priority: Notifications.AndroidNotificationPriority.MAX,
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour,
-      minute,
+      hour: prepHour,
+      minute: prepMinute,
     },
   });
 }
