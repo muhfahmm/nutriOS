@@ -102,7 +102,19 @@ export default function PolaMakanScreen({ navigation, route }) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/pola-makan/${userId}`);
       if (response.ok) {
-        const { schedules } = await response.json();
+        const { schedules, serverRestartId } = await response.json();
+
+        const lastRestartId = await AsyncStorage.getItem('last_server_restart_id');
+        if (serverRestartId && lastRestartId !== serverRestartId) {
+          const keys = await AsyncStorage.getAllKeys();
+          const foodKeys = keys.filter(k => k.startsWith('food_log_'));
+          if (foodKeys.length > 0) {
+            await AsyncStorage.multiRemove(foodKeys);
+          }
+          await AsyncStorage.setItem('last_server_restart_id', serverRestartId);
+          setFoodLog([]);
+        }
+
         const mappedSchedule = {
           breakfast: '-',
           lunch: '-',

@@ -61,6 +61,8 @@ const dbConfig = {
   port: process.env.DB_PORT ? Number(process.env.DB_PORT) : getXamppMysqlPort(),
 };
 
+const serverRestartId = Date.now().toString();
+
 let pool;
 async function initializeDatabase() {
   try {
@@ -82,6 +84,7 @@ async function initializeDatabase() {
     try {
       await connection.execute('TRUNCATE TABLE jadwal_makan;');
       await connection.execute('TRUNCATE TABLE riwayat_olahraga;');
+      await connection.execute('TRUNCATE TABLE log_makanan;');
     } catch (resetError) {
     }
 
@@ -692,7 +695,7 @@ app.get('/api/pola-makan/:userId', async (req, res) => {
     }
     const [schedules] = await pool.execute(schedulesQuery, schedulesParams);
 
-    return res.json({ schedules });
+    return res.json({ schedules, serverRestartId });
   } catch (error) {
     console.error('Error fetching pola makan:', error);
     return res.status(500).json({ message: 'Gagal mengambil data pola makan.' });
