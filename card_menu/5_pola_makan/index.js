@@ -22,8 +22,6 @@ export default function PolaMakanScreen({ navigation, route }) {
   const { user, isDarkMode } = useContext(AuthContext);
   const userId = user?.id || 'guest';
 
-
-
   const [schedule, setSchedule] = useState({
     breakfast: '-',
     lunch: '-',
@@ -35,7 +33,6 @@ export default function PolaMakanScreen({ navigation, route }) {
     lunch: false,
     dinner: false,
   });
-
 
   const [foodLog, setFoodLog] = useState([]);
   const [foodModalVisible, setFoodModalVisible] = useState(false);
@@ -162,8 +159,7 @@ export default function PolaMakanScreen({ navigation, route }) {
   return (
     <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: '#0F172A' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
-        {}
+        
         <View style={styles.headerRow}>
           <View style={styles.header}>
             <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Pola Makan</Text>
@@ -174,7 +170,6 @@ export default function PolaMakanScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
-        {}
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="time" size={22} color="#2563EB" style={{ marginRight: 8 }} />
@@ -193,77 +188,87 @@ export default function PolaMakanScreen({ navigation, route }) {
                   style={styles.scheduleItem}
                   onPress={() => navigation.navigate(screenNames[key])}
                 >
-                  <View style={styles.scheduleIconWrap}>
+                  <View style={[styles.scheduleIconWrap, isDarkMode && { backgroundColor: '#334155' }]}>
                     <Ionicons name={icons[key]} size={20} color="#2563EB" />
                   </View>
-                  <Text style={styles.scheduleLabel}>{labels[key]}</Text>
-                  <View style={styles.scheduleTimeBox}>
-                    <Text style={styles.scheduleTime}>{time}</Text>
+                  <Text style={[styles.scheduleLabel, isDarkMode && { color: '#F8FAFC' }]}>{labels[key]}</Text>
+                  <View style={[styles.scheduleTimeBox, isDarkMode && { backgroundColor: '#334155' }]}>
+                    <Text style={[styles.scheduleTime, isDarkMode && { color: '#60A5FA' }]}>{time}</Text>
                   </View>
                 </TouchableOpacity>
               );
             })}
 
-            {}
             <TouchableOpacity
               style={styles.scheduleItem}
               onPress={() => navigation.navigate('TambahJadwal')}
             >
-              <View style={[styles.scheduleIconWrap, { backgroundColor: '#E0F2FE' }]}>
-                <Ionicons name="add" size={24} color="#0284C7" />
+              <View style={[styles.scheduleIconWrap, { backgroundColor: isDarkMode ? '#1E3A8A' : '#E0F2FE' }]}>
+                <Ionicons name="add" size={24} color={isDarkMode ? '#60A5FA' : '#0284C7'} />
               </View>
-              <Text style={styles.scheduleLabel}>Tambah</Text>
-              <View style={[styles.scheduleTimeBox, { backgroundColor: '#F0F9FF' }]}>
-                <Text style={[styles.scheduleTime, { color: '#0284C7' }]}>Kustom</Text>
+              <Text style={[styles.scheduleLabel, isDarkMode && { color: '#F8FAFC' }]}>Tambah</Text>
+              <View style={[styles.scheduleTimeBox, { backgroundColor: isDarkMode ? '#1E3A8A' : '#F0F9FF' }]}>
+                <Text style={[styles.scheduleTime, { color: isDarkMode ? '#93C5FD' : '#0284C7' }]}>Kustom</Text>
               </View>
             </TouchableOpacity>
           </View>
         </View>
 
-        {}
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="notifications-outline" size={22} color="#2563EB" style={{ marginRight: 8 }} />
             <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Daftar Pengingat Aktif</Text>
           </View>
-          <View style={[styles.tableHeader, isDarkMode && { backgroundColor: '#334155' }]}>
-            <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Kategori</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'center' }]}>Waktu</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'right' }]}>Notifikasi</Text>
+          
+          <View style={[styles.tableHeader, isDarkMode && { backgroundColor: '#334155', borderBottomColor: '#475569' }]}>
+            <Text style={[styles.tableHeaderCell, { flex: 2 }, isDarkMode && { color: '#CBD5E1' }]}>Kategori</Text>
+            <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'center' }, isDarkMode && { color: '#CBD5E1' }]}>Waktu</Text>
+            <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: 'right' }, isDarkMode && { color: '#CBD5E1' }]}>Notifikasi</Text>
           </View>
 
-          <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, { flex: 2, fontWeight: '700' }]}>☕ Sarapan</Text>
-            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', color: '#2563EB', fontWeight: '700' }]}>
+          {/* Sarapan */}
+          <View style={[styles.tableRow, isDarkMode && { borderBottomColor: '#334155' }]}>
+            <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="cafe-outline" size={16} color={isDarkMode ? '#F8FAFC' : '#1F2937'} style={{ marginRight: 6 }} />
+              <Text style={[styles.tableCell, { fontWeight: '700' }, isDarkMode && { color: '#F8FAFC' }]}>Sarapan</Text>
+            </View>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', fontWeight: '700' }, isDarkMode ? { color: '#60A5FA' } : { color: '#2563EB' }]}>
               {schedule.breakfast}
             </Text>
-            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right', fontWeight: '700', color: notifStates.breakfast ? '#10B981' : '#EF4444' }]}>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right', fontWeight: '700' }, { color: notifStates.breakfast ? (isDarkMode ? '#34D399' : '#10B981') : (isDarkMode ? '#F87171' : '#EF4444') }]}>
               {notifStates.breakfast ? 'Aktif' : 'Nonaktif'}
             </Text>
           </View>
 
-          <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, { flex: 2, fontWeight: '700' }]}>🍽️ Makan Siang</Text>
-            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', color: '#2563EB', fontWeight: '700' }]}>
+          {/* Makan Siang */}
+          <View style={[styles.tableRow, isDarkMode && { borderBottomColor: '#334155' }]}>
+            <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="restaurant-outline" size={16} color={isDarkMode ? '#F8FAFC' : '#1F2937'} style={{ marginRight: 6 }} />
+              <Text style={[styles.tableCell, { fontWeight: '700' }, isDarkMode && { color: '#F8FAFC' }]}>Makan Siang</Text>
+            </View>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', fontWeight: '700' }, isDarkMode ? { color: '#60A5FA' } : { color: '#2563EB' }]}>
               {schedule.lunch}
             </Text>
-            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right', fontWeight: '700', color: notifStates.lunch ? '#10B981' : '#EF4444' }]}>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right', fontWeight: '700' }, { color: notifStates.lunch ? (isDarkMode ? '#34D399' : '#10B981') : (isDarkMode ? '#F87171' : '#EF4444') }]}>
               {notifStates.lunch ? 'Aktif' : 'Nonaktif'}
             </Text>
           </View>
 
-          <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, { flex: 2, fontWeight: '700' }]}>🌙 Makan Malam</Text>
-            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', color: '#2563EB', fontWeight: '700' }]}>
+          {/* Makan Malam */}
+          <View style={[styles.tableRow, isDarkMode && { borderBottomColor: '#334155' }]}>
+            <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="moon-outline" size={16} color={isDarkMode ? '#F8FAFC' : '#1F2937'} style={{ marginRight: 6 }} />
+              <Text style={[styles.tableCell, { fontWeight: '700' }, isDarkMode && { color: '#F8FAFC' }]}>Makan Malam</Text>
+            </View>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center', fontWeight: '700' }, isDarkMode ? { color: '#60A5FA' } : { color: '#2563EB' }]}>
               {schedule.dinner}
             </Text>
-            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right', fontWeight: '700', color: notifStates.dinner ? '#10B981' : '#EF4444' }]}>
+            <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right', fontWeight: '700' }, { color: notifStates.dinner ? (isDarkMode ? '#34D399' : '#10B981') : (isDarkMode ? '#F87171' : '#EF4444') }]}>
               {notifStates.dinner ? 'Aktif' : 'Nonaktif'}
             </Text>
           </View>
         </View>
 
-        {}
         <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
           <View style={[styles.cardHeaderRow, { justifyContent: 'space-between', marginBottom: 12, alignItems: 'center' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -271,7 +276,7 @@ export default function PolaMakanScreen({ navigation, route }) {
               <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Catatan Makan Hari Ini</Text>
             </View>
             <TouchableOpacity
-              style={styles.addFoodBtn}
+              style={[styles.addFoodBtn, isDarkMode && { backgroundColor: '#064E3B', borderColor: '#10B981' }]}
               onPress={() => {
                 const now = new Date();
                 const hrs = now.getHours().toString().padStart(2, '0');
@@ -280,8 +285,8 @@ export default function PolaMakanScreen({ navigation, route }) {
                 setFoodModalVisible(true);
               }}
             >
-              <Ionicons name="add-circle" size={20} color="#10B981" />
-              <Text style={styles.addFoodBtnText}>Tambah</Text>
+              <Ionicons name="add-circle" size={20} color={isDarkMode ? '#6EE7B7' : '#10B981'} />
+              <Text style={[styles.addFoodBtnText, isDarkMode && { color: '#6EE7B7' }]}>Tambah</Text>
             </TouchableOpacity>
           </View>
 
@@ -292,14 +297,14 @@ export default function PolaMakanScreen({ navigation, route }) {
             </View>
           ) : (
             foodLog.map((item) => (
-              <View key={item.id} style={styles.foodRow}>
+              <View key={item.id} style={[styles.foodRow, isDarkMode && { borderBottomColor: '#334155' }]}>
                 <View style={styles.foodInfoWrap}>
-                  <View style={styles.foodTimeBadge}>
-                    <Text style={styles.foodTimeText}>{item.time}</Text>
+                  <View style={[styles.foodTimeBadge, isDarkMode && { backgroundColor: '#334155' }]}>
+                    <Text style={[styles.foodTimeText, isDarkMode && { color: '#CBD5E1' }]}>{item.time}</Text>
                   </View>
                   <View style={{ marginLeft: 12 }}>
-                    <Text style={styles.foodNameText}>{item.name}</Text>
-                    <Text style={styles.foodPortionText}>Porsi: {item.portion}</Text>
+                    <Text style={[styles.foodNameText, isDarkMode && { color: '#F8FAFC' }]}>{item.name}</Text>
+                    <Text style={[styles.foodPortionText, isDarkMode && { color: '#94A3B8' }]}>Porsi: {item.portion}</Text>
                   </View>
                 </View>
                 <TouchableOpacity onPress={() => handleDeleteFood(item.id)} style={styles.deleteFoodBtn}>
@@ -330,7 +335,6 @@ export default function PolaMakanScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
-      {}
       <Modal
         animationType="slide"
         transparent={true}
@@ -370,10 +374,10 @@ export default function PolaMakanScreen({ navigation, route }) {
                 {['Kecil', 'Sedang', 'Besar'].map((p) => (
                   <TouchableOpacity
                     key={p}
-                    style={[styles.portionBtn, portion === p && styles.portionBtnActive]}
+                    style={[styles.portionBtn, isDarkMode && { backgroundColor: '#334155' }, portion === p && styles.portionBtnActive]}
                     onPress={() => setPortion(p)}
                   >
-                    <Text style={[styles.portionText, portion === p && styles.portionTextActive]}>
+                    <Text style={[styles.portionText, isDarkMode && { color: '#94A3B8' }, portion === p && styles.portionTextActive]}>
                       {p}
                     </Text>
                   </TouchableOpacity>
@@ -382,8 +386,8 @@ export default function PolaMakanScreen({ navigation, route }) {
             </View>
 
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setFoodModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Batal</Text>
+              <TouchableOpacity style={[styles.cancelBtn, isDarkMode && { backgroundColor: '#334155' }]} onPress={() => setFoodModalVisible(false)}>
+                <Text style={[styles.cancelBtnText, isDarkMode && { color: '#CBD5E1' }]}>Batal</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: '#10B981' }]} onPress={handleAddFood}>
                 <Text style={styles.confirmBtnText}>Simpan</Text>
@@ -474,44 +478,11 @@ const styles = StyleSheet.create({
     color: '#111827',
     marginBottom: 0,
   },
-  notifToggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginBottom: 14,
-  },
-  notifToggleTextCol: {
-    flex: 1,
-    marginRight: 10,
-  },
-  notifToggleLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#374151',
-    marginBottom: 2,
-  },
-  notifToggleDesc: {
-    fontSize: 11,
-    color: '#6B7280',
-  },
   subCardTitle: {
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 12,
   },
-  smallLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-
-
   scheduleGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -549,242 +520,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2563EB',
   },
-
-
-  notifBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#EFF6FF',
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    marginBottom: 12,
-  },
-  notifContent: {
-    flex: 1,
-  },
-  notifTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1E3A8A',
-    marginBottom: 2,
-  },
-  notifBody: {
-    fontSize: 13,
-    color: '#1E40AF',
-    lineHeight: 18,
-  },
-  snoozeRow: {
-    marginTop: 4,
-    alignItems: 'center',
-  },
-  snoozeBtn: {
-    backgroundColor: '#E5E7EB',
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-    marginBottom: 8,
-  },
-  snoozeBtnActive: {
-    backgroundColor: '#3B82F6',
-  },
-  snoozeText: {
-    fontWeight: '700',
-    color: '#374151',
-  },
-  snoozeNote: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    fontStyle: 'italic',
-  },
-
-
-  foodInput: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#111827',
-    marginBottom: 12,
-  },
-  portionRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
-  },
-  portionBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-  },
-  portionBtnActive: {
-    backgroundColor: '#2563EB',
-  },
-  portionText: {
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  portionTextActive: {
-    color: '#FFFFFF',
-  },
-  aiEvalBtn: {
-    backgroundColor: '#2563EB',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 14,
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  aiEvalBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  healthyRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  healthyBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    gap: 6,
-  },
-  healthyBtnActive: {
-    backgroundColor: '#10B981',
-  },
-  healthyBtnActiveDanger: {
-    backgroundColor: '#EF5350',
-  },
-  healthyText: {
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  healthyTextActive: {
-    color: '#FFFFFF',
-  },
-  logBtn: {
-    backgroundColor: '#3B82F6',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  logBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-
-
-  caloriesTargetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  caloriesTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  caloriesValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  macroContainer: {
-    marginTop: 12,
-    gap: 14,
-  },
-  progressWrapper: {
-    gap: 6,
-  },
-  progressLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  progressLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#4B5563',
-  },
-  progressValue: {
-    fontSize: 13,
-    color: '#6B7280',
-  },
-  progressTrack: {
-    height: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 8,
-  },
-  insightSuggestion: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFF6FF',
-    padding: 12,
-    borderRadius: 14,
-    marginTop: 16,
-  },
-  suggestionText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#1E40AF',
-    lineHeight: 18,
-  },
-
-
-  skipStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 16,
-  },
-  skipStatItem: {
-    alignItems: 'center',
-  },
-  skipStatValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  skipStatLabel: {
-    fontSize: 13,
-    color: '#6B7280',
-  },
-  stressCorrelation: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#FEF2F2',
-    padding: 12,
-    borderRadius: 14,
-  },
-  stressCorrelationText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#991B1B',
-    lineHeight: 20,
-  },
   tableHeader: {
     flexDirection: 'row',
     borderBottomWidth: 2,
@@ -808,8 +543,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1F2937',
   },
-
-
   addFoodBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -981,5 +714,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF'
-  }
+  },
+  aiEvalBtn: {
+    backgroundColor: '#2563EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 14,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  aiEvalBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
 });
