@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,7 +8,9 @@ import {
   TextInput,
   ActivityIndicator,
   Platform,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  PanResponder,
+  Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from './AuthContext';
@@ -76,6 +78,44 @@ export function LogoutSuccessModal({ visible, onClose }) {
 
 export function MenuModal({ visible, onClose, title, menus }) {
   const { isDarkMode } = useContext(AuthContext);
+  const panY = useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (visible) {
+      panY.setValue(0);
+    }
+  }, [visible]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return gestureState.dy > 5;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (gestureState.dy > 0) {
+          panY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dy > 120 || (gestureState.dy > 50 && gestureState.vy > 0.5)) {
+          Animated.timing(panY, {
+            toValue: 600,
+            duration: 250,
+            useNativeDriver: true,
+          }).start(() => {
+            onClose();
+          });
+        } else {
+          Animated.spring(panY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   return (
     <Modal
       transparent
@@ -86,9 +126,14 @@ export function MenuModal({ visible, onClose, title, menus }) {
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.bottomOverlay}>
           <TouchableWithoutFeedback onPress={() => {}}>
-            <View style={[styles.sheetContent, isDarkMode && { backgroundColor: '#1E293B' }]}>
-
-              <View style={styles.dragIndicatorWrapper}>
+            <Animated.View
+              style={[
+                styles.sheetContent,
+                isDarkMode && { backgroundColor: '#1E293B' },
+                { transform: [{ translateY: panY }] }
+              ]}
+            >
+              <View style={styles.dragIndicatorWrapper} {...panResponder.panHandlers}>
                 <View style={[styles.dragIndicator, isDarkMode && { backgroundColor: '#475569' }]} />
               </View>
 
@@ -130,7 +175,7 @@ export function MenuModal({ visible, onClose, title, menus }) {
                   </TouchableOpacity>
                 ))}
               </View>
-            </View>
+            </Animated.View>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>

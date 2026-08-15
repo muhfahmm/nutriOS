@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Platform
+  Platform,
+  PanResponder,
+  Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -56,6 +58,44 @@ export function AddChildModal({
   onSave,
   isSaving
 }) {
+  const panY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      panY.setValue(0);
+    }
+  }, [visible]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return gestureState.dy > 5;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (gestureState.dy > 0) {
+          panY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dy > 120 || (gestureState.dy > 50 && gestureState.vy > 0.5)) {
+          Animated.timing(panY, {
+            toValue: 600,
+            duration: 250,
+            useNativeDriver: true,
+          }).start(() => {
+            onClose();
+          });
+        } else {
+          Animated.spring(panY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   return (
     <Modal
       transparent
@@ -64,7 +104,10 @@ export function AddChildModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.sheetContent}>
+        <Animated.View style={[styles.sheetContent, { transform: [{ translateY: panY }] }]}>
+          <View style={styles.dragIndicatorWrapper} {...panResponder.panHandlers}>
+            <View style={styles.dragIndicator} />
+          </View>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Tambah Profil Anak</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -119,7 +162,7 @@ export function AddChildModal({
               )}
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -287,5 +330,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 15,
     fontFamily: 'Roboto',
+  },
+  dragIndicatorWrapper: {
+    width: '100%',
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dragIndicator: {
+    width: 36,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#E2E8F0',
   },
 });
