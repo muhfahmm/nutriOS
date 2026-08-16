@@ -81,7 +81,7 @@ export default function SarapanScreen({ navigation }) {
       });
 
       if (!saveResponse.ok) {
-        Alert.alert('Gagal', 'Gagal menyimpan ke database.');
+        Alert.alert('Gagal');
         return;
       }
 

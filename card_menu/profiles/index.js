@@ -476,7 +476,7 @@ export default function ProfileScreen({ navigation }) {
             <View style={[styles.card, isDarkMode && { backgroundColor: '#1E293B' }]}>
               <Text style={[styles.cardTitle, isDarkMode && { color: '#F8FAFC' }]}>Silahkan masuk</Text>
               <Text style={[styles.cardText, isDarkMode && { color: '#94A3B8' }]}>
-                Masuk untuk menyimpan progres pertumbuhan, mengelola jadwal tidur, dan menyinkronkan data KMS anak Anda ke server.
+                Masuk untuk menyimpan progres pertumbuhan, mengelola jadwal tidur
               </Text>
               <View style={styles.authButtonRow}>
                 <TouchableOpacity style={styles.buttonPrimary} onPress={() => navigation.navigate('Login')}>

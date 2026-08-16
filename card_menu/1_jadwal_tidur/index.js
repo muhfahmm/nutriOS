@@ -213,7 +213,7 @@ export default function JadwalTidurScreen({ navigation }) {
           ageGroup,
           duration: durasiTerpenuhi,
         });
-        setSuccessMessage(result.message || 'Target tidur harian berhasil disimpan ke database!');
+        setSuccessMessage(result.message || 'Target tidur harian berhasil disimpan!');
         setIsSuccessVisible(true);
       } else {
         Alert.alert(
@@ -445,7 +445,7 @@ export default function JadwalTidurScreen({ navigation }) {
             ) : (
               <>
                 <Ionicons name="cloud-upload-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.saveDatabaseButtonText}>Simpan Target ke Database</Text>
+                <Text style={styles.saveDatabaseButtonText}>Simpan</Text>
               </>
             )}
           </TouchableOpacity>

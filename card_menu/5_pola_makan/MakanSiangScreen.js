@@ -80,7 +80,7 @@ export default function MakanSiangScreen({ navigation }) {
       });
 
       if (!saveResponse.ok) {
-        Alert.alert('Gagal', 'Gagal menyimpan ke database.');
+        Alert.alert('Gagal');
         return;
       }
 

@@ -169,7 +169,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
       }
     } catch (error) {
       console.error('[Jadwal Tidur Detail] Error saving changes:', error.message);
-      Alert.alert('Error', 'Gagal terhubung ke database. Cek koneksi server Anda.');
+      Alert.alert('Error', 'Gagal terhubung ke database');
     } finally {
       setIsSaving(false);
     }
@@ -285,7 +285,7 @@ export default function JadwalTidurDetail({ route, navigation }) {
               ) : (
                 <>
                   <Ionicons name="save-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.saveChangesText}>Simpan Target Baru</Text>
+                  <Text style={styles.saveChangesText}>Simpan</Text>
                 </>
               )}
             </TouchableOpacity>

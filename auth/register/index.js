@@ -154,9 +154,6 @@ export default function RegisterScreen({ navigation }) {
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.headerSection}>
-            <View style={styles.iconWrapper}>
-              <Ionicons name="person-add" size={44} color="#3B82F6" />
-            </View>
             <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Daftar Akun</Text>
             <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Buat akun baru untuk mulai menggunakan aplikasi.</Text>
           </View>

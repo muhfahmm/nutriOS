@@ -208,14 +208,6 @@ export default function LoginScreen({ navigation }) {
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.headerSection}>
-          <View style={styles.iconWrapper}>
-            <Ionicons name="shield-checkmark" size={48} color="#3B82F6" />
-          </View>
-          <Text style={[styles.title, isDarkMode && { color: '#F8FAFC' }]}>Masuk</Text>
-          <Text style={[styles.subtitle, isDarkMode && { color: '#94A3B8' }]}>Selamat datang kembali! Silakan masuk ke akun Anda.</Text>
-        </View>
-
         <View style={[styles.form, isDarkMode && { backgroundColor: '#1E293B', shadowColor: '#000' }]}>
           <View style={styles.inputWrapper}>
             <Text style={[styles.label, isDarkMode && { color: '#CBD5E1' }]}>Username</Text>
@@ -306,9 +298,6 @@ export default function LoginScreen({ navigation }) {
             if (navigation) navigation.replace('MainTabs');
           }}
         >
-          <Text style={[styles.footerHighlight, { color: '#10B981', fontWeight: '700' }]}>
-            Masuk sebagai Tamu (Guest)
-          </Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>

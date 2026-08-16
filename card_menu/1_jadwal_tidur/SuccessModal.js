@@ -20,7 +20,7 @@ export default function SuccessModal({ visible, onClose, message, sleepTime, wak
           </View>
 
           <Text style={styles.modalTitle}>Berhasil Disimpan!</Text>
-          <Text style={styles.modalMessage}>{message || 'Target tidur harian Anda telah sukses disimpan ke database.'}</Text>
+          <Text style={styles.modalMessage}>{message || 'Target tidur harian Anda telah sukses disimpan.'}</Text>
 
           {}
           <View style={styles.tableContainer}>
